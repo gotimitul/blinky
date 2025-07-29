@@ -95,13 +95,6 @@ void led_blue (void *argument) {
 }
 void led_red (void *argument) {
 	osDelay(1000);
-	/*
-	for (;;) {
-    osThreadFlagsWait(1U, osFlagsWaitAny, osWaitForever);
-
-    //handle event
-	HAL_GPIO_TogglePin(LED_Red_GPIO_Port, LED_Red_Pin);
-	}*/
   // ...
 	
 	for(;;)	{
@@ -177,9 +170,11 @@ void led_green (void *argument) {
   }
 }
 
-void usb_rx (void *argument)
+void usb_send (void *argument)
 {	
 	evt_id = osEventFlagsNew(NULL);
+	osThreadFlagsWait(1U, osFlagsWaitAny, osWaitForever);
+	
 	for(;;)
 	{
 		osEventFlagsWait(evt_id, 1U, osFlagsWaitAny, osWaitForever);
@@ -196,6 +191,11 @@ void usb_rx (void *argument)
 		}
 	}
 }
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	osThreadFlagsSet(tid5, 1U);
+}	
 
 /* USER CODE END 0 */
 
@@ -232,12 +232,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	osKernelInitialize();
 	
-	const osThreadAttr_t usb_rx_thread_config = {.priority = osPriorityLow, .name = "usb_rx"};	
+	const osThreadAttr_t usb_rx_thread_config = {.attr_bits = osSafetyClass(3U), .priority = osPriorityLow, .name = "usb_send"};	
 	
-	const osThreadAttr_t led_blue_thread_config = {.priority = osPriorityNormal, .name = "blue"};	
-	const osThreadAttr_t led_red_thread_config = {.priority = osPriorityNormal1, .name = "red"};	
-	const osThreadAttr_t led_orange_thread_config = {.priority = osPriorityNormal2, .name = "orange"};	
-	const osThreadAttr_t led_green_thread_config = {.priority = osPriorityNormal3, .name = "green"};	
+	const osThreadAttr_t led_blue_thread_config = {.attr_bits = osSafetyClass(2U), .priority = osPriorityNormal, .name = "blue"};	
+	const osThreadAttr_t led_red_thread_config = {.attr_bits = osSafetyClass(1U), .priority = osPriorityNormal1, .name = "red"};	
+	const osThreadAttr_t led_orange_thread_config = {.attr_bits = osSafetyClass(3U), .priority = osPriorityNormal2, .name = "orange"};	
+	const osThreadAttr_t led_green_thread_config = {.attr_bits = osSafetyClass(4U), .priority = osPriorityNormal3, .name = "green"};	
 	
 	mid1 = osMessageQueueNew(10, 20, NULL);
 	if (mid1 == NULL)
@@ -251,7 +251,7 @@ int main(void)
 	tid3 = osThreadNew(led_orange, NULL, &led_orange_thread_config);
 	tid4 = osThreadNew(led_green, NULL, &led_green_thread_config);
 	
-	tid5 = osThreadNew(usb_rx, NULL, &usb_rx_thread_config);
+	tid5 = osThreadNew(usb_send, NULL, &usb_rx_thread_config);
 	}
 	osKernelStart();
   /* USER CODE END 2 */
@@ -337,7 +337,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : BUTTON_1_Pin */
   GPIO_InitStruct.Pin = BUTTON_1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BUTTON_1_GPIO_Port, &GPIO_InitStruct);
 
@@ -347,6 +347,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 9, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
