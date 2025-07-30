@@ -74,6 +74,11 @@ build-gen:
       files:
         - file: C:/Users/gotim/AppData/Local/Arm/Packs/ARM/CMSIS-FreeRTOS/11.2.0/Source/timers.c
           category: sourceC
+    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint@1.2.0
+      from-pack: Keil::ARM_Compiler@1.7.2
+      files:
+        - file: C:/Users/gotim/AppData/Local/Arm/Packs/Keil/ARM_Compiler/1.7.2/Source/retarget_io.c
+          category: sourceC
     - component: Keil::Device:CubeMX@1.0.0
       from-pack: Keil::STM32F4xx_DFP@3.1.0
   apis:
@@ -82,5 +87,7 @@ build-gen:
     - api: CMSIS:RTOS2(API)@2.3.0
       from-pack: ARM::CMSIS@6.2.0
   groups:
-    - group: Source Group 1
-      files: 
+    - group: Application
+      files:
+        - file: C:/Users/gotim/Documents/MDK/blinky/blinky.h
+          category: header

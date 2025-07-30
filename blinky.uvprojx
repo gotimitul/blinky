@@ -382,7 +382,14 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>Source Group 1</GroupName>
+          <GroupName>Application</GroupName>
+          <Files>
+            <File>
+              <FileName>blinky.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\blinky.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>:CubeMX:CubeMX</GroupName>
@@ -675,6 +682,30 @@
           <targetInfo name="Target_1"/>
         </targetInfos>
       </file>
+      <file attr="config" category="source" name="Config\RTX_Config.c" version="5.2.0">
+        <instance index="0" removed="1">RTE\CMSIS\RTX_Config.c</instance>
+        <component Capiversion="2.3.0" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Library" Cvendor="ARM" Cversion="5.9.0" condition="RTX5"/>
+        <package name="CMSIS-RTX" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="ARM" version="5.9.0"/>
+        <targetInfos/>
+      </file>
+      <file attr="config" category="header" name="Config\RTX_Config.h" version="5.6.0">
+        <instance index="0" removed="1">RTE\CMSIS\RTX_Config.h</instance>
+        <component Capiversion="2.3.0" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Library" Cvendor="ARM" Cversion="5.9.0" condition="RTX5"/>
+        <package name="CMSIS-RTX" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="ARM" version="5.9.0"/>
+        <targetInfos/>
+      </file>
+      <file attr="config" category="header" name="Config\DV_Config.h" version="2.0.0">
+        <instance index="0" removed="1">RTE\CMSIS_Driver_Validation\DV_Config.h</instance>
+        <component Cclass="CMSIS Driver Validation" Cgroup="Framework" Cvendor="ARM" Cversion="2.0.0" condition="CMSIS Core with RTOS and STDOUT"/>
+        <package name="CMSIS-Driver_Validation" schemaVersion="1.7.7" url="http://www.keil.com/pack/" vendor="ARM" version="3.0.0"/>
+        <targetInfos/>
+      </file>
+      <file attr="config" category="header" name="Config\DV_USART_Config.h" version="2.0.0">
+        <instance index="0" removed="1">RTE\CMSIS_Driver_Validation\DV_USART_Config.h</instance>
+        <component Cclass="CMSIS Driver Validation" Cgroup="USART" Cvendor="ARM" Cversion="2.0.0" condition="CMSIS Driver Validation USART"/>
+        <package name="CMSIS-Driver_Validation" schemaVersion="1.7.7" url="http://www.keil.com/pack/" vendor="ARM" version="3.0.0"/>
+        <targetInfos/>
+      </file>
       <file attr="config" category="header" name="CMSIS\RTOS2\FreeRTOS\Config\FreeRTOSConfig.h" version="10.7.0">
         <instance index="0">RTE\RTOS\FreeRTOSConfig.h</instance>
         <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Config" Cvariant="CMSIS RTOS2" Cvendor="ARM" Cversion="11.2.0" condition="FreeRTOS Config CMSIS RTOS2"/>
@@ -703,5 +734,14 @@
       </file>
     </files>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>blinky</LayName>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>

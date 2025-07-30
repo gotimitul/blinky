@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "cmsis_os2.h"
 #include "EventRecorder.h"
+//#include "USBD_STM32.h"
 #include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
@@ -89,6 +90,7 @@ void led_blue (void *argument) {
 			text = "Blue LED OFF\r\n";
 		}
 		osMessageQueuePut(mid1, text, 3, 0U);
+
   delayTime = 4000U;                    // delay 1 second
   status = osDelay(delayTime);          // suspend thread execution
   }
@@ -180,11 +182,11 @@ void usb_send (void *argument)
 		osEventFlagsWait(evt_id, 1U, osFlagsWaitAny, osWaitForever);
 		uint8_t msg_count = osMessageQueueGetCount(mid1);
 		for (int i = 0; i < msg_count; i++)
-		{			
+		{
 			char msg[20];
 			osMessageQueueGet(mid1, msg, NULL, osWaitForever);	
 
-			while (CDC_Transmit_FS((uint8_t*)msg, strlen((const char*)msg)))
+//			while (CDC_Transmit_FS((uint8_t*)msg, strlen((const char*)msg)))
 			{
 				osDelay(1);
 			}
@@ -207,7 +209,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	EventRecorderInitialize(EventRecordAPI, 1);
+	EventRecorderInitialize(EventRecordAll, 0);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
