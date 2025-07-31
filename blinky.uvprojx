@@ -565,6 +565,9 @@
           <GroupName>::CMSIS</GroupName>
         </Group>
         <Group>
+          <GroupName>::CMSIS Driver</GroupName>
+        </Group>
+        <Group>
           <GroupName>::CMSIS-View</GroupName>
         </Group>
         <Group>
@@ -586,6 +589,12 @@
       </gpdsc>
     </gpdscs>
     <apis>
+      <api Capiversion="1.0.0" Cclass="CMSIS Driver" Cgroup="GPIO" exclusive="0">
+        <package name="CMSIS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="6.2.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </api>
       <api Capiversion="1.0.1" Cclass="CMSIS" Cgroup="OS Tick" exclusive="1">
         <package name="CMSIS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="6.2.0"/>
         <targetInfos>
@@ -662,6 +671,12 @@
       </component>
       <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Timers" Cvendor="ARM" Cversion="11.2.0" condition="FreeRTOS Timers">
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="11.2.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </component>
+      <component Capiversion="1.0.0" Cclass="CMSIS Driver" Cgroup="GPIO" Cvendor="Keil" Cversion="1.2.0" condition="CMSIS Driver requirements">
+        <package name="CMSIS-Driver_STM32" schemaVersion="1.7.37" url="https://www.keil.com/pack/" vendor="ARM" version="1.2.0"/>
         <targetInfos>
           <targetInfo name="Target_1"/>
         </targetInfos>

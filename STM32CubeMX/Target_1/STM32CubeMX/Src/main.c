@@ -26,6 +26,7 @@
 #include "EventRecorder.h"
 //#include "USBD_STM32.h"
 #include "usbd_cdc_if.h"
+#include "GPIO_STM32.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,6 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+extern ARM_DRIVER_GPIO Driver_GPIO0;
 osThreadId_t tid1;
 osThreadId_t tid2;
 osThreadId_t tid3;
@@ -61,8 +63,7 @@ osMessageQueueId_t mid1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -74,12 +75,14 @@ void led_blue (void *argument) {
 	for(;;)	{
 	osStatus_t status;                    // capture the return status
   uint32_t   delayTime;                 // delay time in milliseconds
- 
-	HAL_GPIO_TogglePin(LED_Blue_GPIO_Port, LED_Blue_Pin);		
+
+		static uint32_t pin_state = 0U;
+	if (pin_state == 0)	pin_state = 1U;
+		else pin_state = 0U;
+	Driver_GPIO0.SetOutput(63, pin_state);
+//	HAL_GPIO_TogglePin(LED_Blue_GPIO_Port, LED_Blue_Pin);		
 		
-//	 osThreadFlagsSet(tid2, 1U);
-		
-		GPIO_PinState led_state = HAL_GPIO_ReadPin(LED_Blue_GPIO_Port, LED_Blue_Pin);
+		GPIO_PinState led_state = Driver_GPIO0.GetInput(63); //HAL_GPIO_ReadPin(LED_Blue_GPIO_Port, LED_Blue_Pin);
 		char *text;
 		if (led_state == GPIO_PIN_RESET)
 		{
@@ -102,8 +105,12 @@ void led_red (void *argument) {
 	for(;;)	{
 	osStatus_t status;                    // capture the return status
   uint32_t   delayTime;                 // delay time in milliseconds
- 
-	HAL_GPIO_TogglePin(LED_Red_GPIO_Port, LED_Red_Pin);
+
+	static uint32_t pin_state = 0U;
+	if (pin_state == 0)	pin_state = 1U;
+		else pin_state = 0U;
+	Driver_GPIO0.SetOutput(62, pin_state);
+//	HAL_GPIO_TogglePin(LED_Red_GPIO_Port, LED_Red_Pin);
 	
 	GPIO_PinState led_state = HAL_GPIO_ReadPin(LED_Red_GPIO_Port, LED_Red_Pin);
 		char *text;
@@ -126,8 +133,13 @@ void led_orange (void *argument) {
 	for(;;)	{
 	osStatus_t status;                    // capture the return status
   uint32_t   delayTime;                 // delay time in milliseconds
- 
-	HAL_GPIO_TogglePin(LED_Orange_GPIO_Port, LED_Orange_Pin);
+	
+	static uint32_t pin_state = 0U;
+	if (pin_state == 0)	pin_state = 1U;
+		else pin_state = 0U;
+	Driver_GPIO0.SetOutput(61, pin_state);
+		
+//	HAL_GPIO_TogglePin(LED_Orange_GPIO_Port, LED_Orange_Pin);
 		
 		GPIO_PinState led_state = HAL_GPIO_ReadPin(LED_Orange_GPIO_Port, LED_Orange_Pin);
 		char *text;
@@ -142,18 +154,21 @@ void led_orange (void *argument) {
 		osMessageQueuePut(mid1, text, 5, 0U);
   delayTime = 4000U;                    // delay 1 second
   status = osDelay(delayTime);          // suspend thread execution
-		
+		osThreadJoin(tid4);
   }
 }
 void led_green (void *argument) {
  	osDelay(3000);
-
+	
   // ...
 	for(;;)	{
 	osStatus_t status;                    // capture the return status
   uint32_t   delayTime;                 // delay time in milliseconds
- 
-	HAL_GPIO_TogglePin(LED_Green_GPIO_Port, LED_Green_Pin);
+	static uint32_t pin_state = 0U;
+	if (pin_state == 0)	pin_state = 1U;
+		else pin_state = 0U;
+	Driver_GPIO0.SetOutput(60, pin_state);
+//	HAL_GPIO_TogglePin(LED_Green_GPIO_Port, LED_Green_Pin);
 		
 		GPIO_PinState led_state = HAL_GPIO_ReadPin(LED_Green_GPIO_Port, LED_Green_Pin);
 		char *text;
@@ -167,8 +182,10 @@ void led_green (void *argument) {
 		}
 		osMessageQueuePut(mid1, text, 4, 0U);
 		osEventFlagsSet(evt_id, 1U);
-  delayTime = 4000U;                    // delay 1 second
-  status = osDelay(delayTime);          // suspend thread execution
+		delayTime = 4000U;                    // delay 1 second
+		status = osDelay(delayTime);          // suspend thread execution
+		
+		osThreadExit();
   }
 }
 
@@ -186,7 +203,7 @@ void usb_send (void *argument)
 			char msg[20];
 			osMessageQueueGet(mid1, msg, NULL, osWaitForever);	
 
-//			while (CDC_Transmit_FS((uint8_t*)msg, strlen((const char*)msg)))
+			while (CDC_Transmit_FS((uint8_t*)msg, strlen((const char*)msg)))
 			{
 				osDelay(1);
 			}
@@ -194,10 +211,15 @@ void usb_send (void *argument)
 	}
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+//{
+//	osThreadFlagsSet(tid5, 1U);
+//}
+
+void ARM_GPIO_SignalEvent (ARM_GPIO_Pin_t pin, uint32_t event)
 {
 	osThreadFlagsSet(tid5, 1U);
-}	
+}
 
 /* USER CODE END 0 */
 
@@ -232,6 +254,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
+	Driver_GPIO0.Setup(0, ARM_GPIO_SignalEvent);
+	Driver_GPIO0.SetEventTrigger(0, ARM_GPIO_TRIGGER_RISING_EDGE);
 	osKernelInitialize();
 	
 	const osThreadAttr_t usb_rx_thread_config = {.attr_bits = osSafetyClass(3U), .priority = osPriorityLow, .name = "usb_send"};	

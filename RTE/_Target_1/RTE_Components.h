@@ -29,6 +29,8 @@
 #define RTE_RTOS_FreeRTOS_HEAP_4        /* RTOS FreeRTOS Heap 4 */
 /* ARM::RTOS&FreeRTOS:Timers@11.2.0 */
 #define RTE_RTOS_FreeRTOS_TIMERS        /* RTOS FreeRTOS Timers */
+/* Keil::CMSIS Driver:GPIO@1.2.0 */
+#define RTE_Drivers_GPIO0               /* Driver GPIO0 */
 /* Keil::Device:CubeMX@1.0.0 */
 #define RTE_DEVICE_CUBE_MX
 #define CMSIS_device_header "stm32f4xx.h"
