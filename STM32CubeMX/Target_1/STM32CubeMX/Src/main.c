@@ -24,9 +24,8 @@
 /* USER CODE BEGIN Includes */
 #include "cmsis_os2.h"
 #include "EventRecorder.h"
-//#include "USBD_STM32.h"
 #include "usbd_cdc_if.h"
-#include "GPIO_STM32.h"
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,15 +46,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern ARM_DRIVER_GPIO Driver_GPIO0;
-osThreadId_t tid1;
-osThreadId_t tid2;
-osThreadId_t tid3;
-osThreadId_t tid4;
-osThreadId_t tid5;
-static osEventFlagsId_t evt_id = 0;  
+	osThreadId_t tid_app;
 
-osMessageQueueId_t mid1;
+//osMessageQueueId_t mid1;
 
 /* USER CODE END PV */
 
@@ -68,7 +61,7 @@ static void MX_GPIO_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+/*
 void led_blue (void *argument) {
 
   // ...
@@ -96,96 +89,6 @@ void led_blue (void *argument) {
 
   delayTime = 4000U;                    // delay 1 second
   status = osDelay(delayTime);          // suspend thread execution
-  }
-}
-void led_red (void *argument) {
-	osDelay(1000);
-  // ...
-	
-	for(;;)	{
-	osStatus_t status;                    // capture the return status
-  uint32_t   delayTime;                 // delay time in milliseconds
-
-	static uint32_t pin_state = 0U;
-	if (pin_state == 0)	pin_state = 1U;
-		else pin_state = 0U;
-	Driver_GPIO0.SetOutput(62, pin_state);
-//	HAL_GPIO_TogglePin(LED_Red_GPIO_Port, LED_Red_Pin);
-	
-	GPIO_PinState led_state = HAL_GPIO_ReadPin(LED_Red_GPIO_Port, LED_Red_Pin);
-		char *text;
-		if (led_state == GPIO_PIN_RESET)
-		{
-			text = "Red LED ON\r\n";
-		}
-		else 
-		{
-			text = "Red LED OFF\r\n";
-		}
-		osMessageQueuePut(mid1, text, 1, 0U);
-  delayTime = 4000U;                    // delay 1 second
-  status = osDelay(delayTime);          // suspend thread execution
-  }
-}
-void led_orange (void *argument) {
- 	osDelay(2000);
-  // ...
-	for(;;)	{
-	osStatus_t status;                    // capture the return status
-  uint32_t   delayTime;                 // delay time in milliseconds
-	
-	static uint32_t pin_state = 0U;
-	if (pin_state == 0)	pin_state = 1U;
-		else pin_state = 0U;
-	Driver_GPIO0.SetOutput(61, pin_state);
-		
-//	HAL_GPIO_TogglePin(LED_Orange_GPIO_Port, LED_Orange_Pin);
-		
-		GPIO_PinState led_state = HAL_GPIO_ReadPin(LED_Orange_GPIO_Port, LED_Orange_Pin);
-		char *text;
-		if (led_state == GPIO_PIN_RESET)
-		{
-			text = "Orange LED ON\r\n";
-		}
-		else 
-		{
-			text = "Orange LED OFF\r\n";
-		}		
-		osMessageQueuePut(mid1, text, 5, 0U);
-  delayTime = 4000U;                    // delay 1 second
-  status = osDelay(delayTime);          // suspend thread execution
-		osThreadJoin(tid4);
-  }
-}
-void led_green (void *argument) {
- 	osDelay(3000);
-	
-  // ...
-	for(;;)	{
-	osStatus_t status;                    // capture the return status
-  uint32_t   delayTime;                 // delay time in milliseconds
-	static uint32_t pin_state = 0U;
-	if (pin_state == 0)	pin_state = 1U;
-		else pin_state = 0U;
-	Driver_GPIO0.SetOutput(60, pin_state);
-//	HAL_GPIO_TogglePin(LED_Green_GPIO_Port, LED_Green_Pin);
-		
-		GPIO_PinState led_state = HAL_GPIO_ReadPin(LED_Green_GPIO_Port, LED_Green_Pin);
-		char *text;
-		if (led_state == GPIO_PIN_RESET)
-		{
-			text = "Green LED ON\r\n";
-		}
-		else 
-		{
-			text = "Green LED OFF\r\n";
-		}
-		osMessageQueuePut(mid1, text, 4, 0U);
-		osEventFlagsSet(evt_id, 1U);
-		delayTime = 4000U;                    // delay 1 second
-		status = osDelay(delayTime);          // suspend thread execution
-		
-		osThreadExit();
   }
 }
 
@@ -220,7 +123,7 @@ void ARM_GPIO_SignalEvent (ARM_GPIO_Pin_t pin, uint32_t event)
 {
 	osThreadFlagsSet(tid5, 1U);
 }
-
+*/
 /* USER CODE END 0 */
 
 /**
@@ -254,31 +157,23 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-	Driver_GPIO0.Setup(0, ARM_GPIO_SignalEvent);
-	Driver_GPIO0.SetEventTrigger(0, ARM_GPIO_TRIGGER_RISING_EDGE);
+//	Driver_GPIO0.Setup(0, ARM_GPIO_SignalEvent);
+//	Driver_GPIO0.SetEventTrigger(0, ARM_GPIO_TRIGGER_RISING_EDGE);
 	osKernelInitialize();
 	
-	const osThreadAttr_t usb_rx_thread_config = {.attr_bits = osSafetyClass(3U), .priority = osPriorityLow, .name = "usb_send"};	
+	const osThreadAttr_t app_main_config = {.name = "app_main", .priority = osPriorityNormal, };	
 	
-	const osThreadAttr_t led_blue_thread_config = {.attr_bits = osSafetyClass(2U), .priority = osPriorityNormal, .name = "blue"};	
-	const osThreadAttr_t led_red_thread_config = {.attr_bits = osSafetyClass(1U), .priority = osPriorityNormal1, .name = "red"};	
-	const osThreadAttr_t led_orange_thread_config = {.attr_bits = osSafetyClass(3U), .priority = osPriorityNormal2, .name = "orange"};	
-	const osThreadAttr_t led_green_thread_config = {.attr_bits = osSafetyClass(4U), .priority = osPriorityNormal3, .name = "green"};	
-	
-	mid1 = osMessageQueueNew(10, 20, NULL);
-	if (mid1 == NULL)
-	{
-		HAL_GPIO_WritePin(LED_Red_GPIO_Port, LED_Red_Pin, GPIO_PIN_SET);
-	}	
-	else
-	{
-	tid1 = osThreadNew(led_blue, NULL, &led_blue_thread_config);
-	tid2 = osThreadNew(led_red, NULL, &led_red_thread_config);
-	tid3 = osThreadNew(led_orange, NULL, &led_orange_thread_config);
-	tid4 = osThreadNew(led_green, NULL, &led_green_thread_config);
-	
-	tid5 = osThreadNew(usb_send, NULL, &usb_rx_thread_config);
-	}
+	tid_app = osThreadNew(app_main, NULL, &app_main_config);
+/*	
+	const osThreadAttr_t usb_rx_thread_config = {.priority = osPriorityLow, .name = "usb_send"};	
+*/	
+//	mid1 = osMessageQueueNew(10, 20, NULL);
+
+//	else
+//	{
+
+//	tid5 = osThreadNew(usb_send, NULL, &usb_rx_thread_config);
+//	}
 	osKernelStart();
   /* USER CODE END 2 */
 
