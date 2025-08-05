@@ -48,8 +48,6 @@
 /* USER CODE BEGIN PV */
 	osThreadId_t tid_app;
 
-//osMessageQueueId_t mid1;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -134,7 +132,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	EventRecorderInitialize(EventRecordAll, 0);
+	EventRecorderInitialize(EventRecordAll, 1);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -157,8 +155,6 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-//	Driver_GPIO0.Setup(0, ARM_GPIO_SignalEvent);
-//	Driver_GPIO0.SetEventTrigger(0, ARM_GPIO_TRIGGER_RISING_EDGE);
 	osKernelInitialize();
 	
 	const osThreadAttr_t app_main_config = {.name = "app_main", .priority = osPriorityNormal, };	
