@@ -4,10 +4,10 @@
 
 
 LedThread::LedThread(const char* name, uint32_t pin)
-    : thread_name(name), pin(pin) {
+	: Led(pin)  {
 
     thread_attr = {
-        .name = thread_name,
+        .name = name,
 				.attr_bits = 0U,
         .cb_mem = cb,
         .cb_size = sizeof(cb),
@@ -19,21 +19,24 @@ LedThread::LedThread(const char* name, uint32_t pin)
 
 void LedThread::start(void *argument) {
     osThreadNew(thread_entry, this, &thread_attr);
-		sem = (osSemaphoreId_t*)argument;
+		this->sem = (osSemaphoreId_t*)argument;
 }
 
 void LedThread::thread_entry(void* argument) {
-    static_cast<LedThread*>(argument)->run();
+    LedThread *thread = static_cast<LedThread*>(argument);
+	thread->run();
 }
 
 void LedThread::run() {
-    Led led;
+		Led *led = static_cast<Led*>(this);
     for (;;) {
-        osSemaphoreAcquire(sem, osWaitForever);
-        led.toggle(pin);
+        osSemaphoreAcquire(this->sem, osWaitForever);
+
+        led->toggle();
         osDelay(100);
-        led.toggle(pin);
-        osSemaphoreRelease(sem);
+
+        led->toggle();
+        osSemaphoreRelease(this->sem);
         osDelay(1);
     }
 }

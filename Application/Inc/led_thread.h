@@ -2,6 +2,8 @@
 #ifndef __LEDTHREAD_H
 #define __LEDTHREAD_H
 
+#include "led.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,17 +16,12 @@ extern "C" {
 }
 #endif
 
-class LedThread {
-public:
-    LedThread(const char* name, uint32_t pin);
-    void start(void *argument);
+class LedThread : public Led {
     
 private:
     static void thread_entry(void* argument);
     void run();
 
-    const char* thread_name;
-    uint32_t pin;
     osThreadId_t thread_id = NULL;
 		osSemaphoreId_t *sem;
 
@@ -32,6 +29,10 @@ private:
     uint64_t cb[32] __attribute__((aligned(64)));
 
     osThreadAttr_t thread_attr;
+
+public:
+	LedThread(const char* name, uint32_t pin);
+    void start(void *argument);
 };
 
 #endif

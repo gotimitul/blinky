@@ -19,8 +19,10 @@ extern "C" {
 
 class Led {
     private:
+			uint32_t pin;
 		public:
-    void toggle(uint32_t pin);
+		Led (uint32_t pin) : pin(pin){};
+    void toggle(void);
 };
 
 #endif /* __LED_H */
