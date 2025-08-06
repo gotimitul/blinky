@@ -2,6 +2,8 @@
  * @file app.cpp
  * @brief Application main function: initializes threads and synchronization
  *
+ * @ingroup app
+ *
  * This file contains the application entry point which initializes a shared semaphore
  * and starts multiple LED control threads with CMSIS-RTOS2.
  */

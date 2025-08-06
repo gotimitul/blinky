@@ -2,6 +2,8 @@
  * @file led.cpp
  * @brief Implementation of the Led class for GPIO-based LED control
  *
+ * @ingroup led
+ *
  * This file defines the toggle method of the Led class, using the CMSIS-compliant
  * ARM GPIO driver to change the LED state based on its current input.
  */

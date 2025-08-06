@@ -2,8 +2,9 @@
  * @file led.h
  * @brief LED control abstraction using GPIO pins
  *
- * Provides the base `Led` class which encapsulates a GPIO pin and exposes a method
- * to toggle the LED. Also defines LED pin numbers.
+ * @defgroup led LED Driver
+ * @ingroup led
+ * @{
  */
 
 #ifndef __LED_H
@@ -39,6 +40,8 @@ public:
     /**
      * @brief Constructor
      *
+     * Initializes the LED pin.
+     *
      * @param pin GPIO pin number
      */
     Led(uint32_t pin) : pin(pin) {}
@@ -52,3 +55,5 @@ public:
 };
 
 #endif /* __LED_H */
+
+/** @} */ // end of led

@@ -2,6 +2,8 @@
  * @file led_thread.cpp
  * @brief Thread-based LED control using CMSIS-RTOS2
  *
+ * @ingroup led_thread
+ *
  * Implements the LedThread class that manages LED blinking in its own thread.
  * Thread execution is synchronized using a shared semaphore to ensure mutual exclusion.
  */

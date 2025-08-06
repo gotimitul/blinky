@@ -2,18 +2,21 @@
  * @file led_thread.h
  * @brief Thread-enabled LED controller class
  *
- * Declares the `LedThread` class that runs a blinking LED logic inside a CMSIS-RTOS2 thread.
+ * @defgroup led_thread LED Thread
+ * @ingroup led_thread
+ * @{
  */
 
 #ifndef __LEDTHREAD_H
 #define __LEDTHREAD_H
-
+/* includes --------------------------------------------------------------------------*/
 #include "led.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* C headers includes -----------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 #include "cmsis_os2.h"
 
@@ -74,3 +77,5 @@ public:
 };
 
 #endif /* __LEDTHREAD_H */
+
+/** @} */ // end of led_thread

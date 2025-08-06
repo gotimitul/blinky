@@ -2,7 +2,9 @@
  * @file app.h
  * @brief Application header file for RTOS-based LED control
  *
- * Declares the main application thread entry and argument structure.
+ * @defgroup app Application API
+ * @ingroup app
+ * @{
  */
 
 #ifndef __APP_H
@@ -15,10 +17,7 @@ extern "C" {
 #include "stm32f4xx_hal.h"
 
 /**
- * @struct argument_t
  * @brief Struct for passing thread configuration parameters
- *
- * Used to encapsulate runtime configuration such as LED pin and delay time.
  */
 typedef struct 
 {
@@ -28,10 +27,6 @@ typedef struct
 
 /**
  * @brief Entry point for the main application logic
- *
- * This function is called after the RTOS kernel is initialized and started.
- * It initializes synchronization primitives and launches LED threads.
- *
  * @param argument Optional pointer to arguments (currently unused)
  */
 void app_main(void *argument);
@@ -41,3 +36,5 @@ void app_main(void *argument);
 #endif
 
 #endif /* __APP_H */
+
+/** @} */ // end of app
