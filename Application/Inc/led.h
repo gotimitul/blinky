@@ -3,7 +3,7 @@
  * @brief LED control abstraction using GPIO pins
  *
  * @defgroup led LED Driver
- * @ingroup led
+ * 
  * @{
  */
 
@@ -37,20 +37,9 @@ private:
     uint32_t pin; ///< GPIO pin associated with this LED
 
 public:
-    /**
-     * @brief Constructor
-     *
-     * Initializes the LED pin.
-     *
-     * @param pin GPIO pin number
-     */
-    Led(uint32_t pin) : pin(pin) {}
 
-    /**
-     * @brief Toggle the state of the LED
-     *
-     * Reads the current GPIO input and sets the opposite output state.
-     */
+    Led(uint32_t pin) : pin(pin) {}
+			
     void toggle(void);
 };
 

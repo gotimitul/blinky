@@ -3,7 +3,7 @@
  * @brief Thread-enabled LED controller class
  *
  * @defgroup led_thread LED Thread
- * @ingroup led_thread
+ * 
  * @{
  */
 
@@ -33,21 +33,8 @@ extern "C" {
  */
 class LedThread : public Led {
 private:
-    /**
-     * @brief Static RTOS thread entry point
-     *
-     * Casts the argument back to the `LedThread` object and calls its `run()` method.
-     *
-     * @param argument Pointer to `LedThread` instance
-     */
-    static void thread_entry(void* argument);
 
-    /**
-     * @brief Internal method to execute the thread loop
-     *
-     * Toggles the LED and synchronizes using a semaphore.
-     */
-    void run();
+    static void thread_entry(void* argument);
 
     osThreadId_t thread_id = NULL;      ///< CMSIS RTOS thread ID
     osSemaphoreId_t *sem;              ///< Shared semaphore pointer
@@ -57,23 +44,12 @@ private:
 
     osThreadAttr_t thread_attr;        ///< Thread attributes used by osThreadNew
 
-public:
-    /**
-     * @brief Constructor
-     *
-     * Initializes the LED pin and sets up thread attributes.
-     *
-     * @param name Thread name
-     * @param pin GPIO pin number for the LED
-     */
-    LedThread(const char* name, uint32_t pin);
+    void start(void);				///< It creates a new thread
+    void run(void);					///< It contains the control logic for an LED.
 
-    /**
-     * @brief Starts the thread execution
-     *
-     * @param argument Pointer to the shared semaphore
-     */
-    void start(void *argument);
+public:
+	
+    LedThread(const char* name, uint32_t pin, void* sem);
 };
 
 #endif /* __LEDTHREAD_H */

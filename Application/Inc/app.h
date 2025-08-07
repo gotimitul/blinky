@@ -3,7 +3,7 @@
  * @brief Application header file for RTOS-based LED control
  *
  * @defgroup app Application API
- * @ingroup app
+ * 
  * @{
  */
 
@@ -25,10 +25,6 @@ typedef struct
     uint32_t pin;   ///< GPIO pin number
 } argument_t;
 
-/**
- * @brief Entry point for the main application logic
- * @param argument Optional pointer to arguments (currently unused)
- */
 void app_main(void *argument);
 
 #ifdef __cplusplus

@@ -10,6 +10,7 @@
 
 #include "led_thread.h"
 #include "led.h"
+#include "usb_logger.h"
 
 /**
  * @brief Construct a new LedThread object
@@ -18,9 +19,10 @@
  *
  * @param name Name of the thread (used by CMSIS-RTOS2 for debugging)
  * @param pin  GPIO pin number associated with the LED
+ * @param sem  Semaphore reference that controls the execution of the threads
  */
-LedThread::LedThread(const char* name, uint32_t pin)
-    : Led(pin)  // Call base class constructor to assign pin
+LedThread::LedThread(const char* name, uint32_t pin, void* sem)
+    : Led(pin), sem((osSemaphoreId_t*)sem)  // Call base class constructor to assign pin
 {
     // Initialize thread attributes for CMSIS-RTOS2
     thread_attr = {
@@ -32,6 +34,8 @@ LedThread::LedThread(const char* name, uint32_t pin)
         .stack_size = sizeof(stack), // Stack size in bytes
         .priority = osPriorityNormal // Thread priority
     };
+		
+		this->start();
 }
 
 /**
@@ -39,14 +43,10 @@ LedThread::LedThread(const char* name, uint32_t pin)
  *
  * Spawns a new thread using CMSIS-RTOS2 and stores the shared semaphore reference.
  *
- * @param argument Pointer to a shared osSemaphoreId_t, passed to all threads
  */
-void LedThread::start(void *argument) {
+void LedThread::start(void) {
     // Start thread, passing 'this' so static entry can cast it back
-    osThreadNew(thread_entry, this, &thread_attr);
-
-    // Store semaphore pointer for thread-safe access to the LED
-    this->sem = (osSemaphoreId_t*)argument;
+	thread_id = osThreadNew(thread_entry, this, &thread_attr);
 }
 
 /**
@@ -69,7 +69,7 @@ void LedThread::thread_entry(void* argument) {
  * This function continuously toggles the LED on and off with a delay.
  * It uses a shared semaphore to avoid simultaneous access to the same GPIO pins.
  */
-void LedThread::run() {
+void LedThread::run(void) {
     // Cast this pointer to base class to access toggle method
     Led *led = static_cast<Led*>(this);
 
@@ -79,7 +79,9 @@ void LedThread::run() {
 
         // Toggle LED ON
         led->toggle();
-        osDelay(100); // Delay 100 ms
+        osDelay(1000); // Delay 100 ms
+        
+				UsbLogger::getInstance().log("LED is toggled\r\n");
 
         // Toggle LED OFF
         led->toggle();

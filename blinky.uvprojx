@@ -399,6 +399,11 @@
               <FileType>8</FileType>
               <FilePath>.\Application\Src\led_thread.cpp</FilePath>
             </File>
+            <File>
+              <FileName>usb_logger.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\Application\Src\usb_logger.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

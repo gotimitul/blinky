@@ -12,6 +12,7 @@
 #include "led.h"
 #include "cmsis_os2.h"
 #include "led_thread.h"
+#include "usb_logger.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,17 +33,14 @@ void app_main(void *argument) {
     osSemaphoreId_t semMultiplex;
     semMultiplex = osSemaphoreNew(4, 1, NULL);
 
-    // Create static LED threads, one for each LED color
-    static LedThread blue("blue", LED_BLUE_PIN);
-    static LedThread red("red", LED_RED_PIN);
-    static LedThread orange("orange", LED_ORANGE_PIN);
-    static LedThread green("green", LED_GREEN_PIN);
+    UsbLogger::getInstance().init();
+    UsbLogger::getInstance().start();
 
-    // Start each thread with shared semaphore for multiplexing
-    blue.start(semMultiplex);
-    red.start(semMultiplex);
-    orange.start(semMultiplex);
-    green.start(semMultiplex);
+    // Create static LED threads, one for each LED color
+    static LedThread blue("blue", LED_BLUE_PIN, semMultiplex);
+    static LedThread red("red", LED_RED_PIN, semMultiplex);
+    static LedThread orange("orange", LED_ORANGE_PIN, semMultiplex);
+    static LedThread green("green", LED_GREEN_PIN, semMultiplex);
 
     // Exit the application thread once all LED threads are launched
     osThreadExit();
