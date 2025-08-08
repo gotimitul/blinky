@@ -60,63 +60,6 @@ static void MX_GPIO_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /*
-void led_blue (void *argument) {
-
-  // ...
-	for(;;)	{
-	osStatus_t status;                    // capture the return status
-  uint32_t   delayTime;                 // delay time in milliseconds
-
-		static uint32_t pin_state = 0U;
-	if (pin_state == 0)	pin_state = 1U;
-		else pin_state = 0U;
-	Driver_GPIO0.SetOutput(63, pin_state);
-//	HAL_GPIO_TogglePin(LED_Blue_GPIO_Port, LED_Blue_Pin);		
-		
-		GPIO_PinState led_state = Driver_GPIO0.GetInput(63); //HAL_GPIO_ReadPin(LED_Blue_GPIO_Port, LED_Blue_Pin);
-		char *text;
-		if (led_state == GPIO_PIN_RESET)
-		{
-			text = "Blue LED ON\r\n";
-		}
-		else 
-		{
-			text = "Blue LED OFF\r\n";
-		}
-		osMessageQueuePut(mid1, text, 3, 0U);
-
-  delayTime = 4000U;                    // delay 1 second
-  status = osDelay(delayTime);          // suspend thread execution
-  }
-}
-
-void usb_send (void *argument)
-{	
-	evt_id = osEventFlagsNew(NULL);
-	osThreadFlagsWait(1U, osFlagsWaitAny, osWaitForever);
-	
-	for(;;)
-	{
-		osEventFlagsWait(evt_id, 1U, osFlagsWaitAny, osWaitForever);
-		uint8_t msg_count = osMessageQueueGetCount(mid1);
-		for (int i = 0; i < msg_count; i++)
-		{
-			char msg[20];
-			osMessageQueueGet(mid1, msg, NULL, osWaitForever);	
-
-			while (CDC_Transmit_FS((uint8_t*)msg, strlen((const char*)msg)))
-			{
-				osDelay(1);
-			}
-		}
-	}
-}
-
-//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-//{
-//	osThreadFlagsSet(tid5, 1U);
-//}
-
 void ARM_GPIO_SignalEvent (ARM_GPIO_Pin_t pin, uint32_t event)
 {
 	osThreadFlagsSet(tid5, 1U);

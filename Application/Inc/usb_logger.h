@@ -56,7 +56,7 @@ public:
      * @brief Send a log message to be transmitted over USB CDC.
      *
      */
-    void log(const char* msg);
+    void log(const char* format, ...);
 
     /// @}
 

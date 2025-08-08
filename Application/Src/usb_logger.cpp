@@ -9,6 +9,7 @@
 #include "usb_logger.h"
 #include <cstring>
 #include "usbd_cdc_if.h"
+#include  "cstdarg" // For va_list, va_start, etc.
 
 /// @addtogroup UsbLogger
 /// @{
@@ -48,8 +49,13 @@ void UsbLogger::start() {
 
 /// @brief Queues a log message for USB transmission.
 /// @param msg Null-terminated string (max 127 bytes)
-void UsbLogger::log(const char* msg) {
-    if (msgQueueId != nullptr && msg != nullptr) {
+void UsbLogger::log(const char* format, ...) {
+    if (msgQueueId != nullptr && format != nullptr) {
+        char msg[LOG_MSG_SIZE];
+        va_list args;
+        va_start(args, format);
+        vsnprintf(msg, LOG_MSG_SIZE, format, args);
+        va_end(args);
         osMessageQueuePut(msgQueueId, msg, 0, 0); // non-blocking enqueue
     }
 }
@@ -62,7 +68,6 @@ void UsbLogger::loggerThreadWrapper(void *argument) {
 
 /// @brief Thread function that waits for messages and sends them via USB CDC.
 void UsbLogger::loggerThread() {
-    const uint8_t ep_in = 0x81;  // USB CDC IN endpoint
     char logBuf[LOG_MSG_SIZE];
 
     while (1) {

@@ -33,7 +33,7 @@ extern "C" {
  */
 class LedThread : public Led {
 private:
-
+    uint32_t pin; ///< GPIO pin associated with this LED
     static void thread_entry(void* argument);
 
     osThreadId_t thread_id = NULL;      ///< CMSIS RTOS thread ID

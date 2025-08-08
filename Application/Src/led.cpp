@@ -19,14 +19,14 @@
  *
  * The implementation uses the CMSIS-Driver `ARM_DRIVER_GPIO` interface.
  */
-void Led::toggle(void) {
+void Led::toggle(uint32_t pin) {
     // Use external GPIO driver instance
     extern ARM_DRIVER_GPIO Driver_GPIO0;
 
     uint32_t pin_state = 0U;
 
     // Read the current state of the pin
-    if (Driver_GPIO0.GetInput(this->pin) == 0) {
+    if (Driver_GPIO0.GetInput(pin) == 0) {
         // If currently LOW, prepare to set it HIGH
         pin_state = 1U;
     }

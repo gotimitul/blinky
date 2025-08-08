@@ -22,7 +22,7 @@
  * @param sem  Semaphore reference that controls the execution of the threads
  */
 LedThread::LedThread(const char* name, uint32_t pin, void* sem)
-    : Led(pin), sem((osSemaphoreId_t*)sem)  // Call base class constructor to assign pin
+    : pin(pin), sem((osSemaphoreId_t*)sem)  // Call base class constructor to assign pin
 {
     // Initialize thread attributes for CMSIS-RTOS2
     thread_attr = {
@@ -58,6 +58,9 @@ void LedThread::start(void) {
  * @param argument Pointer to the instance of LedThread
  */
 void LedThread::thread_entry(void* argument) {
+    if (argument == nullptr) {
+        return; // Safety check for null pointer
+    }
     // Cast back to LedThread and call the member function
     LedThread *thread = static_cast<LedThread*>(argument);
     thread->run();
@@ -70,21 +73,22 @@ void LedThread::thread_entry(void* argument) {
  * It uses a shared semaphore to avoid simultaneous access to the same GPIO pins.
  */
 void LedThread::run(void) {
-    // Cast this pointer to base class to access toggle method
-    Led *led = static_cast<Led*>(this);
-
+    if (sem == nullptr) {
+        UsbLogger::getInstance().log("Semaphore is null, cannot run LED thread\r\n");
+        return; // Safety check for null semaphore
+    }
     for (;;) {
         // Acquire semaphore before accessing the LED
         osSemaphoreAcquire(this->sem, osWaitForever);
 
         // Toggle LED ON
-        led->toggle();
-        osDelay(1000); // Delay 100 ms
+		Led::toggle(pin);
+        osDelay(500); // Delay 500 ms
         
-				UsbLogger::getInstance().log("LED is toggled\r\n");
+		UsbLogger::getInstance().log("LED %s is toggled\r\n", osThreadGetName(this->thread_id));
 
         // Toggle LED OFF
-        led->toggle();
+		Led::toggle(pin);
 
         // Release semaphore for next thread
         osSemaphoreRelease(this->sem);
