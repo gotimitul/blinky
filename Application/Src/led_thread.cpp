@@ -59,7 +59,8 @@ void LedThread::start(void) {
  */
 void LedThread::thread_entry(void* argument) {
     if (argument == nullptr) {
-        return; // Safety check for null pointer
+        UsbLogger::getInstance().log("LedThread::thread_entry: argument is null\r\n");
+        osThreadExit();
     }
     // Cast back to LedThread and call the member function
     LedThread *thread = static_cast<LedThread*>(argument);
@@ -75,7 +76,7 @@ void LedThread::thread_entry(void* argument) {
 void LedThread::run(void) {
     if (sem == nullptr) {
         UsbLogger::getInstance().log("Semaphore is null, cannot run LED thread\r\n");
-        return; // Safety check for null semaphore
+        osThreadExit(); // Safety check for null semaphore
     }
     for (;;) {
         // Acquire semaphore before accessing the LED
@@ -85,7 +86,7 @@ void LedThread::run(void) {
 		Led::toggle(pin);
         osDelay(500); // Delay 500 ms
         
-		UsbLogger::getInstance().log("LED %s is toggled\r\n", osThreadGetName(this->thread_id));
+		UsbLogger::getInstance().log("LED %s is toggled\r\n", osThreadGetName(thread_id));
 
         // Toggle LED OFF
 		Led::toggle(pin);

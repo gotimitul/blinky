@@ -30,8 +30,8 @@ void app_main(void *argument) {
     UNUSED(argument);  // CMSIS macro to mark unused variable
 
     // Create a counting semaphore with 4 tokens, 1 initially available
-    osSemaphoreId_t semMultiplex;
-    semMultiplex = osSemaphoreNew(4, 1, NULL);
+    osSemaphoreId_t semMultiplex = nullptr;
+    semMultiplex = osSemaphoreNew(4, 1, nullptr);
 
     UsbLogger::getInstance().init();
     UsbLogger::getInstance().start();

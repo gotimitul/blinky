@@ -34,11 +34,9 @@ extern "C" {
  */
 class Led {
 private:
- //   uint32_t pin; ///< GPIO pin associated with this LED
 
 public:
     Led() = default; ///< Default constructor
- //   explicit Led(uint32_t pin) : pin(pin) {}
 			
     void toggle(uint32_t pin) ; ///< Static method to toggle an LED on a given GPIO pin
 };

@@ -14,11 +14,21 @@
 /// @addtogroup UsbLogger
 /// @{
 
-/// @brief Maximum size of each log message (bytes)
-#define LOG_MSG_SIZE     128
-
-/// @brief Number of messages that can be stored in queue
-#define LOG_QUEUE_LENGTH 10
+namespace {
+    constexpr osMessageQueueAttr_t msgQueueAttr = {
+        .name = "UsbLoggerQueue",  // Name for debugging
+        .attr_bits = 0U,            // No special attributes
+        .cb_mem = nullptr,          // No custom control block memory
+        .cb_size = 0U,              // Default size
+    };
+    constexpr osThreadAttr_t threadAttr = {
+        .name = "UsbLoggerThread",  // Name for debugging
+        .stack_size = 1024,         // Stack size in bytes
+        .priority = osPriorityLow    // Thread priority
+    };
+    constexpr uint32_t LOG_MSG_SIZE = 128; // Size of each log message
+    constexpr uint32_t LOG_QUEUE_LENGTH = 10; // Number of messages in queue
+}
 
 /// @brief (Unused) memory buffer declared for alignment or extension
 static uint8_t log_queue_mem[LOG_QUEUE_LENGTH * LOG_MSG_SIZE];
@@ -34,19 +44,18 @@ UsbLogger& UsbLogger::getInstance() {
 
 /// @brief Initializes the logger's message queue.
 void UsbLogger::init() {
-    msgQueueId = osMessageQueueNew(LOG_QUEUE_LENGTH, LOG_MSG_SIZE, nullptr);
+    msgQueueId = osMessageQueueNew(LOG_QUEUE_LENGTH, LOG_MSG_SIZE, &msgQueueAttr);
 }
 
 /// @brief Starts the logger's background thread.
 void UsbLogger::start() {
-    const osThreadAttr_t attr = {
-        .name = "UsbLoggerThread",
-        .stack_size = 1024,
-        .priority = osPriorityLow
-    };
-    threadId = osThreadNew(loggerThreadWrapper, this, &attr);
+    if (msgQueueId == nullptr) {
+        UsbLogger::getInstance().log("Message queue not initialized, cannot start logger thread\r\n");
+        return; // Safety check for uninitialized queue
+    }
+    threadId = osThreadNew(loggerThreadWrapper, this, &threadAttr);
 }
-
+/*
 /// @brief Queues a log message for USB transmission.
 /// @param msg Null-terminated string (max 127 bytes)
 void UsbLogger::log(const char* format, ...) {
@@ -57,6 +66,28 @@ void UsbLogger::log(const char* format, ...) {
         vsnprintf(msg, LOG_MSG_SIZE, format, args);
         va_end(args);
         osMessageQueuePut(msgQueueId, msg, 0, 0); // non-blocking enqueue
+    }
+}
+*/
+void UsbLogger::log(const char* msg) {
+    if (msgQueueId != nullptr && msg != nullptr) {
+        osMessageQueuePut(msgQueueId, msg, 0, 0); // non-blocking enqueue
+    }
+}
+
+void UsbLogger::log(const char* msg, uint32_t val) {
+    if (msgQueueId != nullptr && msg != nullptr) {
+        char logMsg[LOG_MSG_SIZE];
+        snprintf(logMsg, LOG_MSG_SIZE, msg, val);
+        osMessageQueuePut(msgQueueId, logMsg, 0, 0); // non-blocking enqueue
+    }
+}
+
+void UsbLogger::log(const char* msg, const char* str) {
+    if (msgQueueId != nullptr && msg != nullptr && str != nullptr) {
+        char logMsg[LOG_MSG_SIZE];
+        snprintf(logMsg, LOG_MSG_SIZE, msg, str);
+        osMessageQueuePut(msgQueueId, logMsg, 0, 0); // non-blocking enqueue
     }
 }
 
