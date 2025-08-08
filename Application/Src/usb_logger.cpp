@@ -55,26 +55,17 @@ void UsbLogger::start() {
     }
     threadId = osThreadNew(loggerThreadWrapper, this, &threadAttr);
 }
-/*
-/// @brief Queues a log message for USB transmission.
-/// @param msg Null-terminated string (max 127 bytes)
-void UsbLogger::log(const char* format, ...) {
-    if (msgQueueId != nullptr && format != nullptr) {
-        char msg[LOG_MSG_SIZE];
-        va_list args;
-        va_start(args, format);
-        vsnprintf(msg, LOG_MSG_SIZE, format, args);
-        va_end(args);
-        osMessageQueuePut(msgQueueId, msg, 0, 0); // non-blocking enqueue
-    }
-}
-*/
+
+/// @brief Static wrapper to call loggerThread from C-style function pointer.
 void UsbLogger::log(const char* msg) {
     if (msgQueueId != nullptr && msg != nullptr) {
         osMessageQueuePut(msgQueueId, msg, 0, 0); // non-blocking enqueue
     }
 }
 
+/// @brief Log a message with a single integer value.
+/// @param msg Format string for the log message.
+/// @param val Integer value to include in the log message.
 void UsbLogger::log(const char* msg, uint32_t val) {
     if (msgQueueId != nullptr && msg != nullptr) {
         char logMsg[LOG_MSG_SIZE];
@@ -83,6 +74,9 @@ void UsbLogger::log(const char* msg, uint32_t val) {
     }
 }
 
+/// @brief Log a message with a string value.
+/// @param msg Format string for the log message.
+/// @param str String value to include in the log message.
 void UsbLogger::log(const char* msg, const char* str) {
     if (msgQueueId != nullptr && msg != nullptr && str != nullptr) {
         char logMsg[LOG_MSG_SIZE];

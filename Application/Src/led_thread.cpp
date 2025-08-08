@@ -47,6 +47,9 @@ LedThread::LedThread(const char* name, uint32_t pin, void* sem)
 void LedThread::start(void) {
     // Start thread, passing 'this' so static entry can cast it back
 	thread_id = osThreadNew(thread_entry, this, &thread_attr);
+    if (thread_id == nullptr) {
+        UsbLogger::getInstance().log("Failed to create LED thread %s\r\n", thread_attr.name);
+    }
 }
 
 /**
@@ -58,6 +61,7 @@ void LedThread::start(void) {
  * @param argument Pointer to the instance of LedThread
  */
 void LedThread::thread_entry(void* argument) {
+    // Safety check for null argument
     if (argument == nullptr) {
         UsbLogger::getInstance().log("LedThread::thread_entry: argument is null\r\n");
         osThreadExit();
@@ -83,13 +87,13 @@ void LedThread::run(void) {
         osSemaphoreAcquire(this->sem, osWaitForever);
 
         // Toggle LED ON
-		Led::toggle(pin);
+		Led::on(pin);
         osDelay(500); // Delay 500 ms
         
-		UsbLogger::getInstance().log("LED %s is toggled\r\n", osThreadGetName(thread_id));
+		UsbLogger::getInstance().log("LED %s is on\r\n", osThreadGetName(thread_id));
 
         // Toggle LED OFF
-		Led::toggle(pin);
+		Led::off(pin);
 
         // Release semaphore for next thread
         osSemaphoreRelease(this->sem);

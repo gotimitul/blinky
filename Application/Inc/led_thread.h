@@ -49,7 +49,7 @@ private:
 
 public:
 	
-    LedThread(const char* name, uint32_t pin, void* sem);
+    LedThread(const char* name, uint32_t pin, void* sem);   ///< Constructor initializes the LED pin and thread attributes
 };
 
 #endif /* __LEDTHREAD_H */

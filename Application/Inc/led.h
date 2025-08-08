@@ -37,7 +37,11 @@ private:
 
 public:
     Led() = default; ///< Default constructor
-			
+	
+    void on(uint32_t pin); ///< Static method to turn on an LED on a given GPIO pin
+    
+    void off(uint32_t pin); ///< Static method to turn off an LED on a given GPIO pin
+
     void toggle(uint32_t pin) ; ///< Static method to toggle an LED on a given GPIO pin
 };
 #endif /* __LED_H */

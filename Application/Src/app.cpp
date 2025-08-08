@@ -28,13 +28,16 @@ extern "C" {
  */
 void app_main(void *argument) {
     UNUSED(argument);  // CMSIS macro to mark unused variable
-
+    // Initialize USB logger for debugging output
+    UsbLogger::getInstance().init();
+    // Start the USB logger thread
+    UsbLogger::getInstance().start();
     // Create a counting semaphore with 4 tokens, 1 initially available
     osSemaphoreId_t semMultiplex = nullptr;
     semMultiplex = osSemaphoreNew(4, 1, nullptr);
-
-    UsbLogger::getInstance().init();
-    UsbLogger::getInstance().start();
+    if (semMultiplex == nullptr) {
+        UsbLogger::getInstance().log("Failed to create semaphore\r\n");
+    }
 
     // Create static LED threads, one for each LED color
     static LedThread blue("blue", LED_BLUE_PIN, semMultiplex);

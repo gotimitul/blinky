@@ -25,7 +25,7 @@ typedef struct
     uint32_t pin;   ///< GPIO pin number
 } argument_t;
 
-void app_main(void *argument);
+void app_main(void *argument);      ///< Main application thread function
 
 #ifdef __cplusplus
 }
