@@ -18,7 +18,7 @@
     * @param msg Pointer to the message string to be logged.
     * @retval None
     */
-void usb_logger_c_api(const char* msg) {
+extern "C" void usb_logger_c_api(const char* msg) {
     UsbLogger::getInstance().log(msg);
 }
 /// @} // end of UsbLogger
