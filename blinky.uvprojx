@@ -404,6 +404,11 @@
               <FileType>8</FileType>
               <FilePath>.\Application\Src\usb_logger.cpp</FilePath>
             </File>
+            <File>
+              <FileName>usb_logger_c_api.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\Application\Src\usb_logger_c_api.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

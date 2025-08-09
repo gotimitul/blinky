@@ -45,10 +45,6 @@ UsbLogger& UsbLogger::getInstance() {
 /// @brief Initializes the logger's message queue.
 void UsbLogger::init() {
     msgQueueId = osMessageQueueNew(LOG_QUEUE_LENGTH, LOG_MSG_SIZE, &msgQueueAttr);
-}
-
-/// @brief Starts the logger's background thread.
-void UsbLogger::start() {
     if (msgQueueId == nullptr) {
         UsbLogger::getInstance().log("Message queue not initialized, cannot start logger thread\r\n");
         return; // Safety check for uninitialized queue

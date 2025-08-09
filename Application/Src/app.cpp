@@ -9,14 +9,9 @@
  */
 
 #include "app.h"
-#include "led.h"
-#include "cmsis_os2.h"
 #include "led_thread.h"
 #include "usb_logger.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "cmsis_os2.h"  // Include CMSIS-RTOS2 header for RTOS functions
 
 /**
  * @brief Main application thread entry
@@ -30,11 +25,11 @@ void app_main(void *argument) {
     UNUSED(argument);  // CMSIS macro to mark unused variable
     // Initialize USB logger for debugging output
     UsbLogger::getInstance().init();
-    // Start the USB logger thread
-    UsbLogger::getInstance().start();
-    // Create a counting semaphore with 4 tokens, 1 initially available
+    // Semaphore for multiplexing access to GPIO pins
     osSemaphoreId_t semMultiplex = nullptr;
+    // Create a semaphore for synchronizing access to GPIO pins
     semMultiplex = osSemaphoreNew(4, 1, nullptr);
+    // Check if semaphore was created successfully
     if (semMultiplex == nullptr) {
         UsbLogger::getInstance().log("Failed to create semaphore\r\n");
     }
@@ -48,7 +43,3 @@ void app_main(void *argument) {
     // Exit the application thread once all LED threads are launched
     osThreadExit();
 }
-
-#ifdef __cplusplus
-}
-#endif

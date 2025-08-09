@@ -16,15 +16,6 @@ extern "C" {
 
 #include "stm32f4xx_hal.h"
 
-/**
- * @brief Struct for passing thread configuration parameters
- */
-typedef struct 
-{
-    uint32_t delay; ///< Delay time in milliseconds
-    uint32_t pin;   ///< GPIO pin number
-} argument_t;
-
 void app_main(void *argument);      ///< Main application thread function
 
 #ifdef __cplusplus

@@ -26,6 +26,7 @@
 #include "EventRecorder.h"
 #include "usbd_cdc_if.h"
 #include "app.h"
+#include "usb_logger_c_api.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,7 +47,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-	osThreadId_t tid_app;
 
 /* USER CODE END PV */
 
@@ -75,7 +75,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	EventRecorderInitialize(EventRecordAll, 1);
+	EventRecorderInitialize(EventRecordAll, 1);   // Initialize Event Recorder
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -98,22 +98,17 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-	osKernelInitialize();
+	osKernelInitialize(); // Initialize CMSIS-RTOS2 kernel
 	
+  osThreadId_t tid_app = NULL; // Declare thread ID for the application main thread
+  // Initialize the application main thread
 	const osThreadAttr_t app_main_config = {.name = "app_main", .priority = osPriorityNormal, };	
-	
+  // Create the main application thread
 	tid_app = osThreadNew(app_main, NULL, &app_main_config);
-/*	
-	const osThreadAttr_t usb_rx_thread_config = {.priority = osPriorityLow, .name = "usb_send"};	
-*/	
-//	mid1 = osMessageQueueNew(10, 20, NULL);
-
-//	else
-//	{
-
-//	tid5 = osThreadNew(usb_send, NULL, &usb_rx_thread_config);
-//	}
-	osKernelStart();
+  if (tid_app == NULL) {
+    usb_logger_c_api("Failed to create app_main thread\r\n");
+  }
+	osKernelStart();  // Start the CMSIS-RTOS2 kernel
   /* USER CODE END 2 */
 
   /* Infinite loop */

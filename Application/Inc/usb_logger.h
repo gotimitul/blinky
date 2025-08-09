@@ -40,8 +40,6 @@ public:
 
     void init();    ///< Initializes the logger's message queue.
 
-    void start();   ///< Starts the logger's background thread.
-
     void log(const char* msg);  ///< Logs a message to the USB CDC interface.
 
     void log(const char* msg, uint32_t val);    ///< Logs a message with an integer value to the USB CDC interface.
