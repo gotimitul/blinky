@@ -3619,9 +3619,9 @@
       <ActiveTab>0</ActiveTab>
       <Doc>
         <Name>.\STM32CubeMX\Target_1\STM32CubeMX\Src\main.c</Name>
-        <ColumnNumber>23</ColumnNumber>
+        <ColumnNumber>11</ColumnNumber>
         <TopLine>90</TopLine>
-        <CurrentLine>99</CurrentLine>
+        <CurrentLine>100</CurrentLine>
         <Folding>1</Folding>
         <ContractedFolders></ContractedFolders>
         <PaneID>0</PaneID>

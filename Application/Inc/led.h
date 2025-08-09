@@ -20,11 +20,6 @@ extern "C" {
 }
 #endif
 
-/// GPIO pin definitions for different LED colors
-#define LED_BLUE_PIN        63U
-#define LED_RED_PIN         62U
-#define LED_ORANGE_PIN      61U
-#define LED_GREEN_PIN       60U
 
 /**
  * @class Led

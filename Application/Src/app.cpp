@@ -13,6 +13,13 @@
 #include "usb_logger.h"
 #include "cmsis_os2.h"  // Include CMSIS-RTOS2 header for RTOS functions
 
+namespace {
+    constexpr uint32_t LED_BLUE_PIN = 63U;        ///< GPIO pin for blue LED
+    constexpr uint32_t LED_RED_PIN = 62U;       ///< GPIO pin for red LED
+    constexpr uint32_t LED_ORANGE_PIN = 61U;    ///< GPIO pin for orange LED
+    constexpr uint32_t LED_GREEN_PIN = 60U;     ///< GPIO pin for green LED
+}
+
 /**
  * @brief Main application thread entry
  *
