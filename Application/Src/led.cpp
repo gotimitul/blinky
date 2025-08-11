@@ -9,9 +9,9 @@
  */
 
 #include "led.h"
-#include "Driver_GPIO.h"  // CMSIS-Driver GPIO interface
+#include "Driver_GPIO.h" // CMSIS-Driver GPIO interface
 
-extern ARM_DRIVER_GPIO Driver_GPIO0;  // External GPIO driver instance
+extern ARM_DRIVER_GPIO Driver_GPIO0; // External GPIO driver instance
 
 /**
  * @brief Turn on the LED by setting the GPIO pin to HIGH
@@ -19,7 +19,8 @@ extern ARM_DRIVER_GPIO Driver_GPIO0;  // External GPIO driver instance
  *
  * @param pin GPIO pin number associated with the LED
  */
-void Led::on(uint32_t pin) {
+void Led::on(uint32_t pin)
+{
     // Set the pin to HIGH (logic 1) to turn on the LED
     Driver_GPIO0.SetOutput(pin, 1U);
 }
@@ -29,7 +30,8 @@ void Led::on(uint32_t pin) {
  *
  * @param pin GPIO pin number associated with the LED
  */
-void Led::off(uint32_t pin) {
+void Led::off(uint32_t pin)
+{
     // Set the pin to LOW (logic 0) to turn off the LED
     Driver_GPIO0.SetOutput(pin, 0U);
 }
@@ -42,7 +44,8 @@ void Led::off(uint32_t pin) {
  *
  * The implementation uses the CMSIS-Driver `ARM_DRIVER_GPIO` interface.
  */
-void Led::toggle(uint32_t pin) {
+void Led::toggle(uint32_t pin)
+{
     // Read the current state of the pin
     uint32_t pin_state = Driver_GPIO0.GetInput(pin);
 

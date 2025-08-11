@@ -6,19 +6,19 @@
 /// @ingroup UsbLogger
 /// @addtogroup UsbLogger
 /// @{
-#include    "usb_logger_c_api.h"
-#include    "usb_logger.h"
-
+#include "usb_logger_c_api.h"
+#include "usb_logger.h"
 
 /** * @brief C API function to log messages using UsbLogger.
-    * 
-    * This function provides a C-style interface for logging messages
-    * using the UsbLogger class, which operates in a separate thread
-    * and sends messages over USB CDC.
-    * @param msg Pointer to the message string to be logged.
-    * @retval None
-    */
-extern "C" void usb_logger_c_api(const char* msg) {
+ *
+ * This function provides a C-style interface for logging messages
+ * using the UsbLogger class, which operates in a separate thread
+ * and sends messages over USB CDC.
+ * @param msg Pointer to the message string to be logged.
+ * @retval None
+ */
+extern "C" void usb_logger_c_api(const char *msg)
+{
     UsbLogger::getInstance().log(msg);
 }
 /// @} // end of UsbLogger

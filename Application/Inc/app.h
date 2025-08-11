@@ -3,7 +3,7 @@
  * @brief Application header file for RTOS-based LED control
  *
  * @defgroup app Application API
- * 
+ *
  * @{
  */
 
@@ -11,12 +11,13 @@
 #define __APP_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #include "stm32f4xx_hal.h"
 
-void app_main(void *argument);      ///< Main application thread function
+    void app_main(void *argument); ///< Main application thread function
 
 #ifdef __cplusplus
 }

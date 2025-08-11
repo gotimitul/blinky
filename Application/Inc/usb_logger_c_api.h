@@ -7,13 +7,14 @@
 /// @addtogroup UsbLogger
 /// @{
 
-#ifdef  __cplusplus
-extern "C" {
+#ifdef __cplusplus
+extern "C"
+{
 #endif
 
-void usb_logger_c_api(const char* msg);
+    void usb_logger_c_api(const char *msg);
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 /// @} // end of UsbLogger

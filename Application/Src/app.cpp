@@ -11,13 +11,14 @@
 #include "app.h"
 #include "led_thread.h"
 #include "usb_logger.h"
-#include "cmsis_os2.h"  // Include CMSIS-RTOS2 header for RTOS functions
+#include "cmsis_os2.h" // Include CMSIS-RTOS2 header for RTOS functions
 
-namespace {
-    constexpr uint32_t LED_BLUE_PIN = 63U;        ///< GPIO pin for blue LED
-    constexpr uint32_t LED_RED_PIN = 62U;       ///< GPIO pin for red LED
-    constexpr uint32_t LED_ORANGE_PIN = 61U;    ///< GPIO pin for orange LED
-    constexpr uint32_t LED_GREEN_PIN = 60U;     ///< GPIO pin for green LED
+namespace
+{
+    constexpr uint32_t LED_BLUE_PIN = 63U;   ///< GPIO pin for blue LED
+    constexpr uint32_t LED_RED_PIN = 62U;    ///< GPIO pin for red LED
+    constexpr uint32_t LED_ORANGE_PIN = 61U; ///< GPIO pin for orange LED
+    constexpr uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
 }
 
 /**
@@ -28,8 +29,9 @@ namespace {
  *
  * @param argument Unused (reserved for future extensions)
  */
-void app_main(void *argument) {
-    UNUSED(argument);  // CMSIS macro to mark unused variable
+void app_main(void *argument)
+{
+    UNUSED(argument); // CMSIS macro to mark unused variable
     // Initialize USB logger for debugging output
     UsbLogger::getInstance().init();
     // Semaphore for multiplexing access to GPIO pins
@@ -37,7 +39,8 @@ void app_main(void *argument) {
     // Create a semaphore for synchronizing access to GPIO pins
     semMultiplex = osSemaphoreNew(4, 1, nullptr);
     // Check if semaphore was created successfully
-    if (semMultiplex == nullptr) {
+    if (semMultiplex == nullptr)
+    {
         UsbLogger::getInstance().log("Failed to create semaphore\r\n");
     }
 
