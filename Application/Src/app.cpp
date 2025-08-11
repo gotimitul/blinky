@@ -38,10 +38,11 @@ void app_main(void *argument)
     osSemaphoreId_t semMultiplex = nullptr;
     // Create a semaphore for synchronizing access to GPIO pins
     semMultiplex = osSemaphoreNew(4, 1, nullptr);
+    osDelay(5000); // Delay to allow USB CDC initialization
     // Check if semaphore was created successfully
     if (semMultiplex == nullptr)
     {
-        UsbLogger::getInstance().log("Failed to create semaphore\r\n");
+        UsbLogger::getInstance().log("Failed to create a semaphore at File: %s, Line: %d\r\n", __FILE__, __LINE__);
     }
 
     // Create static LED threads, one for each LED color

@@ -91,6 +91,16 @@ void UsbLogger::log(const char *msg, const char *str)
     }
 }
 
+void UsbLogger::log(const char *msg, const char *str, uint32_t val)
+{
+    if (msgQueueId != nullptr && msg != nullptr && str != nullptr)
+    {
+        char logMsg[LOG_MSG_SIZE];
+        snprintf(logMsg, LOG_MSG_SIZE, msg, str, val);
+        osMessageQueuePut(msgQueueId, logMsg, 0, 0); // non-blocking enqueue
+    }
+}
+
 /// @brief Wrapper to start logger thread from C-style function pointer.
 /// @param argument Pointer to UsbLogger instance.
 void UsbLogger::loggerThreadWrapper(void *argument)
