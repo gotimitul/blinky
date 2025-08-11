@@ -1,0 +1,20 @@
+build-idx:
+  generated-by: csolution version 2.10.0
+  csolution: blinky.csolution.yml
+  tmpdir: tmp
+  cprojects:
+    - cproject: blinky.cproject.yml
+  cbuilds:
+    - cbuild: blinky+Target_1.cbuild.yml
+      project: blinky
+      configuration: +Target_1
+      clayers:
+        - clayer: STM32CubeMX/Target_1/blinky.cgen.yml
+      messages:
+        info:
+          - blinky.cbuild-pack.yml - file is already up-to-date
+          - blinky+Target_1.cbuild-run.yml - file generated successfully
+          - blinky+Target_1.cbuild.yml - file is already up-to-date
+      packs-unused:
+        - pack: ARM::CMSIS-DSP@1.16.2
+        - pack: ARM::CMSIS-NN@4.1.0

@@ -1,0 +1,4 @@
+cbuild-set:
+  generated-by: vscode-cmsis-csolution version 1.58.1
+  contexts:
+    - context: blinky+Target_1

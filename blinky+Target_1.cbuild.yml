@@ -1,0 +1,566 @@
+build:
+  generated-by: csolution version 2.10.0
+  solution: blinky.csolution.yml
+  project: blinky.cproject.yml
+  context: blinky+Target_1
+  compiler: AC6
+  device: STMicroelectronics::STM32F407VGTx
+  device-pack: Keil::STM32F4xx_DFP@3.1.0
+  device-books:
+    - name: https://www.st.com/resource/en/reference_manual/rm0090-stm32f405415-stm32f407417-stm32f427437-and-stm32f429439-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+      title: STM32F405/415 STM32F407/417 STM32F427/437 STM32F429/439 Reference Manual
+    - name: https://www.st.com/resource/en/datasheet/stm32f405rg.pdf
+      title: STM32F405/407 Datasheet
+    - name: https://www.st.com/resource/en/user_manual/um1725-description-of-stm32f4-hal-and-lowlayer-drivers-stmicroelectronics.pdf
+      title: STM32F4xx HAL Drivers
+    - name: https://developer.arm.com/documentation/dui0553/latest
+      title: Cortex-M4 Generic User Guide
+  dbgconf:
+    - file: .cmsis/blinky+Target_1.dbgconf
+      version: 0.0.0
+  processor:
+    endian: little
+    fpu: sp
+    core: Cortex-M4
+  packs:
+    - pack: ARM::CMSIS-Driver_STM32@1.2.0
+      path: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0
+    - pack: ARM::CMSIS-FreeRTOS@11.2.0
+      path: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0
+    - pack: ARM::CMSIS-View@1.2.0
+      path: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0
+    - pack: ARM::CMSIS@6.2.0
+      path: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0
+    - pack: Keil::ARM_Compiler@1.7.2
+      path: ${CMSIS_PACK_ROOT}/Keil/ARM_Compiler/1.7.2
+    - pack: Keil::STM32F4xx_DFP@3.1.0
+      path: ${CMSIS_PACK_ROOT}/Keil/STM32F4xx_DFP/3.1.0
+  optimize: debug
+  debug: on
+  misc:
+    ASM:
+      - -masm=auto
+    C:
+      - -std=c11
+      - -flto
+      - -fno-rtti
+      - -funsigned-char
+      - -fshort-enums
+      - -fshort-wchar
+      - -ffunction-sections
+      - -Wno-packed
+      - -Wno-missing-variable-declarations
+      - -Wno-missing-prototypes
+      - -Wno-missing-noreturn
+      - -Wno-sign-conversion
+      - -Wno-nonportable-include-path
+      - -Wno-reserved-id-macro
+      - -Wno-unused-macros
+      - -Wno-documentation-unknown-command
+      - -Wno-documentation
+      - -Wno-license-management
+      - -Wno-parentheses-equality
+    CPP:
+      - -xc++
+      - -std=c++17
+      - -fno-exceptions
+      - -flto
+      - -fno-rtti
+      - -funsigned-char
+      - -fshort-enums
+      - -fshort-wchar
+      - -ffunction-sections
+      - -Wno-packed
+      - -Wno-missing-variable-declarations
+      - -Wno-missing-prototypes
+      - -Wno-missing-noreturn
+      - -Wno-sign-conversion
+      - -Wno-nonportable-include-path
+      - -Wno-reserved-id-macro
+      - -Wno-unused-macros
+      - -Wno-documentation-unknown-command
+      - -Wno-documentation
+      - -Wno-license-management
+      - -Wno-parentheses-equality
+    Link:
+      - --map
+      - --load_addr_map_info
+      - --xref
+      - --callgraph
+      - --symbols
+      - --info sizes
+      - --info totals
+      - --info unused
+      - --info veneers
+      - --lto
+      - --strict
+      - --summary_stderr
+      - --info summarysizes
+  define:
+    - USE_HAL_DRIVER
+    - STM32F407xx
+    - STM32F407xx
+    - _RTE_
+  define-asm:
+    - STM32F407xx
+    - _RTE_
+  add-path:
+    - Application/Inc
+    - STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Inc
+    - STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy
+    - STM32CubeMX/Target_1/STM32CubeMX/Middlewares/ST/STM32_USB_Device_Library/Core/Inc
+    - STM32CubeMX/Target_1/STM32CubeMX/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
+    - STM32CubeMX/Target_1/STM32CubeMX/Drivers/CMSIS/Device/ST/STM32F4xx/Include
+    - STM32CubeMX/Target_1/STM32CubeMX/Inc
+    - STM32CubeMX/Target_1/MX_Device
+    - RTE/CMSIS-View
+    - RTE/RTOS
+    - RTE/_Target_1
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Drivers
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/portable/GCC/ARM_CM4F
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/EventRecorder/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Core/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Driver/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/RTOS2/Include
+  add-path-asm:
+    - RTE/CMSIS-View
+    - RTE/RTOS
+    - RTE/_Target_1
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Drivers
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/portable/GCC/ARM_CM4F
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/EventRecorder/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Core/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Driver/Include
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/RTOS2/Include
+  output-dirs:
+    intdir: tmp
+    outdir: out/blinky/Target_1
+    rtedir: RTE
+  output:
+    - type: elf
+      file: blinky.axf
+  components:
+    - component: ARM::CMSIS Driver:CAN:Custom@1.0.0
+      from-pack: ARM::CMSIS@6.2.0
+      selected-by: ARM::CMSIS Driver:CAN:Custom
+      implements: CMSIS Driver:CAN@1.3.0
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Driver/DriverTemplates/Driver_CAN.c
+          category: sourceC
+          attr: template
+          version: 1.0.0
+          select: CAN Driver
+    - component: ARM::CMSIS-View:Event Recorder&DAP@1.6.0
+      condition: EventRecorder
+      from-pack: ARM::CMSIS-View@1.2.0
+      selected-by: ARM::CMSIS-View:Event Recorder&DAP
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Documentation/html/evr.html
+          category: doc
+          version: 1.6.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/EventRecorder/EventRecorder.scvd
+          category: other
+          version: 1.6.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/EventRecorder/Include/EventRecorder.h
+          category: header
+          version: 1.6.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/EventRecorder/Source/EventRecorder.c
+          category: source
+          version: 1.6.0
+        - file: RTE/CMSIS-View/EventRecorderConf.h
+          category: header
+          attr: config
+          version: 1.1.0
+    - component: ARM::CMSIS-View:Fault:Record@1.1.0
+      condition: FaultRecord
+      from-pack: ARM::CMSIS-View@1.2.0
+      selected-by: ARM::CMSIS-View:Fault:Record
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Documentation/html/fault.html
+          category: doc
+          version: 1.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/ARM_Fault.scvd
+          category: other
+          version: 1.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/Include/ARM_Fault.h
+          category: header
+          version: 1.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/Source/ARM_FaultRecord.c
+          category: source
+          version: 1.1.0
+    - component: ARM::CMSIS-View:Fault:Storage@1.1.0
+      condition: Cortex-M Device
+      from-pack: ARM::CMSIS-View@1.2.0
+      selected-by: ARM::CMSIS-View:Fault:Storage
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Documentation/html/fault.html
+          category: doc
+          version: 1.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/ARM_Fault.scvd
+          category: other
+          version: 1.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/Include/ARM_Fault.h
+          category: header
+          version: 1.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/Source/ARM_FaultStorage.c
+          category: source
+          version: 1.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/Template/ARM_FaultPrint.c
+          category: source
+          attr: template
+          version: 1.0.1
+          select: Output decoded fault information via STDIO
+    - component: ARM::CMSIS:CORE@6.1.1
+      condition: ARMv6_7_8-M Device
+      from-pack: ARM::CMSIS@6.2.0
+      selected-by: ARM::CMSIS:CORE
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Core/Include
+          category: include
+          version: 6.1.1
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Core/Include/tz_context.h
+          category: header
+          version: 6.1.1
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Core/Template/ARMv8-M/main_s.c
+          category: sourceC
+          attr: template
+          version: 1.1.1
+          select: Secure mode 'main' module for ARMv8-M
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Core/Template/ARMv8-M/tz_context.c
+          category: sourceC
+          attr: template
+          version: 1.1.1
+          select: RTOS Context Management (TrustZone for ARMv8-M)
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Documentation/html/Core/index.html
+          category: doc
+          version: 6.1.1
+    - component: ARM::CMSIS:OS Tick:SysTick@1.0.5
+      condition: OS Tick SysTick
+      from-pack: ARM::CMSIS@6.2.0
+      selected-by: ARM::CMSIS:OS Tick:SysTick
+      implements: CMSIS:OS Tick@1.0.1
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/RTOS2/Source/os_systick.c
+          category: sourceC
+          version: 1.0.5
+    - component: ARM::CMSIS:RTOS2:FreeRTOS&Cortex-M@11.2.0
+      condition: CMSIS RTOS2 FreeRTOS CortexM
+      from-pack: ARM::CMSIS-FreeRTOS@11.2.0
+      selected-by: ARM::CMSIS:RTOS2:FreeRTOS&Cortex-M
+      implements: CMSIS:RTOS2@2.3.0
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Include/freertos_mpool.h
+          category: header
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Source/clib_os.c
+          category: source
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Source/cmsis_os2.c
+          category: source
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Documentation/html/index.html
+          category: doc
+          version: 11.2.0
+    - component: ARM::RTOS&FreeRTOS:Config&CMSIS RTOS2@11.2.0
+      condition: FreeRTOS Config CMSIS RTOS2
+      from-pack: ARM::CMSIS-FreeRTOS@11.2.0
+      selected-by: ARM::RTOS&FreeRTOS:Config&CMSIS RTOS2
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Documentation/html/page_create_project.html#configure_cmsis_freertos
+          category: doc
+          version: 11.2.0
+        - file: RTE/RTOS/FreeRTOSConfig.h
+          category: header
+          attr: config
+          version: 10.7.0
+    - component: ARM::RTOS&FreeRTOS:Core&Cortex-M@11.2.0
+      condition: FreeRTOS Core CM
+      from-pack: ARM::CMSIS-FreeRTOS@11.2.0
+      selected-by: ARM::RTOS&FreeRTOS:Core&Cortex-M
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/FreeRTOS.scvd
+          category: other
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Include
+          category: include
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Source/freertos_evr.c
+          category: source
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include
+          category: include
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include/FreeRTOS.h
+          category: header
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include/queue.h
+          category: header
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include/semphr.h
+          category: header
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include/task.h
+          category: header
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/list.c
+          category: source
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/portable/GCC/ARM_CM4F
+          category: include
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/portable/GCC/ARM_CM4F/port.c
+          category: source
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/queue.c
+          category: source
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/tasks.c
+          category: source
+          version: 11.2.0
+    - component: ARM::RTOS&FreeRTOS:Event Groups@11.2.0
+      condition: FreeRTOS Event Groups
+      from-pack: ARM::CMSIS-FreeRTOS@11.2.0
+      selected-by: ARM::RTOS&FreeRTOS:Event Groups
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/event_groups.c
+          category: source
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include/event_groups.h
+          category: header
+          version: 11.2.0
+    - component: ARM::RTOS&FreeRTOS:Heap&Heap_4@11.2.0
+      condition: FreeRTOS Heap
+      from-pack: ARM::CMSIS-FreeRTOS@11.2.0
+      selected-by: ARM::RTOS&FreeRTOS:Heap&Heap_4
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/portable/MemMang/heap_4.c
+          category: source
+          version: 11.2.0
+        - file: https://www.freertos.org/Documentation/02-Kernel/02-Kernel-features/09-Memory-management/01-Memory-management
+          category: doc
+          version: 11.2.0
+    - component: ARM::RTOS&FreeRTOS:Timers@11.2.0
+      condition: FreeRTOS Timers
+      from-pack: ARM::CMSIS-FreeRTOS@11.2.0
+      selected-by: ARM::RTOS&FreeRTOS:Timers
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include/timers.h
+          category: header
+          version: 11.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/timers.c
+          category: source
+          version: 11.2.0
+    - component: Keil::CMSIS Driver:GPIO@1.2.0
+      condition: CMSIS Driver requirements
+      from-pack: ARM::CMSIS-Driver_STM32@1.2.0
+      selected-by: Keil::CMSIS Driver:GPIO
+      implements: CMSIS Driver:GPIO@1.0.0
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Documentation/html/gpio_stm32.html
+          category: doc
+          version: 1.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Drivers/GPIO_STM32.c
+          category: source
+          version: 1.2.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Drivers/GPIO_STM32.h
+          category: header
+          version: 1.2.0
+    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint@1.2.0
+      condition: ARMCC Cortex-M
+      from-pack: Keil::ARM_Compiler@1.7.2
+      selected-by: Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint
+      files:
+        - file: ${CMSIS_PACK_ROOT}/Keil/ARM_Compiler/1.7.2/Source/retarget_io.c
+          category: source
+          version: 1.2.0
+    - component: Keil::Device:CubeMX@1.0.0
+      condition: STM32F4 CMSIS
+      from-pack: Keil::STM32F4xx_DFP@3.1.0
+      selected-by: Keil::Device:CubeMX
+      files:
+        - file: https://open-cmsis-pack.github.io/cmsis-toolbox/CubeMX
+          category: doc
+          version: 1.0.0
+      generator:
+        id: CubeMX
+        path: STM32CubeMX/Target_1/blinky.cgen.yml
+  apis:
+    - api: CMSIS Driver:CAN@1.3.0
+      from-pack: ARM::CMSIS@6.2.0
+      implemented-by: ARM::CMSIS Driver:CAN:Custom@1.0.0
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Documentation/html/Driver/group__can__interface__gr.html
+          category: doc
+          version: 1.3.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Driver/Include/Driver_CAN.h
+          category: header
+          version: 1.3.0
+    - api: CMSIS Driver:GPIO@1.0.0
+      from-pack: ARM::CMSIS@6.2.0
+      implemented-by: Keil::CMSIS Driver:GPIO@1.2.0
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Documentation/html/Driver/group__gpio__interface__gr.html
+          category: doc
+          version: 1.0.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Driver/Include/Driver_GPIO.h
+          category: header
+          version: 1.0.0
+    - api: CMSIS:OS Tick@1.0.1
+      from-pack: ARM::CMSIS@6.2.0
+      implemented-by: ARM::CMSIS:OS Tick:SysTick@1.0.5
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/RTOS2/Include/os_tick.h
+          category: header
+          version: 1.0.1
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Documentation/html/RTOS2/group__CMSIS__RTOS__TickAPI.html
+          category: doc
+          version: 1.0.1
+    - api: CMSIS:RTOS2@2.3.0
+      from-pack: ARM::CMSIS@6.2.0
+      implemented-by: ARM::CMSIS:RTOS2:FreeRTOS&Cortex-M@11.2.0
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Documentation/html/RTOS2/group__CMSIS__RTOS.html
+          category: doc
+          version: 2.3.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/RTOS2/Include/cmsis_os2.h
+          category: header
+          version: 2.3.0
+  linker:
+    script: blinky_Target_1.sct
+  groups:
+    - group: Application
+      files:
+        - file: Application/Src/app.cpp
+          category: sourceCpp
+        - file: Application/Src/led.cpp
+          category: sourceCpp
+        - file: Application/Src/led_thread.cpp
+          category: sourceCpp
+        - file: Application/Src/usb_logger.cpp
+          category: sourceCpp
+        - file: Application/Src/usb_logger_c_api.cpp
+          category: sourceCpp
+    - group: CubeMX
+      files:
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/main.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/usb_device.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/usbd_conf.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/usbd_desc.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/usbd_cdc_if.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/stm32f4xx_it.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/stm32f4xx_hal_msp.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/stm32f4xx_hal_timebase_tim.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/MDK-ARM/startup_stm32f407xx.s
+          category: sourceAsm
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Src/system_stm32f4xx.c
+          category: sourceC
+    - group: STM32 HAL Driver
+      files:
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c
+          category: sourceC
+        - file: STM32CubeMX/Target_1/STM32CubeMX/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c
+          category: sourceC
+  constructed-files:
+    - file: RTE/_Target_1/RTE_Components.h
+      category: header
+  licenses:
+    - license: <unknown>
+      packs:
+        - pack: Keil::ARM_Compiler@1.7.2
+      components:
+        - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint@1.2.0
+    - license: Apache-2.0
+      packs:
+        - pack: ARM::CMSIS-Driver_STM32@1.2.0
+        - pack: ARM::CMSIS-FreeRTOS@11.2.0
+        - pack: ARM::CMSIS-View@1.2.0
+        - pack: ARM::CMSIS@6.2.0
+        - pack: Keil::STM32F4xx_DFP@3.1.0
+      components:
+        - component: ARM::CMSIS Driver:CAN:Custom@1.0.0
+        - component: ARM::CMSIS-View:Event Recorder&DAP@1.6.0
+        - component: ARM::CMSIS-View:Fault:Record@1.1.0
+        - component: ARM::CMSIS-View:Fault:Storage@1.1.0
+        - component: ARM::CMSIS:CORE@6.1.1
+        - component: ARM::CMSIS:OS Tick:SysTick@1.0.5
+        - component: ARM::CMSIS:RTOS2:FreeRTOS&Cortex-M@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Config&CMSIS RTOS2@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Core&Cortex-M@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Event Groups@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Heap&Heap_4@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Timers@11.2.0
+        - component: CMSIS Driver:CAN(API)
+        - component: CMSIS Driver:GPIO(API)
+        - component: CMSIS:OS Tick(API)
+        - component: CMSIS:RTOS2(API)
+        - component: Keil::CMSIS Driver:GPIO@1.2.0
+        - component: Keil::Device:CubeMX@1.0.0
+    - license: BSD-3-Clause
+      packs:
+        - pack: Keil::STM32F4xx_DFP@3.1.0
+      components:
+        - component: Keil::Device:CubeMX@1.0.0
+    - license: MIT
+      packs:
+        - pack: ARM::CMSIS-FreeRTOS@11.2.0
+      components:
+        - component: ARM::CMSIS:RTOS2:FreeRTOS&Cortex-M@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Config&CMSIS RTOS2@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Core&Cortex-M@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Event Groups@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Heap&Heap_4@11.2.0
+        - component: ARM::RTOS&FreeRTOS:Timers@11.2.0

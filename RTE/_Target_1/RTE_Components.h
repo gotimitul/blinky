@@ -31,6 +31,9 @@
 #define RTE_RTOS_FreeRTOS_TIMERS        /* RTOS FreeRTOS Timers */
 /* Keil::CMSIS Driver:GPIO@1.2.0 */
 #define RTE_Drivers_GPIO0               /* Driver GPIO0 */
+/* Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint@1.2.0 */
+#define RTE_Compiler_IO_STDOUT          /* Compiler I/O: STDOUT */
+#define RTE_Compiler_IO_STDOUT_BKPT     /* Compiler I/O: STDOUT Breakpoint */
 /* Keil::Device:CubeMX@1.0.0 */
 #define RTE_DEVICE_CUBE_MX
 #define CMSIS_device_header "stm32f4xx.h"
