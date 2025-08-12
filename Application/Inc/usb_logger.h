@@ -37,23 +37,23 @@ public:
   /// @{
 
   static UsbLogger &
-  getInstance(); ///< Returns the singleton instance of UsbLogger.
+  getInstance(); // Returns the singleton instance of UsbLogger.
 
-  void init(); ///< Initializes the logger's message queue.
+  void init(); // Initializes the logger's message queue.
 
-  void log(const char *msg); ///< Logs a message to the USB CDC interface.
+  void log(const char *msg); // Logs a message to the USB CDC interface.
 
-  void log(const char *msg, uint32_t val); ///< Logs a message with an integer
-                                           ///< value to the USB CDC interface.
+  void log(const char *msg, uint32_t val); // Logs a message with an integer
+                                           // value to the USB CDC interface.
 
   void log(const char *msg,
-           const char *str); ///< Logs a message with a string value to the USB
-                             ///< CDC interface.
+           const char *str); // Logs a message with a string value to the USB
+                             // CDC interface.
 
   void log(const char *msg, const char *str,
-           uint32_t val); ///< Logs a message with a string and an integer value
-                          ///< to the USB CDC interface.
-                          /// @}
+           uint32_t val); // Logs a message with a string and an integer value
+                          // to the USB CDC interface.
+                          // @}
 
 private:
   /// @name Internal Mechanics
@@ -66,11 +66,11 @@ private:
       delete; ///< Delete assignment operator to prevent assignment.
 
   static void
-  loggerThreadWrapper(void *argument); ///< Static wrapper to call loggerThread
-                                       ///< from C-style function pointer.
+  loggerThreadWrapper(void *argument); // Static wrapper to call loggerThread
+                                       // from C-style function pointer.
 
-  void loggerThread(); ///< Thread function that waits for messages and sends
-                       ///< them via USB CDC.
+  void loggerThread(); // Thread function that waits for messages and sends
+                       // them via USB CDC.
 
   osThreadId_t threadId;         ///< RTOS thread ID for logger
   osMessageQueueId_t msgQueueId; ///< Message queue for log strings

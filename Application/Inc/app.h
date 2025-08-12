@@ -1,7 +1,8 @@
 /**
  * @file app.h
  * @brief Application header file for RTOS-based LED control
- *
+ * @version 1.0
+ * @date 2025-08-07
  * @defgroup app Application API
  *
  * @{
@@ -16,7 +17,7 @@ extern "C" {
 
 #include "stm32f4xx_hal.h" // IWYU pragma: keep
 
-void app_main(void *argument); ///< Main application thread function
+void app_main(void *argument); // Main application thread function
 
 #ifdef __cplusplus
 }

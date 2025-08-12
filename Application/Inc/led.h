@@ -1,7 +1,8 @@
 /**
  * @file led.h
  * @brief LED control abstraction using GPIO pins
- *
+ * @version 1.0
+ * @date 2025-08-07
  * @defgroup led LED Driver
  *
  * @{
@@ -30,14 +31,13 @@ private:
 public:
   Led() = default; ///< Default constructor
 
-  void
-  on(uint32_t pin); ///< Static method to turn on an LED on a given GPIO pin
+  void on(uint32_t pin); // Static method to turn on an LED on a given GPIO pin
 
   void
-  off(uint32_t pin); ///< Static method to turn off an LED on a given GPIO pin
+  off(uint32_t pin); // Static method to turn off an LED on a given GPIO pin
 
   void
-  toggle(uint32_t pin); ///< Static method to toggle an LED on a given GPIO pin
+  toggle(uint32_t pin); // Static method to toggle an LED on a given GPIO pin
 };
 #endif /* __LED_H */
 

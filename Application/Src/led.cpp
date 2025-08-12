@@ -1,11 +1,13 @@
 /**
  * @file led.cpp
  * @brief Implementation of the Led class for GPIO-based LED control
- *
+ * @version 1.0
+ * @date 2025-08-07
  * @ingroup led
  *
- * This file defines the toggle method of the Led class, using the CMSIS-compliant
- * ARM GPIO driver to change the LED state based on its current input.
+ * This file defines the toggle method of the Led class, using the
+ * CMSIS-compliant ARM GPIO driver to change the LED state based on its current
+ * input.
  */
 
 #include "led.h"
@@ -19,10 +21,9 @@ extern ARM_DRIVER_GPIO Driver_GPIO0; // External GPIO driver instance
  *
  * @param pin GPIO pin number associated with the LED
  */
-void Led::on(uint32_t pin)
-{
-    // Set the pin to HIGH (logic 1) to turn on the LED
-    Driver_GPIO0.SetOutput(pin, 1U);
+void Led::on(uint32_t pin) {
+  // Set the pin to HIGH (logic 1) to turn on the LED
+  Driver_GPIO0.SetOutput(pin, 1U);
 }
 
 /** * @brief Turn off the LED by setting the GPIO pin to LOW
@@ -30,10 +31,9 @@ void Led::on(uint32_t pin)
  *
  * @param pin GPIO pin number associated with the LED
  */
-void Led::off(uint32_t pin)
-{
-    // Set the pin to LOW (logic 0) to turn off the LED
-    Driver_GPIO0.SetOutput(pin, 0U);
+void Led::off(uint32_t pin) {
+  // Set the pin to LOW (logic 0) to turn off the LED
+  Driver_GPIO0.SetOutput(pin, 0U);
 }
 
 /**
@@ -44,12 +44,11 @@ void Led::off(uint32_t pin)
  *
  * The implementation uses the CMSIS-Driver `ARM_DRIVER_GPIO` interface.
  */
-void Led::toggle(uint32_t pin)
-{
-    // Read the current state of the pin
-    uint32_t pin_state = Driver_GPIO0.GetInput(pin);
+void Led::toggle(uint32_t pin) {
+  // Read the current state of the pin
+  uint32_t pin_state = Driver_GPIO0.GetInput(pin);
 
-    // Apply the new output state to the pin
-    Driver_GPIO0.SetOutput(pin, pin_state == 0 ? 1U : 0U);
-    // Note: The pin state is inverted here to toggle the LED
+  // Apply the new output state to the pin
+  Driver_GPIO0.SetOutput(pin, pin_state == 0 ? 1U : 0U);
+  // Note: The pin state is inverted here to toggle the LED
 }

@@ -11,9 +11,6 @@
 #include "usbd_cdc_if.h"
 #include <cstring>
 
-/// @addtogroup UsbLogger
-/// @{
-
 namespace {
 constexpr osMessageQueueAttr_t msgQueueAttr = {
     .name = "UsbLoggerQueue", // Name for debugging
@@ -116,5 +113,3 @@ void UsbLogger::loggerThread() {
     }
   }
 }
-
-/// @}
