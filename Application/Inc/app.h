@@ -11,13 +11,12 @@
 #define __APP_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal.h" // IWYU pragma: keep
 
-    void app_main(void *argument); ///< Main application thread function
+void app_main(void *argument); ///< Main application thread function
 
 #ifdef __cplusplus
 }

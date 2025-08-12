@@ -1,3 +1,8 @@
 {
-    "debug.hideSlowPreLaunchWarning": true
+    "debug.hideSlowPreLaunchWarning": true,
+    "C_Cpp.default.compilerPath": "c:/Users/gotim/.vcpkg/artifacts/2139c4c6/compilers.arm.armclang/6.24.0/bin/armclang.exe",
+    "C_Cpp.default.configurationProvider": "cmsis-csolution",
+    "clangd.arguments": [
+        "--compile-commands-dir=c:\\Users\\gotim\\Documents\\MDK\\blinky\\out\\blinky\\Target_1"
+    ]
 }

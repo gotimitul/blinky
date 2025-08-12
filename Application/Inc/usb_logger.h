@@ -14,8 +14,7 @@
 #define USB_LOGGER_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "cmsis_os2.h"
@@ -32,41 +31,51 @@ extern "C"
  * This class provides a global thread-safe logger that uses a background thread
  * to send messages over USB CDC interface.
  */
-class UsbLogger
-{
+class UsbLogger {
 public:
-    /// @name Public API
-    /// @{
+  /// @name Public API
+  /// @{
 
-    static UsbLogger &getInstance(); ///< Returns the singleton instance of UsbLogger.
+  static UsbLogger &
+  getInstance(); ///< Returns the singleton instance of UsbLogger.
 
-    void init(); ///< Initializes the logger's message queue.
+  void init(); ///< Initializes the logger's message queue.
 
-    void log(const char *msg); ///< Logs a message to the USB CDC interface.
+  void log(const char *msg); ///< Logs a message to the USB CDC interface.
 
-    void log(const char *msg, uint32_t val); ///< Logs a message with an integer value to the USB CDC interface.
+  void log(const char *msg, uint32_t val); ///< Logs a message with an integer
+                                           ///< value to the USB CDC interface.
 
-    void log(const char *msg, const char *str); ///< Logs a message with a string value to the USB CDC interface.
+  void log(const char *msg,
+           const char *str); ///< Logs a message with a string value to the USB
+                             ///< CDC interface.
 
-    void log(const char *msg, const char *str, uint32_t val); ///< Logs a message with a string and an integer value to the USB CDC interface.
-    /// @}
+  void log(const char *msg, const char *str,
+           uint32_t val); ///< Logs a message with a string and an integer value
+                          ///< to the USB CDC interface.
+                          /// @}
 
 private:
-    /// @name Internal Mechanics
-    /// @{
+  /// @name Internal Mechanics
+  /// @{
 
-    UsbLogger();                                      ///< Private constructor for singleton pattern.
-    UsbLogger(const UsbLogger &) = delete;            ///< Delete copy constructor to prevent copying.
-    UsbLogger &operator=(const UsbLogger &) = delete; ///< Delete assignment operator to prevent assignment.
+  UsbLogger(); ///< Private constructor for singleton pattern.
+  UsbLogger(const UsbLogger &) =
+      delete; ///< Delete copy constructor to prevent copying.
+  UsbLogger &operator=(const UsbLogger &) =
+      delete; ///< Delete assignment operator to prevent assignment.
 
-    static void loggerThreadWrapper(void *argument); ///< Static wrapper to call loggerThread from C-style function pointer.
+  static void
+  loggerThreadWrapper(void *argument); ///< Static wrapper to call loggerThread
+                                       ///< from C-style function pointer.
 
-    void loggerThread(); ///< Thread function that waits for messages and sends them via USB CDC.
+  void loggerThread(); ///< Thread function that waits for messages and sends
+                       ///< them via USB CDC.
 
-    osThreadId_t threadId;         ///< RTOS thread ID for logger
-    osMessageQueueId_t msgQueueId; ///< Message queue for log strings
+  osThreadId_t threadId;         ///< RTOS thread ID for logger
+  osMessageQueueId_t msgQueueId; ///< Message queue for log strings
 
-    /// @}
+  /// @}
 };
 
 #endif // USB_LOGGER_H
