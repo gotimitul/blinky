@@ -20,6 +20,9 @@
  * @param msg Pointer to the message string to be logged.
  */
 extern "C" void usb_logger_c_api(const char *msg) {
+  if (msg == nullptr) {
+    return; // Safety check for null message
+  }
   UsbLogger::getInstance().log(msg);
 }
 

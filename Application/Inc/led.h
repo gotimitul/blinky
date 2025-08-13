@@ -29,15 +29,14 @@ extern "C" {
 class Led {
 private:
 public:
-  Led() = default; ///< Default constructor
-
-  void on(uint32_t pin); // Static method to turn on an LED on a given GPIO pin
-
-  void
-  off(uint32_t pin); // Static method to turn off an LED on a given GPIO pin
-
-  void
-  toggle(uint32_t pin); // Static method to toggle an LED on a given GPIO pin
+  ///< Default constructor
+  Led() = default;
+  // Static method to turn on an LED on a given GPIO pin
+  static void on(uint32_t pin);
+  // Static method to turn off an LED on a given GPIO pin
+  static void off(uint32_t pin);
+  // Static method to toggle an LED on a given GPIO pin
+  static void toggle(uint32_t pin);
 };
 #endif /* __LED_H */
 

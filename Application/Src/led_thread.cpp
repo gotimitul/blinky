@@ -22,11 +22,24 @@
  * semaphores used for inter-thread communication in the application.
  */
 namespace {
-std::once_flag evt_once_flag; ///< Ensure event flags are created only once
-osEventFlagsId_t evt_button = nullptr; ///< Event flags for button press
-std::once_flag sem_once_flag;          // Ensure semaphore is created only once
-osSemaphoreId_t semaphore = nullptr;   // Static semaphore pointer
-uint32_t onTime = 500U;                ///< Default delay for LED toggling
+uint32_t onTime = 500U; ///< Default delay for LED toggling
+
+/** * @brief Static function to get a shared semaphore for LED threads
+ *
+ * This function ensures that the semaphore is created only once and returns a
+ * pointer to it. It uses a static once_flag to guarantee thread-safe
+ * initialization.
+ * @return osSemaphoreId_t Pointer to the shared semaphore
+ */
+osSemaphoreId_t shared_semaphore(void) {
+  static std::once_flag sem_once_flag; // Ensure semaphore is created only once
+  static osSemaphoreId_t semaphore = nullptr; // Static semaphore pointer
+  std::call_once(sem_once_flag, []() {
+    // Create a semaphore with a maximum count of 1 and initial count of 1
+    semaphore = osSemaphoreNew(1, 1, nullptr);
+  });
+  return semaphore;
+}
 } // namespace
 
 /** * @brief Get the event flags for button press
@@ -37,25 +50,14 @@ uint32_t onTime = 500U;                ///< Default delay for LED toggling
  * @return osEventFlagsId_t Event flags ID for button press
  */
 osEventFlagsId_t app_events_get() {
+  ///< Ensure event flags are created only once
+  static std::once_flag evt_once_flag;
+  ///< Event flags for button press
+  static osEventFlagsId_t evt_button = nullptr;
   // Create event flags only once using std::call_once
   std::call_once(evt_once_flag,
                  []() { evt_button = osEventFlagsNew(nullptr); });
   return evt_button; // Return the event flags ID
-}
-
-/** * @brief Static function to get a shared semaphore for LED threads
- *
- * This function ensures that the semaphore is created only once and returns a
- * pointer to it. It uses a static once_flag to guarantee thread-safe
- * initialization.
- * @return osSemaphoreId_t Pointer to the shared semaphore
- */
-osSemaphoreId_t LedThread::shared_semaphore(void) {
-  std::call_once(sem_once_flag, []() {
-    // Create a semaphore with a maximum count of 4 and initial count of 1
-    semaphore = osSemaphoreNew(4, 1, nullptr);
-  });
-  return semaphore;
 }
 
 /**
@@ -141,9 +143,9 @@ void LedThread::run(void) {
     osSemaphoreAcquire(sem, osWaitForever);
     //    osEventFlagsWait(evt_button, 1U, osFlagsWaitAny | osFlagsNoClear,
     //                     osWaitForever);
-    if (osEventFlagsGet(app_events_get()) == 1U) {
-      onTime -= 100;                           // Set delay to 1000 ms
-      osEventFlagsClear(app_events_get(), 1U); // Clear the event flag)
+    if ((osEventFlagsGet(app_events_get()) & 1U) == 1U) {
+      onTime = onTime > 100U ? onTime - 100U : 1000U; // Ensure minimum delay
+      osEventFlagsClear(app_events_get(), 1U);        // Clear the event flag)
     }
     // Toggle LED ON
     Led::on(pin);

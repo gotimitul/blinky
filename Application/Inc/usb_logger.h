@@ -72,9 +72,6 @@ private:
   void loggerThread(); // Thread function that waits for messages and sends
                        // them via USB CDC.
 
-  osThreadId_t threadId;         ///< RTOS thread ID for logger
-  osMessageQueueId_t msgQueueId; ///< Message queue for log strings
-
   /// @}
 };
 

@@ -12,7 +12,6 @@
 #define __LEDTHREAD_H
 /* includes
  * --------------------------------------------------------------------------*/
-#include "led.h"
 #include <cstdint>
 
 #ifdef __cplusplus
@@ -34,11 +33,10 @@ extern "C" {
  * Inherits from the `Led` class and runs an internal thread that toggles the
  * LED. Uses a semaphore for synchronized access to shared GPIO lines.
  */
-class LedThread : public Led {
+class LedThread {
 private:
   uint32_t pin; ///< GPIO pin associated with this LED
   static void thread_entry(void *argument);
-  osSemaphoreId_t shared_semaphore(void);
 
   osThreadId_t thread_id = NULL; ///< CMSIS RTOS thread ID
   osSemaphoreId_t sem;           ///< Shared semaphore pointer
