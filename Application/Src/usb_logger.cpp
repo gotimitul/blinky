@@ -9,6 +9,7 @@
 #include "usb_logger.h"
 #include "cstdarg" // For va_list, va_start, etc.
 #include "usbd_cdc_if.h"
+#include <cstdint>
 #include <cstring>
 
 namespace {
@@ -18,18 +19,21 @@ constexpr uint32_t LOG_QUEUE_LENGTH = 10; // Number of messages in queue
 osThreadId_t threadId = nullptr;         ///< RTOS thread ID for logger
 osMessageQueueId_t msgQueueId = nullptr; ///< Message queue for log strings
 /// @brief (Unused) memory buffer declared for alignment or extension
-uint8_t log_queue_mem[LOG_QUEUE_LENGTH * LOG_MSG_SIZE];
+uint64_t log_queue_mem[LOG_QUEUE_LENGTH * LOG_MSG_SIZE / 8]
+    __attribute__((aligned(64))); ///< Memory buffer for message queue
+uint64_t log_queue_cb[32]
+    __attribute__((aligned(64))); ///< Control block for message queue
 uint64_t stack[256]
     __attribute__((aligned(64))); ///< Static thread stack (aligned)
 uint64_t cb[32]
     __attribute__((aligned(64))); ///< Static thread control block (aligned)
 constexpr osMessageQueueAttr_t msgQueueAttr = {
-    .name = "UsbLoggerQueue",         // Name for debugging
-    .attr_bits = 0U,                  // No special attributes
-    .cb_mem = nullptr,                // No custom control block memory
-    .cb_size = 0U,                    // Default size
-    .mq_mem = log_queue_mem,          // Pointer to memory for queue
-    .mq_size = sizeof(log_queue_mem), // Size of the memory buffer
+    .name = "UsbLoggerQueue", // Name for debugging
+    .attr_bits = 0U,          // No special attributes
+    .cb_mem = log_queue_cb,        // No custom control block memory
+    .cb_size = sizeof(log_queue_cb),            // Default size
+    .mq_mem = log_queue_mem,        // Pointer to memory for queue
+    .mq_size = sizeof(log_queue_mem),            // Size of the memory buffer
 };
 constexpr osThreadAttr_t threadAttr = {
     .name = "UsbLoggerThread",   // Name for debugging
@@ -55,8 +59,6 @@ UsbLogger &UsbLogger::getInstance() {
 void UsbLogger::init() {
   msgQueueId = osMessageQueueNew(LOG_QUEUE_LENGTH, LOG_MSG_SIZE, &msgQueueAttr);
   if (msgQueueId == nullptr) {
-    UsbLogger::getInstance().log(
-        "Message queue not initialized, cannot start logger thread\r\n");
     return; // Safety check for uninitialized queue
   }
   threadId = osThreadNew(loggerThreadWrapper, this, &threadAttr);
@@ -67,6 +69,12 @@ void UsbLogger::init() {
     return; // Safety check for uninitialized thread
   }
 #endif
+}
+
+/// @brief Wrapper to start logger thread from C-style function pointer.
+/// @param argument Pointer to UsbLogger instance.
+void UsbLogger::loggerThreadWrapper(void *argument) {
+  static_cast<UsbLogger *>(argument)->loggerThread();
 }
 
 /// @brief Static wrapper to call loggerThread from C-style function pointer.
@@ -106,12 +114,6 @@ void UsbLogger::log(const char *msg, const char *str, uint32_t val) {
     snprintf(logMsg, LOG_MSG_SIZE, msg, str, val);
     osMessageQueuePut(msgQueueId, logMsg, 0, 0); // non-blocking enqueue
   }
-}
-
-/// @brief Wrapper to start logger thread from C-style function pointer.
-/// @param argument Pointer to UsbLogger instance.
-void UsbLogger::loggerThreadWrapper(void *argument) {
-  static_cast<UsbLogger *>(argument)->loggerThread();
 }
 
 /// @brief Thread function that waits for messages and sends them via USB CDC.
