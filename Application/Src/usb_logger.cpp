@@ -8,6 +8,7 @@
 
 #include "usb_logger.h"
 #include "cstdarg" // For va_list, va_start, etc.
+#include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
 #include <cstdint>
 #include <cstring>
@@ -28,12 +29,12 @@ uint64_t stack[256]
 uint64_t cb[32]
     __attribute__((aligned(64))); ///< Static thread control block (aligned)
 constexpr osMessageQueueAttr_t msgQueueAttr = {
-    .name = "UsbLoggerQueue", // Name for debugging
-    .attr_bits = 0U,          // No special attributes
-    .cb_mem = log_queue_cb,        // No custom control block memory
-    .cb_size = sizeof(log_queue_cb),            // Default size
-    .mq_mem = log_queue_mem,        // Pointer to memory for queue
-    .mq_size = sizeof(log_queue_mem),            // Size of the memory buffer
+    .name = "UsbLoggerQueue",         // Name for debugging
+    .attr_bits = 0U,                  // No special attributes
+    .cb_mem = log_queue_cb,           // No custom control block memory
+    .cb_size = sizeof(log_queue_cb),  // Default size
+    .mq_mem = log_queue_mem,          // Pointer to memory for queue
+    .mq_size = sizeof(log_queue_mem), // Size of the memory buffer
 };
 constexpr osThreadAttr_t threadAttr = {
     .name = "UsbLoggerThread",   // Name for debugging
@@ -59,16 +60,18 @@ UsbLogger &UsbLogger::getInstance() {
 void UsbLogger::init() {
   msgQueueId = osMessageQueueNew(LOG_QUEUE_LENGTH, LOG_MSG_SIZE, &msgQueueAttr);
   if (msgQueueId == nullptr) {
+#ifdef DEBUG
+    printf("Failed to create message queue for USB logger\r\n");
+#endif
     return; // Safety check for uninitialized queue
   }
   threadId = osThreadNew(loggerThreadWrapper, this, &threadAttr);
 
-#ifdef USE_FULL_ASSERT
   if (threadId == nullptr) {
-    assert_param(threadId != nullptr);
-    return; // Safety check for uninitialized thread
-  }
+#ifdef DEBUG
+    printf("Failed to create USB logger thread\r\n");
 #endif
+  }
 }
 
 /// @brief Wrapper to start logger thread from C-style function pointer.

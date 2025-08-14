@@ -13,6 +13,7 @@
 #include "led_thread.h"
 #include "cmsis_os2.h"
 #include "led.h"
+#include "stdio.h"
 #include "usb_logger.h"
 #include <mutex>
 
@@ -57,6 +58,16 @@ osEventFlagsId_t app_events_get() {
   // Create event flags only once using std::call_once
   std::call_once(evt_once_flag,
                  []() { evt_button = osEventFlagsNew(nullptr); });
+  // Check if event flags were created successfully
+  if (evt_button == nullptr) {
+#ifdef DEBUG
+    std::printf("Failed to create event flags for button press\r\n");
+#elif RUN_TIME
+    UsbLogger::getInstance().log("Failed to create event flags for button "
+                                 "press\r\n");
+#endif
+    return nullptr; // Return null if creation failed
+  }
   return evt_button; // Return the event flags ID
 }
 
@@ -87,6 +98,12 @@ LedThread::LedThread(const char *threadName, uint32_t pin)
   // Semaphore for multiplexing access to GPIO pins
   this->sem = shared_semaphore(); // Get the shared semaphore
   if (this->sem == nullptr) {
+#ifdef DEBUG
+    printf("Failed to create semaphore for LED thread\r\n");
+#elif RUN_TIME
+    UsbLogger::getInstance().log(
+        "Failed to create semaphore for LED thread\r\n");
+#endif
     return; // If semaphore creation failed, exit constructor
   }
   this->start();
@@ -103,8 +120,13 @@ void LedThread::start(void) {
   // Start thread, passing 'this' so static entry can cast it back
   thread_id = osThreadNew(thread_entry, this, &thread_attr);
   if (thread_id == nullptr) {
+#ifdef DEBUG
+    printf("Failed to create LED thread %s\r\n", thread_attr.name);
+#elif RUN_TIME
     UsbLogger::getInstance().log("Failed to create LED thread %s\r\n",
                                  thread_attr.name);
+#endif
+    return; // If thread creation failed, exit start method
   }
 }
 
@@ -119,8 +141,12 @@ void LedThread::start(void) {
 void LedThread::thread_entry(void *argument) {
   // Safety check for null argument
   if (argument == nullptr) {
+#ifdef DEBUG
+    printf("LedThread::thread_entry: argument is null\r\n");
+#elif RUN_TIME
     UsbLogger::getInstance().log(
         "LedThread::thread_entry: argument is null\r\n");
+#endif
     osThreadExit();
   }
   // Cast back to LedThread and call the member function
@@ -141,11 +167,12 @@ void LedThread::run(void) {
   for (;;) {
     // Acquire semaphore before accessing the LED
     osSemaphoreAcquire(sem, osWaitForever);
-    //    osEventFlagsWait(evt_button, 1U, osFlagsWaitAny | osFlagsNoClear,
-    //                     osWaitForever);
+    // Check if the event flag for button press is set
+    // If the button is pressed, adjust the onTime delay
+    // and clear the event flag
     if ((osEventFlagsGet(app_events_get()) & 1U) == 1U) {
-      onTime = onTime > 100U ? onTime - 100U : 1000U; // Ensure minimum delay
-      osEventFlagsClear(app_events_get(), 1U);        // Clear the event flag)
+      onTime = onTime > 100U ? onTime - 100U : 1000U;
+      osEventFlagsClear(app_events_get(), 1U);
     }
     // Toggle LED ON
     Led::on(pin);

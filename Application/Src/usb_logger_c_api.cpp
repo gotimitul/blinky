@@ -21,6 +21,11 @@
  */
 extern "C" void usb_logger_c_api(const char *msg) {
   if (msg == nullptr) {
+#ifdef DEBUG
+    printf("usb_logger_c_api: msg is null\r\n");
+#elif RUN_TIME
+    UsbLogger::getInstance().log("usb_logger_c_api: msg is null\r\n");
+#endif
     return; // Safety check for null message
   }
   UsbLogger::getInstance().log(msg);

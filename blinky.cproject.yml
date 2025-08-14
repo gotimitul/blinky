@@ -15,6 +15,8 @@ project:
       add-path:
         - Application/Inc
       debug: "on"
+      define:
+        - RUN_TIME
       misc:
         - C:
             - -std=c11
@@ -81,5 +83,7 @@ project:
     - component: ARM::RTOS&FreeRTOS:Heap&Heap_4
     - component: ARM::RTOS&FreeRTOS:Timers
     - component: Keil::CMSIS Driver:GPIO
-    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint
+    - component: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM
+    - component: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM
+    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM
     - component: Keil::Device:CubeMX

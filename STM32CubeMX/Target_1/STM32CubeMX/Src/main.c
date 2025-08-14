@@ -69,7 +69,7 @@ static void MX_GPIO_Init(void);
 int main(void) {
 
   /* USER CODE BEGIN 1 */
-  EventRecorderInitialize(EventRecordAll, 1); // Initialize Event Recorder
+  //  EventRecorderInitialize(EventRecordAll, 1); // Initialize Event Recorder
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -104,12 +104,14 @@ int main(void) {
   };
   // Create the main application thread
   tid_app = osThreadNew(app_main, NULL, &app_main_config);
-// Check if the application thread was created successfully
-#ifdef USE_FULL_ASSERT
+  // Check if the application thread was created successfully
+
   if (tid_app == NULL) {
-    assert_param(expression : tid_app != NULL);
-  }
+#ifdef DEBUG
+    printf("Failed to create app_main thread\r\n");
 #endif
+  }
+
   osKernelStart(); // Start the CMSIS-RTOS2 kernel
   /* USER CODE END 2 */
 

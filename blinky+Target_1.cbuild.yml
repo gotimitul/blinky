@@ -97,6 +97,7 @@ build:
       - --summary_stderr
       - --info summarysizes
   define:
+    - RUN_TIME
     - USE_HAL_DRIVER
     - STM32F407xx
     - STM32F407xx
@@ -371,14 +372,22 @@ build:
         - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Drivers/GPIO_STM32.h
           category: header
           version: 1.2.0
-    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint@1.2.0
-      condition: ARMCC Cortex-M
+    - component: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM@1.2.0
+      condition: ARMCC Cortex-M with ITM
       from-pack: Keil::ARM_Compiler@1.7.2
-      selected-by: Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint
+      selected-by: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM
       files:
         - file: ${CMSIS_PACK_ROOT}/Keil/ARM_Compiler/1.7.2/Source/retarget_io.c
           category: source
           version: 1.2.0
+    - component: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM@1.2.0
+      condition: ARMCC Cortex-M with ITM
+      from-pack: Keil::ARM_Compiler@1.7.2
+      selected-by: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM
+    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM@1.2.0
+      condition: ARMCC Cortex-M with ITM
+      from-pack: Keil::ARM_Compiler@1.7.2
+      selected-by: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM
     - component: Keil::Device:CubeMX@1.0.0
       condition: STM32F4 CMSIS
       from-pack: Keil::STM32F4xx_DFP@3.1.0
@@ -522,7 +531,9 @@ build:
       packs:
         - pack: Keil::ARM_Compiler@1.7.2
       components:
-        - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&Breakpoint@1.2.0
+        - component: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM@1.2.0
+        - component: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM@1.2.0
+        - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM@1.2.0
     - license: Apache-2.0
       packs:
         - pack: ARM::CMSIS-Driver_STM32@1.2.0
