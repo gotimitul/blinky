@@ -7,6 +7,7 @@
  */
 
 #include "usb_logger.h"
+#include "EventRecorder.h"
 #include "cstdarg" // For va_list, va_start, etc.
 #include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
@@ -125,11 +126,13 @@ void UsbLogger::loggerThread() {
 
   for (;;) {
     if (osMessageQueueGet(msgQueueId, logBuf, NULL, osWaitForever) == osOK) {
+      EventStartA(1);
       logBuf[LOG_MSG_SIZE - 1] = '\0'; // Ensure null-termination
       while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(logBuf),
                              strlen(logBuf)) == USBD_BUSY) {
         osDelay(1); // Wait for endpoint to be ready
       }
+      EventStopA(1);
     }
   }
 }

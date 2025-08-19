@@ -15,6 +15,7 @@
 #include "cmsis_os2.h" // Include CMSIS-RTOS2 header for RTOS functions
 #include "led_thread.h"
 #include "usb_logger.h"
+#include "eventrecorder.h"
 
 extern ARM_DRIVER_GPIO Driver_GPIO0; // External GPIO driver instance
 static void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event);
@@ -35,6 +36,7 @@ constexpr uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
  */
 void app_main(void *argument) {
   UNUSED(argument); // CMSIS macro to mark unused variable
+	
   // Setup GPIO for user button with event callback
   Driver_GPIO0.Setup(USER_BUTTON_PIN, ARM_GPIO_SignalEvent);
   // Set event trigger for rising edge on user button pin
@@ -47,7 +49,7 @@ void app_main(void *argument) {
   static LedThread red("red", LED_RED_PIN);
   static LedThread orange("orange", LED_ORANGE_PIN);
   static LedThread green("green", LED_GREEN_PIN);
-
+	
   // Exit the application thread once all LED threads are launched
   osThreadExit();
 }
@@ -63,8 +65,10 @@ void app_main(void *argument) {
 void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
   if (pin == USER_BUTTON_PIN && event == ARM_GPIO_EVENT_RISING_EDGE) {
     if (app_events_get() != nullptr) {
+			EventStartB(0);
       // Signal the event to the LED thread
       osEventFlagsSet(app_events_get(), 1U);
+			EventStopBv(0, 10, 1);
     } else {
       // Handle other GPIO events if necessary
     }

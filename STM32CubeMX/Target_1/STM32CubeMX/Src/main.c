@@ -69,7 +69,8 @@ static void MX_GPIO_Init(void);
 int main(void) {
 
   /* USER CODE BEGIN 1 */
-  //  EventRecorderInitialize(EventRecordAll, 1); // Initialize Event Recorder
+  EventRecorderInitialize(EventRecordNone, 1); // Initialize Event Recorder
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

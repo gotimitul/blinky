@@ -16,6 +16,8 @@
 #include "stdio.h"
 #include "usb_logger.h"
 #include <mutex>
+#include "eventrecorder.h"
+#include "string.h"
 
 /** * @namespace
  * @brief Namespace for application events and synchronization mechanisms
@@ -52,7 +54,7 @@ osSemaphoreId_t shared_semaphore(void) {
  */
 osEventFlagsId_t app_events_get() {
   ///< Ensure event flags are created only once
-  static std::once_flag evt_once_flag;
+  static std::once_flag evt_once_flag; 
   ///< Event flags for button press
   static osEventFlagsId_t evt_button = nullptr;
   // Create event flags only once using std::call_once
@@ -165,8 +167,12 @@ void LedThread::run(void) {
   //  extern osEventFlagsId_t evt_button;
 
   for (;;) {
+		const char *str = osThreadGetName(thread_id);
+		const char *blue = "blue";
     // Acquire semaphore before accessing the LED
     osSemaphoreAcquire(sem, osWaitForever);
+				if ( strcmp(str, blue) == 0)
+		EventStartA(10);
     // Check if the event flag for button press is set
     // If the button is pressed, adjust the onTime delay
     // and clear the event flag
@@ -183,7 +189,8 @@ void LedThread::run(void) {
 
     // Toggle LED OFF
     Led::off(pin);
-
+		if ( strcmp(str, blue) == 0)
+		EventStopA(10);
     // Release semaphore for next thread
     osSemaphoreRelease(sem);
 
