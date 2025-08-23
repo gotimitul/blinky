@@ -10,8 +10,9 @@
  */
 
 #include "usb_logger_c_api.h"
-#include "usb_logger.h"
 #include "stdio.h"
+#include "usb_logger.h"
+
 
 /** * @brief C API function to log messages using UsbLogger.
  *
@@ -23,7 +24,7 @@
 extern "C" void usb_logger_c_api(const char *msg) {
   if (msg == nullptr) {
 #ifdef DEBUG
-    printf("usb_logger_c_api: msg is null\r\n");
+    printf("usb_logger_c_api: msg is null: %s, %d\r\n", __FILE__, __LINE__);
 #elif RUN_TIME
     UsbLogger::getInstance().log("usb_logger_c_api: msg is null\r\n");
 #endif

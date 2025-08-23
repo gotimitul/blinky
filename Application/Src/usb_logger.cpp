@@ -66,7 +66,8 @@ void UsbLogger::init() {
   msgQueueId = osMessageQueueNew(LOG_QUEUE_LENGTH, LOG_MSG_SIZE, &msgQueueAttr);
   if (msgQueueId == nullptr) {
 #ifdef DEBUG
-    printf("Failed to create message queue for USB logger\r\n");
+    printf("Failed to create message queue for USB logger: %s, %d\r\n",
+           __FILE__, __LINE__);
 #endif
     return; // Safety check for uninitialized queue
   }
@@ -74,14 +75,16 @@ void UsbLogger::init() {
 
   if (threadId == nullptr) {
 #ifdef DEBUG
-    printf("Failed to create USB logger thread\r\n");
+    printf("Failed to create USB logger thread: %s, %d\r\n", __FILE__,
+           __LINE__);
 #endif
     return; // Safety check for uninitialized thread
   }
   usbXferFlag = osEventFlagsNew(nullptr);
   if (usbXferFlag == nullptr) {
 #ifdef DEBUG
-    printf("Failed to create USB transfer event flags\r\n");
+    printf("Failed to create USB transfer event flags: %s, %d\r\n", __FILE__,
+           __LINE__);
 #endif
     return; // Safety check for uninitialized event flags
   }
@@ -186,7 +189,7 @@ void UsbLogger::loggerThread() {
     // Wait for USB transfer flag to be set
     if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 10U) != 1U) {
 #ifdef DEBUG
-      printf("Failed: USB transfer\r\n");
+      printf("Failed: USB transfer: %s, %d\r\n", __FILE__, __LINE__);
 #endif
       usbXferCompleted = false; // Timeout or error occurred
     } else {
@@ -216,7 +219,8 @@ bool UsbLogger::usbIsConnected(void) {
 /// Handler for message size errors
 void UsbLogger::errorMessageSize(void) {
 #ifdef DEBUG
-  printf("Warning: Message Size Exceeded. Last Message Truncated.\r\n");
+  printf("Warning: Message Size Exceeded. Last Message Truncated: %s, %d\r\n",
+         __FILE__, __LINE__);
 #endif
 }
 
@@ -227,11 +231,12 @@ void UsbLogger::errorMessageSize(void) {
  */
 
 void UsbLogger::messageQueueFullHandler(void) {
-#ifdef DEBUG
-  printf("Warning: Message Queue Full. Last Message Removed.\r\n");
-#endif
   char logBuf[LOG_MSG_SIZE];
   osMessageQueueGet(msgQueueId, logBuf, 0, 0); // Try to clear the queue
+#ifdef DEBUG
+  printf("Warning: Message Queue Full. Last Message Removed: %s, %d\r\n",
+         __FILE__, __LINE__);
+#endif
 }
 
 /** @brief Sets the USB transfer flag.
@@ -242,6 +247,12 @@ void UsbLogger::messageQueueFullHandler(void) {
 extern "C" void usbXferFlagSet(void) {
   // Set the USB transfer flag to indicate data is ready to be sent
   if (usbXferFlag != nullptr) {
-    osEventFlagsSet(usbXferFlag, 1U);
+    uint32_t returnFlag = osEventFlagsSet(usbXferFlag, 1U);
+    if (returnFlag != 1U) {
+#ifdef DEBUG
+      printf("Failed to set USB transfer event flag: file: %s, line: %d\r\n",
+             __FILE__, __LINE__);
+#endif
+    }
   }
 }

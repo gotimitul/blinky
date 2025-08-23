@@ -13,9 +13,10 @@
 #include "app.h"
 #include "Driver_GPIO.h"
 #include "cmsis_os2.h" // Include CMSIS-RTOS2 header for RTOS functions
-#include "eventrecorder.h"
 #include "led_thread.h"
+#include "stdio.h"
 #include "usb_logger.h"
+#include <cstdint>
 
 extern ARM_DRIVER_GPIO Driver_GPIO0; // External GPIO driver instance
 static void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event);
@@ -65,12 +66,27 @@ void app_main(void *argument) {
 void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
   if (pin == USER_BUTTON_PIN && event == ARM_GPIO_EVENT_RISING_EDGE) {
     if (app_events_get() != nullptr) {
-      EventStartA(2);
       // Signal the event to the LED thread
-      osEventFlagsSet(app_events_get(), 1U);
-      EventStopA(2);
+      uint32_t returnFlag = osEventFlagsSet(app_events_get(), 1U);
+      if (returnFlag != 1U) {
+#ifdef DEBUG
+        printf(
+            "Failed to set event flag for button press: file: %s, line: %d\r\n",
+            __FILE__, __LINE__);
+#elif RUN_TIME
+        UsbLogger::getInstance().log(
+            "Failed to set event flag for button press\r\n");
+#endif
+      }
     } else {
-      // Handle other GPIO events if necessary
+#ifdef DEBUG
+      printf("Failed to get event flags ID for button press: file: %s, line: "
+             "%d\r\n",
+             __FILE__, __LINE__);
+#elif RUN_TIME
+      UsbLogger::getInstance().log(
+          "Failed to get event flags ID for button press\r\n");
+#endif
     }
   }
 }

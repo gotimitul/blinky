@@ -41,6 +41,14 @@ osSemaphoreId_t shared_semaphore(void) {
   std::call_once(sem_once_flag, []() {
     // Create a semaphore with a maximum count of 1 and initial count of 1
     semaphore = osSemaphoreNew(1, 1, nullptr);
+    if (semaphore == nullptr) {
+#ifdef DEBUG
+      printf("Failed to create shared semaphore: %s, %d\r\n", __FILE__,
+             __LINE__);
+#elif RUN_TIME
+      UsbLogger::getInstance().log("Failed to create shared semaphore\r\n");
+#endif
+    }
   });
   return semaphore;
 }
@@ -64,7 +72,8 @@ osEventFlagsId_t app_events_get() {
   // Check if event flags were created successfully
   if (evt_button == nullptr) {
 #ifdef DEBUG
-    std::printf("Failed to create event flags for button press\r\n");
+    std::printf("Failed to create event flags for button press: %s, %d\r\n",
+                __FILE__, __LINE__);
 #elif RUN_TIME
     UsbLogger::getInstance().log("Failed to create event flags for button "
                                  "press\r\n");
@@ -101,12 +110,6 @@ LedThread::LedThread(const char *threadName, uint32_t pin)
   // Semaphore for multiplexing access to GPIO pins
   this->sem = shared_semaphore(); // Get the shared semaphore
   if (this->sem == nullptr) {
-#ifdef DEBUG
-    printf("Failed to create semaphore for LED thread\r\n");
-#elif RUN_TIME
-    UsbLogger::getInstance().log(
-        "Failed to create semaphore for LED thread\r\n");
-#endif
     return; // If semaphore creation failed, exit constructor
   }
   this->start();
@@ -124,7 +127,8 @@ void LedThread::start(void) {
   thread_id = osThreadNew(thread_entry, this, &thread_attr);
   if (thread_id == nullptr) {
 #ifdef DEBUG
-    printf("Failed to create LED thread %s\r\n", thread_attr.name);
+    printf("Failed to create LED thread %s. %s, %d\r\n", thread_attr.name,
+           __FILE__, __LINE__);
 #elif RUN_TIME
     UsbLogger::getInstance().log("Failed to create LED thread %s\r\n",
                                  thread_attr.name);
@@ -145,7 +149,8 @@ void LedThread::thread_entry(void *argument) {
   // Safety check for null argument
   if (argument == nullptr) {
 #ifdef DEBUG
-    printf("LedThread::thread_entry: argument is null\r\n");
+    printf("LedThread::thread_entry: argument is null: %s, %d\r\n", __FILE__,
+           __LINE__);
 #elif RUN_TIME
     UsbLogger::getInstance().log(
         "LedThread::thread_entry: argument is null\r\n");
@@ -187,9 +192,10 @@ void LedThread::run(void) {
     }
     // Toggle LED ON
     Led::on(pin);
-
+#ifdef RUN_TIME
     UsbLogger::getInstance().log("LED %s is on: %d\r\n",
                                  osThreadGetName(thread_id), counter++);
+#endif
     osDelay(onTime - debounceTime); // Delay for the specified time
 
     // Toggle LED OFF
