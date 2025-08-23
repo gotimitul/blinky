@@ -13,15 +13,8 @@
 #ifndef USB_LOGGER_H
 #define USB_LOGGER_H
 
+#include <stdint.h>
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "cmsis_os2.h"
-
-#ifdef __cplusplus
-}
-#endif
 
 /**
  * @class UsbLogger
@@ -46,9 +39,8 @@ public:
   void log(const char *msg, uint32_t val); // Logs a message with an integer
                                            // value to the USB CDC interface.
 
-  void log(const char *msg,
-           const char *str); // Logs a message with a string value to the USB
-                             // CDC interface.
+  void log(const char *msg, const char *str); // Logs a message with a string
+                                              // value to the USB CDC interface.
 
   void log(const char *msg, const char *str,
            uint32_t val); // Logs a message with a string and an integer value
@@ -72,8 +64,23 @@ private:
   void loggerThread(); // Thread function that waits for messages and sends
                        // them via USB CDC.
 
+  void messageQueueFullHandler(void); ///< Handler for full message queue
+
+  void errorMessageSize(void); ///< Handler for message size errors
+
+  bool usbIsConnected(void); // Checks if USB CDC is connected.
+
   /// @}
 };
+
+extern "C" {
+#endif
+
+void usbXferFlagSet(void); // Sets the USB transfer flag.
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // USB_LOGGER_H
 

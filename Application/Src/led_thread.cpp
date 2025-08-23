@@ -27,7 +27,7 @@
  */
 namespace {
 uint32_t onTime = 500U; ///< Default delay for LED toggling
-
+uint32_t counter = 0U;  ///< Counter for LED toggling
 /** * @brief Static function to get a shared semaphore for LED threads
  *
  * This function ensures that the semaphore is created only once and returns a
@@ -180,16 +180,17 @@ void LedThread::run(void) {
     // and clear the event flag
     if ((osEventFlagsGet(app_events_get()) & 1U) == 1U) {
       onTime = onTime > 100U ? onTime - 100U : 1000U;
+      Led::on(pin);          // Turn on the LED immediately
       debounceTime = 50U;    // Set debounce time to 50 ms
       osDelay(debounceTime); // Debounce delay
       osEventFlagsClear(app_events_get(), 1U);
     }
     // Toggle LED ON
     Led::on(pin);
-    osDelay(onTime - debounceTime); // Delay for the specified time
 
-    UsbLogger::getInstance().log("LED %s is on\r\n",
-                                 osThreadGetName(thread_id));
+    UsbLogger::getInstance().log("LED %s is on: %d\r\n",
+                                 osThreadGetName(thread_id), counter++);
+    osDelay(onTime - debounceTime); // Delay for the specified time
 
     // Toggle LED OFF
     Led::off(pin);

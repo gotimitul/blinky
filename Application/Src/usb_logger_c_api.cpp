@@ -11,6 +11,7 @@
 
 #include "usb_logger_c_api.h"
 #include "usb_logger.h"
+#include "stdio.h"
 
 /** * @brief C API function to log messages using UsbLogger.
  *

@@ -8,18 +8,22 @@
 
 #include "usb_logger.h"
 #include "EventRecorder.h"
+#include "cmsis_os2.h"
 #include "cstdarg" // For va_list, va_start, etc.
 #include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
+#include "usbd_def.h"
 #include <cstdint>
 #include <cstring>
 
 namespace {
-constexpr uint32_t LOG_MSG_SIZE = 128;    // Size of each log message
-constexpr uint32_t LOG_QUEUE_LENGTH = 10; // Number of messages in queue
+constexpr uint32_t LOG_MSG_SIZE = 64;     // Size of each log message
+constexpr uint32_t LOG_QUEUE_LENGTH = 32; // Number of messages in queue
 
 osThreadId_t threadId = nullptr;         ///< RTOS thread ID for logger
 osMessageQueueId_t msgQueueId = nullptr; ///< Message queue for log strings
+osEventFlagsId_t usbXferFlag = nullptr;  ///< Event flags for USB transfer
+
 /// @brief (Unused) memory buffer declared for alignment or extension
 uint64_t log_queue_mem[LOG_QUEUE_LENGTH * LOG_MSG_SIZE / 8]
     __attribute__((aligned(64))); ///< Memory buffer for message queue
@@ -72,6 +76,14 @@ void UsbLogger::init() {
 #ifdef DEBUG
     printf("Failed to create USB logger thread\r\n");
 #endif
+    return; // Safety check for uninitialized thread
+  }
+  usbXferFlag = osEventFlagsNew(nullptr);
+  if (usbXferFlag == nullptr) {
+#ifdef DEBUG
+    printf("Failed to create USB transfer event flags\r\n");
+#endif
+    return; // Safety check for uninitialized event flags
   }
 }
 
@@ -82,11 +94,19 @@ void UsbLogger::loggerThreadWrapper(void *argument) {
 }
 
 /// @brief Static wrapper to call loggerThread from C-style function pointer.
+/// @param argument Pointer to UsbLogger instance.
 void UsbLogger::log(const char *msg) {
   if (msgQueueId != nullptr && msg != nullptr) {
     char logMsg[LOG_MSG_SIZE];
-    snprintf(logMsg, LOG_MSG_SIZE, "%s", msg);
-    osMessageQueuePut(msgQueueId, logMsg, 0, 0); // non-blocking enqueue
+    uint8_t n = snprintf(logMsg, LOG_MSG_SIZE, "%s", msg);
+    if (n >= LOG_MSG_SIZE) {
+      errorMessageSize();
+    }
+    while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
+           osErrorResource) // non-blocking enqueue
+    {
+      messageQueueFullHandler();
+    }
   }
 }
 
@@ -96,8 +116,15 @@ void UsbLogger::log(const char *msg) {
 void UsbLogger::log(const char *msg, uint32_t val) {
   if (msgQueueId != nullptr && msg != nullptr) {
     char logMsg[LOG_MSG_SIZE];
-    snprintf(logMsg, LOG_MSG_SIZE, msg, val);
-    osMessageQueuePut(msgQueueId, logMsg, 0, 0); // non-blocking enqueue
+    uint8_t n = snprintf(logMsg, LOG_MSG_SIZE, msg, val);
+    if (n >= LOG_MSG_SIZE) {
+      errorMessageSize();
+    }
+    while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
+           osErrorResource) // non-blocking enqueue
+    {
+      messageQueueFullHandler();
+    }
   }
 }
 
@@ -107,32 +134,114 @@ void UsbLogger::log(const char *msg, uint32_t val) {
 void UsbLogger::log(const char *msg, const char *str) {
   if (msgQueueId != nullptr && msg != nullptr && str != nullptr) {
     char logMsg[LOG_MSG_SIZE];
-    snprintf(logMsg, LOG_MSG_SIZE, msg, str);
-    osMessageQueuePut(msgQueueId, logMsg, 0, 0); // non-blocking enqueue
+    uint8_t n = snprintf(logMsg, LOG_MSG_SIZE, msg, str);
+    if (n >= LOG_MSG_SIZE) {
+      errorMessageSize();
+    }
+    while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
+           osErrorResource) // non-blocking enqueue
+    {
+      messageQueueFullHandler();
+    }
   }
 }
 
+/// @brief Log a message with a string and an integer value.
+/// @param msg Format string for the log message.
+/// @param str String value to include in the log message.
+/// @param val Integer value to include in the log message.
 void UsbLogger::log(const char *msg, const char *str, uint32_t val) {
   if (msgQueueId != nullptr && msg != nullptr && str != nullptr) {
     char logMsg[LOG_MSG_SIZE];
-    snprintf(logMsg, LOG_MSG_SIZE, msg, str, val);
-    osMessageQueuePut(msgQueueId, logMsg, 0, 0); // non-blocking enqueue
+    uint8_t n = snprintf(logMsg, LOG_MSG_SIZE, msg, str, val);
+    if (n >= LOG_MSG_SIZE) {
+      errorMessageSize();
+    }
+    while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
+           osErrorResource) // non-blocking enqueue
+    {
+      messageQueueFullHandler();
+    }
   }
 }
 
 /// @brief Thread function that waits for messages and sends them via USB CDC.
 void UsbLogger::loggerThread() {
   char logBuf[LOG_MSG_SIZE];
+  bool usbXferCompleted = true; // Flag to track USB transfer completion
 
   for (;;) {
-    if (osMessageQueueGet(msgQueueId, logBuf, NULL, osWaitForever) == osOK) {
-      EventStartA(1);
-      logBuf[LOG_MSG_SIZE - 1] = '\0'; // Ensure null-termination
-      while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(logBuf),
-                             strlen(logBuf)) == USBD_BUSY) {
-        osDelay(1); // Wait for endpoint to be ready
-      }
-      EventStopA(1);
+    if (usbXferCompleted == true) {
+      osMessageQueueGet(msgQueueId, logBuf, nullptr, osWaitForever);
     }
+
+    EventStartA(1); // Start event recording for USB transmission
+    logBuf[LOG_MSG_SIZE - 1] = '\0'; // Ensure null-termination
+
+    while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(logBuf),
+                           strlen(logBuf)) != USBD_OK) {
+      osDelay(10); // Wait for endpoint to be ready
+    }
+    osDelay(10); // Short delay to allow transfer to start
+    // Wait for USB transfer flag to be set
+    if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 10U) != 1U) {
+#ifdef DEBUG
+      printf("Failed: USB transfer\r\n");
+#endif
+      usbXferCompleted = false; // Timeout or error occurred
+    } else {
+      usbXferCompleted = true; // Transfer completed successfully
+    }
+    EventStopA(1); // Stop event recording for USB transmission
+  } // End of for loop
+}
+
+/** @brief Checks if USB CDC is connected.
+ * This function checks the USB device state to determine if it is configured
+ * and ready for communication.
+ * @return true if USB is connected, false otherwise.
+ */
+bool UsbLogger::usbIsConnected(void) {
+  // This function can be used to check if USB is connected
+  extern USBD_HandleTypeDef hUsbDeviceFS;
+  if (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {
+    // USB is connected and configured
+    return true;
+  } else {
+    // USB is not connected
+    return false;
+  }
+}
+
+/// Handler for message size errors
+void UsbLogger::errorMessageSize(void) {
+#ifdef DEBUG
+  printf("Warning: Message Size Exceeded. Last Message Truncated.\r\n");
+#endif
+}
+
+/** @brief Handler for full message queue
+ * This function is called when the message queue is full and a new message
+ * cannot be added. It removes the oldest message to make space for the new
+ * message and logs a warning.
+ */
+
+void UsbLogger::messageQueueFullHandler(void) {
+#ifdef DEBUG
+  printf("Warning: Message Queue Full. Last Message Removed.\r\n");
+#endif
+  char logBuf[LOG_MSG_SIZE];
+  osMessageQueueGet(msgQueueId, logBuf, 0, 0); // Try to clear the queue
+}
+
+/** @brief Sets the USB transfer flag.
+ *
+ * This function is called from the USB CDC interrupt handler to signal that
+ * data has been transmitted and the logger thread can proceed.
+ */
+extern "C" void usbXferFlagSet(void) {
+  // Set the USB transfer flag to indicate data is ready to be sent
+  if (usbXferFlag != nullptr) {
+    osEventFlagsSet(usbXferFlag, 1U);
   }
 }
