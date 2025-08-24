@@ -14,6 +14,7 @@
 #define USB_LOGGER_H
 
 #include <stdint.h>
+
 #ifdef __cplusplus
 
 /**

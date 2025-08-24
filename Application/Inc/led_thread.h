@@ -12,19 +12,10 @@
 #define __LEDTHREAD_H
 /* includes
  * --------------------------------------------------------------------------*/
+#include "cmsis_os2.h"
 #include <cstdint>
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-/* C headers includes
- * -----------------------------------------------------------------*/
-#include "cmsis_os2.h"
-
-#ifdef __cplusplus
-}
-#endif
 
 /**
  * @class LedThread
@@ -57,6 +48,13 @@ public:
 };
 
 osEventFlagsId_t app_events_get(void); // Get event flags for button press
+
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __LEDTHREAD_H */
 

@@ -189,12 +189,16 @@ void LedThread::run(void) {
       debounceTime = 50U;    // Set debounce time to 50 ms
       osDelay(debounceTime); // Debounce delay
       osEventFlagsClear(app_events_get(), 1U);
+#ifdef RUN_TIME
+      UsbLogger::getInstance().log("Button pressed. New onTime: %d ms\r\n",
+                                   onTime);
+#endif
     }
     // Toggle LED ON
     Led::on(pin);
 #ifdef RUN_TIME
-    UsbLogger::getInstance().log("LED %s is on: %d\r\n",
-                                 osThreadGetName(thread_id), counter++);
+//    UsbLogger::getInstance().log("LED %s is on: %d\r\n",
+//                                 osThreadGetName(thread_id), counter++);
 #endif
     osDelay(onTime - debounceTime); // Delay for the specified time
 
