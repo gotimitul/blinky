@@ -170,7 +170,6 @@ void LedThread::thread_entry(void *argument) {
  * Access to the LED GPIO pin is synchronized using a semaphore.
  */
 void LedThread::run(void) {
-  //  extern osEventFlagsId_t evt_button;
 
   for (;;) {
     const char *const str = osThreadGetName(thread_id); // Get thread name
@@ -180,15 +179,13 @@ void LedThread::run(void) {
     osSemaphoreAcquire(sem, osWaitForever);
     if (strcmp(str, blue) == 0)
       EventStartA(10);
-    // Check if the event flag for button press is set
-    // If the button is pressed, adjust the onTime delay
-    // and clear the event flag
-    if ((osEventFlagsGet(app_events_get()) & 1U) == 1U) {
+
+    // Check for button press event to adjust onTime
+    if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
       onTime = onTime > 100U ? onTime - 100U : 1000U;
       Led::on(pin);          // Turn on the LED immediately
       debounceTime = 50U;    // Set debounce time to 50 ms
       osDelay(debounceTime); // Debounce delay
-      osEventFlagsClear(app_events_get(), 1U);
 #ifdef RUN_TIME
       UsbLogger::getInstance().log("Button pressed. New onTime: %d ms\r\n",
                                    onTime);
