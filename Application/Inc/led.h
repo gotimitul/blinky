@@ -11,13 +11,9 @@
 #ifndef __LED_H
 #define __LED_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include "stdint.h"
+
 #ifdef __cplusplus
-}
-#endif
 
 /**
  * @class Led
@@ -38,6 +34,14 @@ public:
   // Static method to toggle an LED on a given GPIO pin
   static void toggle(uint32_t pin);
 };
+
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __LED_H */
 
 /** @} */ // end of led

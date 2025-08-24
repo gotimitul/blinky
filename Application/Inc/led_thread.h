@@ -12,19 +12,10 @@
 #define __LEDTHREAD_H
 /* includes
  * --------------------------------------------------------------------------*/
+#include "cmsis_os2.h"
 #include <cstdint>
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-/* C headers includes
- * -----------------------------------------------------------------*/
-#include "cmsis_os2.h"
-
-#ifdef __cplusplus
-}
-#endif
 
 /**
  * @class LedThread
@@ -38,8 +29,8 @@ private:
   uint32_t pin; ///< GPIO pin associated with this LED
   static void thread_entry(void *argument);
 
-  osThreadId_t thread_id = NULL; ///< CMSIS RTOS thread ID
-  osSemaphoreId_t sem;           ///< Shared semaphore pointer
+  osThreadId_t thread_id = nullptr; ///< CMSIS RTOS thread ID
+  osSemaphoreId_t sem;              ///< Shared semaphore pointer
 
   uint64_t stack[64]
       __attribute__((aligned(64))); ///< Static thread stack (aligned)
@@ -57,6 +48,13 @@ public:
 };
 
 osEventFlagsId_t app_events_get(void); // Get event flags for button press
+
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __LEDTHREAD_H */
 

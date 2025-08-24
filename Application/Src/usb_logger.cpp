@@ -9,7 +9,6 @@
 #include "usb_logger.h"
 #include "EventRecorder.h"
 #include "cmsis_os2.h"
-#include "cstdarg" // For va_list, va_start, etc.
 #include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
 #include "usbd_def.h"
@@ -52,16 +51,25 @@ constexpr osThreadAttr_t threadAttr = {
 };
 } // namespace
 
-/// @brief Constructor initializes thread and queue handles to nullptr.
+/** @brief Private constructor for singleton pattern
+ * Ensures only one instance of UsbLogger exists.
+ */
 UsbLogger::UsbLogger() {}
 
-/// @brief Returns reference to singleton logger instance.
+/** @brief Get the singleton instance of UsbLogger
+ * This method returns a reference to the single instance of the UsbLogger
+ * class, creating it if it does not already exist.
+ */
 UsbLogger &UsbLogger::getInstance() {
   static UsbLogger instance;
   return instance;
 }
 
-/// @brief Initializes the logger's message queue.
+/** @brief Initialize the USB logger
+ *
+ * This method sets up the message queue and starts the logger thread.
+ * It must be called before any logging can occur.
+ */
 void UsbLogger::init() {
   msgQueueId = osMessageQueueNew(LOG_QUEUE_LENGTH, LOG_MSG_SIZE, &msgQueueAttr);
   if (msgQueueId == nullptr) {
@@ -90,18 +98,20 @@ void UsbLogger::init() {
   }
 }
 
-/// @brief Wrapper to start logger thread from C-style function pointer.
-/// @param argument Pointer to UsbLogger instance.
+/** @brief Static wrapper to call loggerThread from C-style function pointer.
+ * @param argument Pointer to UsbLogger instance.
+ */
 void UsbLogger::loggerThreadWrapper(void *argument) {
   static_cast<UsbLogger *>(argument)->loggerThread();
 }
 
-/// @brief Static wrapper to call loggerThread from C-style function pointer.
-/// @param argument Pointer to UsbLogger instance.
+/** @brief Log a simple message string.
+ * @param msg The message string to log.
+ */
 void UsbLogger::log(const char *msg) {
   if (msgQueueId != nullptr && msg != nullptr) {
     char logMsg[LOG_MSG_SIZE];
-    uint8_t n = snprintf(logMsg, LOG_MSG_SIZE, "%s", msg);
+    int n = snprintf(logMsg, LOG_MSG_SIZE, "%s", msg);
     if (n >= LOG_MSG_SIZE) {
       errorMessageSize();
     }
@@ -113,13 +123,14 @@ void UsbLogger::log(const char *msg) {
   }
 }
 
-/// @brief Log a message with a single integer value.
-/// @param msg Format string for the log message.
-/// @param val Integer value to include in the log message.
+/** @brief Log a message with an integer value.
+ * @param msg Format string for the log message.
+ * @param val Integer value to include in the log message.
+ */
 void UsbLogger::log(const char *msg, uint32_t val) {
   if (msgQueueId != nullptr && msg != nullptr) {
     char logMsg[LOG_MSG_SIZE];
-    uint8_t n = snprintf(logMsg, LOG_MSG_SIZE, msg, val);
+    int n = snprintf(logMsg, LOG_MSG_SIZE, msg, val);
     if (n >= LOG_MSG_SIZE) {
       errorMessageSize();
     }
@@ -131,13 +142,14 @@ void UsbLogger::log(const char *msg, uint32_t val) {
   }
 }
 
-/// @brief Log a message with a string value.
-/// @param msg Format string for the log message.
-/// @param str String value to include in the log message.
+/** @brief Log a message with a string value.
+ * @param msg Format string for the log message.
+ * @param str String value to include in the log message.
+ */
 void UsbLogger::log(const char *msg, const char *str) {
   if (msgQueueId != nullptr && msg != nullptr && str != nullptr) {
     char logMsg[LOG_MSG_SIZE];
-    uint8_t n = snprintf(logMsg, LOG_MSG_SIZE, msg, str);
+    int n = snprintf(logMsg, LOG_MSG_SIZE, msg, str);
     if (n >= LOG_MSG_SIZE) {
       errorMessageSize();
     }
@@ -149,14 +161,15 @@ void UsbLogger::log(const char *msg, const char *str) {
   }
 }
 
-/// @brief Log a message with a string and an integer value.
-/// @param msg Format string for the log message.
-/// @param str String value to include in the log message.
-/// @param val Integer value to include in the log message.
+/** @brief Log a message with a string and integer value.
+ * @param msg Format string for the log message.
+ * @param str String value to include in the log message.
+ * @param val Integer value to include in the log message.
+ */
 void UsbLogger::log(const char *msg, const char *str, uint32_t val) {
   if (msgQueueId != nullptr && msg != nullptr && str != nullptr) {
     char logMsg[LOG_MSG_SIZE];
-    uint8_t n = snprintf(logMsg, LOG_MSG_SIZE, msg, str, val);
+    int n = snprintf(logMsg, LOG_MSG_SIZE, msg, str, val);
     if (n >= LOG_MSG_SIZE) {
       errorMessageSize();
     }
@@ -168,7 +181,12 @@ void UsbLogger::log(const char *msg, const char *str, uint32_t val) {
   }
 }
 
-/// @brief Thread function that waits for messages and sends them via USB CDC.
+/** @brief Main logger thread function
+ *
+ * This function runs in its own thread and continuously checks the message
+ * queue for new log messages. When a message is available, it sends it over USB
+ * CDC. It uses event flags to synchronize with the USB interrupt handler.
+ */
 void UsbLogger::loggerThread() {
   char logBuf[LOG_MSG_SIZE];
   bool usbXferCompleted = true; // Flag to track USB transfer completion

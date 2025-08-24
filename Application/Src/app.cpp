@@ -35,7 +35,7 @@ constexpr uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
  * triggers, initializes the USB logger, and creates LED threads.
  * @param argument Unused (reserved for future extensions)
  */
-void app_main(void *argument) {
+extern "C" void app_main(void *argument) {
   UNUSED(argument); // CMSIS macro to mark unused variable
 
   // Setup GPIO for user button with event callback

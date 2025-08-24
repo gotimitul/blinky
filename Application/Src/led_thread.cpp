@@ -163,19 +163,19 @@ void LedThread::thread_entry(void *argument) {
 }
 
 /**
- * @brief Main thread function for blinking the LED
+ * @brief Main control loop for the LED thread
  *
- * This function continuously toggles the LED on and off with a delay.
- * It uses a shared semaphore to avoid simultaneous access to the same GPIO
- * pins.
+ * This method contains the logic to toggle the LED on and off with a delay.
+ * It also checks for button press events to adjust the on-time of the LED.
+ * Access to the LED GPIO pin is synchronized using a semaphore.
  */
 void LedThread::run(void) {
   //  extern osEventFlagsId_t evt_button;
 
   for (;;) {
-    const char *str = osThreadGetName(thread_id);
-    const char *blue = "blue";
-    uint32_t debounceTime = 0u; // Debounce time in milliseconds
+    const char *const str = osThreadGetName(thread_id); // Get thread name
+    const char *const blue = "blue"; // Name of blue LED thread
+    uint32_t debounceTime = 0u;      // Intialize debounce time in milliseconds
     // Acquire semaphore before accessing the LED
     osSemaphoreAcquire(sem, osWaitForever);
     if (strcmp(str, blue) == 0)
@@ -189,12 +189,16 @@ void LedThread::run(void) {
       debounceTime = 50U;    // Set debounce time to 50 ms
       osDelay(debounceTime); // Debounce delay
       osEventFlagsClear(app_events_get(), 1U);
+#ifdef RUN_TIME
+      UsbLogger::getInstance().log("Button pressed. New onTime: %d ms\r\n",
+                                   onTime);
+#endif
     }
     // Toggle LED ON
     Led::on(pin);
 #ifdef RUN_TIME
-    UsbLogger::getInstance().log("LED %s is on: %d\r\n",
-                                 osThreadGetName(thread_id), counter++);
+//    UsbLogger::getInstance().log("LED %s is on: %d\r\n",
+//                                 osThreadGetName(thread_id), counter++);
 #endif
     osDelay(onTime - debounceTime); // Delay for the specified time
 
