@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>DEBUG</Define>
+              <Define>RUN_TIME</Define>
               <Undefine></Undefine>
               <IncludePath>.\Application\Inc</IncludePath>
             </VariousControls>
@@ -408,6 +408,11 @@
               <FileName>usb_logger_c_api.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\Application\Src\usb_logger_c_api.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>boot_clock.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\Application\Src\boot_clock.cpp</FilePath>
             </File>
           </Files>
         </Group>

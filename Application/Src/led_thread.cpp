@@ -11,6 +11,7 @@
  */
 
 #include "led_thread.h"
+#include "boot_clock.h"
 #include "cmsis_os2.h"
 #include "eventrecorder.h"
 #include "led.h"
@@ -170,11 +171,11 @@ void LedThread::thread_entry(void *argument) {
  * Access to the LED GPIO pin is synchronized using a semaphore.
  */
 void LedThread::run(void) {
+  const char *const str = osThreadGetName(thread_id); // Get thread name
+  const char *const blue = "blue";                    // Name of blue LED thread
 
   for (;;) {
-    const char *const str = osThreadGetName(thread_id); // Get thread name
-    const char *const blue = "blue"; // Name of blue LED thread
-    uint32_t debounceTime = 0u;      // Intialize debounce time in milliseconds
+    uint32_t debounceTime = 0u; // Intialize debounce time in milliseconds
     // Acquire semaphore before accessing the LED
     osSemaphoreAcquire(sem, osWaitForever);
     if (strcmp(str, blue) == 0)
@@ -187,7 +188,8 @@ void LedThread::run(void) {
       debounceTime = 50U;    // Set debounce time to 50 ms
       osDelay(debounceTime); // Debounce delay
 #ifdef RUN_TIME
-      UsbLogger::getInstance().log("Button pressed. New onTime: %d ms\r\n",
+      UsbLogger::getInstance().log("%s: Button pressed. New onTime: %d ms\r\n",
+                                   Time::getInstance().getCurrentTimeString(),
                                    onTime);
 #endif
     }

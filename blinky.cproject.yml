@@ -69,6 +69,7 @@ project:
         - file: Application/Src/led_thread.cpp
         - file: Application/Src/usb_logger.cpp
         - file: Application/Src/usb_logger_c_api.cpp
+        - file: Application/Src/boot_clock.cpp
   components:
     - component: ARM::CMSIS Driver:CAN:Custom
     - component: ARM::CMSIS-View:Event Recorder&DAP

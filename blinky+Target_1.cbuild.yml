@@ -455,6 +455,8 @@ build:
           category: sourceCpp
         - file: Application/Src/usb_logger_c_api.cpp
           category: sourceCpp
+        - file: Application/Src/boot_clock.cpp
+          category: sourceCpp
     - group: CubeMX
       files:
         - file: STM32CubeMX/Target_1/STM32CubeMX/Src/main.c
