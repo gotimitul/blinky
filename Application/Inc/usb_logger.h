@@ -79,6 +79,10 @@ extern "C" {
 
 void usbXferFlagSet(void); // Sets the USB transfer flag.
 
+int8_t usbXferCompleteCallback(
+    uint8_t *Buf, uint32_t *Len,
+    uint8_t epnum); // Callback when USB transfer is complete.
+
 #ifdef __cplusplus
 }
 #endif

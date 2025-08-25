@@ -96,6 +96,7 @@ void UsbLogger::init() {
 #endif
     return; // Safety check for uninitialized event flags
   }
+  USBD_Interface_fops_FS.TransmitCplt = usbXferCompleteCallback;
 }
 
 /** @brief Static wrapper to call loggerThread from C-style function pointer.
@@ -273,4 +274,15 @@ extern "C" void usbXferFlagSet(void) {
 #endif
     }
   }
+}
+
+extern "C" int8_t usbXferCompleteCallback(uint8_t *Buf, uint32_t *Len,
+                                          uint8_t epnum) {
+  int8_t result = USBD_OK;
+  UNUSED(Buf);
+  UNUSED(Len);
+  UNUSED(epnum);
+  // This function can be used to notify when USB transfer is complete
+  usbXferFlagSet();
+  return result;
 }

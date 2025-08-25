@@ -306,9 +306,6 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
   UNUSED(Buf);
   UNUSED(Len);
   UNUSED(epnum);
-  usbXferFlagSet(); // Set the USB transfer flag to indicate data is ready to be
-                    // sent
-  // Notify the USB logger that data has been transmitted
   /* USER CODE END 13 */
   return result;
 }
