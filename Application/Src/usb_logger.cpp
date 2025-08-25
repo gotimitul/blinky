@@ -14,6 +14,8 @@
 #include "usbd_def.h"
 #include <cstdint>
 #include <cstring>
+#include <stdint.h>
+#include <string.h>
 
 namespace {
 constexpr uint32_t LOG_MSG_SIZE = 64;     // Size of each log message

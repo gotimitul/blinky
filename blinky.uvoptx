@@ -158,7 +158,7 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>logBuf</ItemText>
+          <ItemText>rxBuf</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
