@@ -65,6 +65,9 @@ private:
   void loggerThread(); // Thread function that waits for messages and sends
                        // them via USB CDC.
 
+  void loggerCommand(void); // Thread function that waits for commands and sends
+                            // them via USB CDC.
+
   void messageQueueFullHandler(void); ///< Handler for full message queue
 
   void errorMessageSize(void); ///< Handler for message size errors

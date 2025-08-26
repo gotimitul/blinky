@@ -18,9 +18,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "usb_logger.h"
-#include "usbd_cdc_if.h"
 #include <cstdint>
-#include <cstdio>
 #include <cstring>
 #include <mutex>
 
@@ -177,10 +175,6 @@ void LedThread::thread_entry(void *argument) {
 void LedThread::run(void) {
   const char *const str = osThreadGetName(thread_id); // Get thread name
   const char *const blue = "blue";                    // Name of blue LED thread
-  static char rxBuf[10]; // Buffer for receiving USB commands
-  uint32_t rxLen = 4;    // Length of received USB command
-
-  std::memset(rxBuf, 0, 10); // Clear the receive buffer
 
   for (;;) {
     uint32_t debounceTime = 0u; // Intialize debounce time in milliseconds
@@ -211,25 +205,6 @@ void LedThread::run(void) {
 
     // Toggle LED OFF
     Led::off(pin);
-
-    USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf),
-                                   &rxLen); // Clear callback
-    uint32_t temp = 0;          // Temporary variable to hold parsed integer
-    sscanf(rxBuf, "%u", &temp); // Parse integer from received buffer
-    // If parsed value is within valid range, update onTime
-    if (temp >= 100 && temp <= 2000) {
-      setOnTime(temp);
-    }
-    std::memset(rxBuf, 0, 10); // Clear the receive buffer
-
-    // If onTime was changed, log the new value
-    if (temp != 0) {
-#ifdef RUN_TIME
-      UsbLogger::getInstance().log(
-          "%s: Received USB command. New ON Time: %d ms\r\n",
-          Time::getInstance().getCurrentTimeString(), getOnTime());
-#endif
-    }
 
     if (strcmp(str, blue) == 0)
       EventStopA(10);

@@ -8,7 +8,9 @@
 
 #include "usb_logger.h"
 #include "EventRecorder.h"
+#include "boot_clock.h"
 #include "cmsis_os2.h"
+#include "led_thread.h"
 #include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
 #include "usbd_def.h"
@@ -195,29 +197,67 @@ void UsbLogger::loggerThread() {
   bool usbXferCompleted = true; // Flag to track USB transfer completion
 
   for (;;) {
+    osStatus_t status;
+    // If previous USB transfer completed, get the next message from the queue
     if (usbXferCompleted == true) {
-      osMessageQueueGet(msgQueueId, logBuf, nullptr, osWaitForever);
+      status = osMessageQueueGet(msgQueueId, logBuf, nullptr, 100U);
     }
+    if (status == osOK) {
+      EventStartA(1); // Start event recording for USB transmission
+      logBuf[LOG_MSG_SIZE - 1] = '\0'; // Ensure null-termination
 
-    EventStartA(1); // Start event recording for USB transmission
-    logBuf[LOG_MSG_SIZE - 1] = '\0'; // Ensure null-termination
-
-    while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(logBuf),
-                           strlen(logBuf)) != USBD_OK) {
-      osDelay(10); // Wait for endpoint to be ready
-    }
-    osDelay(10); // Short delay to allow transfer to start
-    // Wait for USB transfer flag to be set
-    if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 10U) != 1U) {
+      while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(logBuf),
+                             strlen(logBuf)) != USBD_OK) {
+        osDelay(10); // Wait for endpoint to be ready
+      }
+      osDelay(10); // Short delay to allow transfer to start
+      // Wait for USB transfer flag to be set
+      if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 10U) != 1U) {
 #ifdef DEBUG
-      printf("Failed: USB transfer: %s, %d\r\n", __FILE__, __LINE__);
+        printf("Failed: USB transfer: %s, %d\r\n", __FILE__, __LINE__);
 #endif
-      usbXferCompleted = false; // Timeout or error occurred
-    } else {
-      usbXferCompleted = true; // Transfer completed successfully
+        usbXferCompleted = false; // Timeout or error occurred
+      } else {
+        usbXferCompleted = true; // Transfer completed successfully
+      }
+      EventStopA(1); // Stop event recording for USB transmission
     }
-    EventStopA(1); // Stop event recording for USB transmission
+    loggerCommand(); // Check for incoming USB commands
   } // End of for loop
+}
+
+/** @brief Thread function that waits for commands and sends them via USB CDC.
+ *
+ * This function checks for incoming commands over USB CDC to adjust the LED
+ * on-time. It reads a command string, parses it, and updates the on-time if
+ * the command is valid.
+ */
+void UsbLogger::loggerCommand(void) {
+  static char rxBuf[10];
+  uint32_t rxLen = 4; // Length of received USB command
+
+  if (USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf),
+                                     &rxLen) == USBD_OK) {
+    uint32_t temp = 0;          // Temporary variable to hold parsed integer
+    sscanf(rxBuf, "%u", &temp); // Parse integer from received buffer
+    // If parsed value is within valid range, update onTime
+    if (temp >= LED_ON_TIME_MIN && temp <= LED_ON_TIME_MAX) {
+      LedThread::setOnTime(temp);
+#ifdef RUN_TIME
+      UsbLogger::getInstance().log(
+          "%s: Received USB command. New ON Time: %d ms\r\n",
+          Time::getInstance().getCurrentTimeString(), LedThread::getOnTime());
+#endif
+    } else if (temp != 0) {
+      UsbLogger::getInstance().log(
+          "Invalid ON Time received: %d. Enter between 100 and 2000.\r\n",
+          temp);
+#ifdef DEBUG
+      printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
+#endif
+    }
+    std::memset(rxBuf, 0, 10); // Clear the receive buffer
+  }
 }
 
 /** @brief Checks if USB CDC is connected.
