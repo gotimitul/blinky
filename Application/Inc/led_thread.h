@@ -29,6 +29,7 @@ private:
   uint32_t pin; ///< GPIO pin associated with this LED
   static void thread_entry(void *argument);
 
+  static uint32_t onTime;           ///< Delay time for LED ON state
   osThreadId_t thread_id = nullptr; ///< CMSIS RTOS thread ID
   osSemaphoreId_t sem;              ///< Shared semaphore pointer
 
@@ -39,6 +40,8 @@ private:
 
   osThreadAttr_t thread_attr; ///< Thread attributes used by osThreadNew
 
+  inline uint32_t getOnTime(void) const { return onTime; }
+  inline void setOnTime(uint32_t t) { onTime = t; }
   void start(void); // It creates a new thread
   void run(void);   // It contains the control logic for an LED.
 

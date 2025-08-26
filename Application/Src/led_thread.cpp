@@ -24,14 +24,15 @@
 #include <cstring>
 #include <mutex>
 
+uint32_t LedThread::onTime = 500; // Definition of static member variable
+
 /** * @namespace
  * @brief Namespace for application events and synchronization mechanisms
  * This namespace contains functions and variables related to event flags and
  * semaphores used for inter-thread communication in the application.
  */
 namespace {
-uint32_t onTime = 500U; ///< Default delay for LED toggling
-uint32_t counter = 0U;  ///< Counter for LED toggling
+uint32_t counter = 0U; ///< Counter for LED toggling
 /** * @brief Static function to get a shared semaphore for LED threads
  *
  * This function ensures that the semaphore is created only once and returns a
@@ -190,14 +191,14 @@ void LedThread::run(void) {
 
     // Check for button press event to adjust onTime
     if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
-      onTime = onTime > 100U ? onTime - 100U : 1000U;
+      setOnTime(getOnTime() > 100U ? getOnTime() - 100U : 1000U);
       Led::on(pin);          // Turn on the LED immediately
       debounceTime = 50U;    // Set debounce time to 50 ms
       osDelay(debounceTime); // Debounce delay
 #ifdef RUN_TIME
       UsbLogger::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
                                    Time::getInstance().getCurrentTimeString(),
-                                   onTime);
+                                   getOnTime());
 #endif
     }
     // Toggle LED ON
@@ -206,7 +207,7 @@ void LedThread::run(void) {
 //    UsbLogger::getInstance().log("LED %s is on: %d\r\n",
 //                                 osThreadGetName(thread_id), counter++);
 #endif
-    osDelay(onTime - debounceTime); // Delay for the specified time
+    osDelay(getOnTime() - debounceTime); // Delay for the specified time
 
     // Toggle LED OFF
     Led::off(pin);
@@ -217,7 +218,7 @@ void LedThread::run(void) {
     sscanf(rxBuf, "%u", &temp); // Parse integer from received buffer
     // If parsed value is within valid range, update onTime
     if (temp >= 100 && temp <= 2000) {
-      onTime = temp;
+      setOnTime(temp);
     }
     std::memset(rxBuf, 0, 10); // Clear the receive buffer
 
@@ -225,8 +226,8 @@ void LedThread::run(void) {
     if (temp != 0) {
 #ifdef RUN_TIME
       UsbLogger::getInstance().log(
-          "%s: Received USB command. New onTime: %d ms\r\n",
-          Time::getInstance().getCurrentTimeString(), onTime);
+          "%s: Received USB command. New ON Time: %d ms\r\n",
+          Time::getInstance().getCurrentTimeString(), getOnTime());
 #endif
     }
 
