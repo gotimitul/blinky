@@ -22,11 +22,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "EventRecorder.h"
 #include "app.h"
 #include "cmsis_os2.h"
 #include "usb_logger_c_api.h"
-
+#ifdef DEBUG
+#include "eventrecorder.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,9 +69,10 @@ static void MX_GPIO_Init(void);
  */
 int main(void) {
 
-  /* USER CODE BEGIN 1 */
+/* USER CODE BEGIN 1 */
+#ifdef DEBUG
   EventRecorderInitialize(EventRecordNone, 1); // Initialize Event Recorder
-
+#endif
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

@@ -13,14 +13,17 @@
 #include "led_thread.h"
 #include "boot_clock.h"
 #include "cmsis_os2.h"
-#include "eventrecorder.h"
 #include "led.h"
 #include "stdio.h"
-#include "string.h"
+#include "string.h" // IWYU pragma: keep
 #include "usb_logger.h"
 #include <cstdint>
 #include <cstring>
 #include <mutex>
+
+#ifdef DEBUG
+#include "eventrecorder.h"
+#endif
 
 uint32_t LedThread::onTime = 500; // Definition of static member variable
 
@@ -30,7 +33,7 @@ uint32_t LedThread::onTime = 500; // Definition of static member variable
  * semaphores used for inter-thread communication in the application.
  */
 namespace {
-uint32_t counter = 0U; ///< Counter for LED toggling
+
 /** * @brief Static function to get a shared semaphore for LED threads
  *
  * This function ensures that the semaphore is created only once and returns a
@@ -173,44 +176,44 @@ void LedThread::thread_entry(void *argument) {
  * Access to the LED GPIO pin is synchronized using a semaphore.
  */
 void LedThread::run(void) {
+#ifdef DEBUG // For debugging, get thread name and compare
   const char *const str = osThreadGetName(thread_id); // Get thread name
   const char *const blue = "blue";                    // Name of blue LED thread
-
+#endif
   for (;;) {
-    uint32_t debounceTime = 0u; // Intialize debounce time in milliseconds
     // Acquire semaphore before accessing the LED
     osSemaphoreAcquire(sem, osWaitForever);
+#ifdef DEBUG // Event recording for debugging
     if (strcmp(str, blue) == 0)
       EventStartA(10);
-
-    // Check for button press event to adjust onTime
-    if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
-      decreaseOnTime(100U);  // Decrease onTime by 100 ms
-      Led::on(pin);          // Turn on the LED immediately
-      debounceTime = 50U;    // Set debounce time to 50 ms
-      osDelay(debounceTime); // Debounce delay
-#ifdef RUN_TIME
-      UsbLogger::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
-                                   Time::getInstance().getCurrentTimeString(),
-                                   getOnTime());
 #endif
-    }
-    // Toggle LED ON
-    Led::on(pin);
-#ifdef RUN_TIME
-//    UsbLogger::getInstance().log("LED %s is on: %d\r\n",
-//                                 osThreadGetName(thread_id), counter++);
-#endif
-    osDelay(getOnTime() - debounceTime); // Delay for the specified time
 
-    // Toggle LED OFF
-    Led::off(pin);
+    Led::on(pin); // Turn on the LED
 
+    osDelay(getOnTime()); // Delay for the specified time
+
+    Led::off(pin); // Turn off the LED
+#ifdef DEBUG       // Event recording for debugging
     if (strcmp(str, blue) == 0)
       EventStopA(10);
+#endif
     // Release semaphore for next thread
     osSemaphoreRelease(sem);
+    checkButtonEvent(); // Check for button press events
     // Small delay to prevent aggressive rescheduling
     osDelay(1);
+  }
+}
+
+void LedThread::checkButtonEvent(void) {
+  if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
+    decreaseOnTime(100U); // Decrease onTime by 100 ms
+#ifdef RUN_TIME           // Log the button press event
+    UsbLogger::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
+                                 Time::getInstance().getCurrentTimeString(),
+                                 getOnTime());
+#endif
+    osDelay(50U);                            // Debounce delay
+    osEventFlagsClear(app_events_get(), 1U); // Clear the event flag
   }
 }
