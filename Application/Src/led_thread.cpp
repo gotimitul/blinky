@@ -191,7 +191,7 @@ void LedThread::run(void) {
 
     // Check for button press event to adjust onTime
     if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
-      setOnTime(getOnTime() > 100U ? getOnTime() - 100U : 1000U);
+      decreaseOnTime(100U);  // Decrease onTime by 100 ms
       Led::on(pin);          // Turn on the LED immediately
       debounceTime = 50U;    // Set debounce time to 50 ms
       osDelay(debounceTime); // Debounce delay

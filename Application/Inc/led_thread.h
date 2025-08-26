@@ -40,14 +40,21 @@ private:
 
   osThreadAttr_t thread_attr; ///< Thread attributes used by osThreadNew
 
-  inline uint32_t getOnTime(void) const { return onTime; }
-  inline void setOnTime(uint32_t t) { onTime = t; }
+  inline uint32_t getOnTime(void) const { return onTime; } // Getter for onTime
+  inline void setOnTime(uint32_t t) { onTime = t; }        // Setter for onTime
   void start(void); // It creates a new thread
   void run(void);   // It contains the control logic for an LED.
 
 public:
   // Constructor initializes the LED pin and thread attributes
   LedThread(const char *threadName, uint32_t pin);
+
+  inline static void increaseOnTime(uint32_t delta) {
+    onTime += delta;
+  } // Increase onTime
+  inline static void decreaseOnTime(uint32_t delta) {
+    onTime = (onTime > delta) ? (onTime - delta) : 2000U;
+  } // Decrease onTime with lower limit
 };
 
 osEventFlagsId_t app_events_get(void); // Get event flags for button press
