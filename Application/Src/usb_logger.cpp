@@ -300,12 +300,14 @@ void UsbLogger::messageQueueFullHandler(void) {
 #endif
 }
 
+/* "C" type functions --------------------------------------------------------*/
+extern "C" {
 /** @brief Sets the USB transfer flag.
  *
  * This function is called from the USB CDC interrupt handler to signal that
  * data has been transmitted and the logger thread can proceed.
  */
-extern "C" void usbXferFlagSet(void) {
+void usbXferFlagSet(void) {
   // Set the USB transfer flag to indicate data is ready to be sent
   if (usbXferFlag != nullptr) {
     uint32_t returnFlag = osEventFlagsSet(usbXferFlag, 1U);
@@ -318,8 +320,16 @@ extern "C" void usbXferFlagSet(void) {
   }
 }
 
-extern "C" int8_t usbXferCompleteCallback(uint8_t *Buf, uint32_t *Len,
-                                          uint8_t epnum) {
+/** @brief USB transfer complete callback
+ *
+ * This function is called by the USB CDC driver when a data transfer is
+ * complete. It sets the transfer flag to notify the logger thread.
+ * @param Buf Pointer to the data buffer (unused)
+ * @param Len Pointer to the length of data (unused)
+ * @param epnum Endpoint number (unused)
+ * @return USBD_OK on success
+ */
+int8_t usbXferCompleteCallback(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
   int8_t result = USBD_OK;
   UNUSED(Buf);
   UNUSED(Len);
@@ -328,3 +338,23 @@ extern "C" int8_t usbXferCompleteCallback(uint8_t *Buf, uint32_t *Len,
   usbXferFlagSet();
   return result;
 }
+
+/** * @brief C API function to log messages using UsbLogger.
+ *
+ * This function provides a C-style interface for logging messages
+ * using the UsbLogger class, which operates in a separate thread
+ * and sends messages over USB CDC.
+ * @param msg Pointer to the message string to be logged.
+ */
+void usb_logger_c_api(const char *msg) {
+  if (msg == nullptr) {
+#ifdef DEBUG
+    printf("usb_logger_c_api: msg is null: %s, %d\r\n", __FILE__, __LINE__);
+#elif RUN_TIME
+    UsbLogger::getInstance().log("usb_logger_c_api: msg is null\r\n");
+#endif
+    return; // Safety check for null message
+  }
+  UsbLogger::getInstance().log(msg);
+}
+} // extern "C"

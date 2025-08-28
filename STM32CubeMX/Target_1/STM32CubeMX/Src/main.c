@@ -24,7 +24,6 @@
 /* USER CODE BEGIN Includes */
 #include "app.h"
 #include "cmsis_os2.h"
-#include "usb_logger_c_api.h"
 #ifdef DEBUG
 #include "eventrecorder.h"
 #endif

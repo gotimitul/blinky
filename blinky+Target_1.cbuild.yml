@@ -453,8 +453,6 @@ build:
           category: sourceCpp
         - file: Application/Src/usb_logger.cpp
           category: sourceCpp
-        - file: Application/Src/usb_logger_c_api.cpp
-          category: sourceCpp
         - file: Application/Src/boot_clock.cpp
           category: sourceCpp
     - group: CubeMX

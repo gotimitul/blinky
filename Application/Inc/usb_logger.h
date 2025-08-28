@@ -86,6 +86,8 @@ int8_t usbXferCompleteCallback(
     uint8_t *Buf, uint32_t *Len,
     uint8_t epnum); // Callback when USB transfer is complete.
 
+void usb_logger_c_api(const char *msg); // C-style function to log a message
+
 #ifdef __cplusplus
 }
 #endif
