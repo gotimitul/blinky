@@ -198,7 +198,7 @@
             <RwSelD>4</RwSelD>
             <CodeSel>0</CodeSel>
             <OptFeed>0</OptFeed>
-            <NoZi1>0</NoZi1>
+            <NoZi1>1</NoZi1>
             <NoZi2>0</NoZi2>
             <NoZi3>0</NoZi3>
             <NoZi4>0</NoZi4>
@@ -588,13 +588,16 @@
           <GroupName>::CMSIS Driver</GroupName>
         </Group>
         <Group>
+          <GroupName>::CMSIS-Compiler</GroupName>
+        </Group>
+        <Group>
           <GroupName>::CMSIS-View</GroupName>
         </Group>
         <Group>
-          <GroupName>::Compiler</GroupName>
+          <GroupName>::Device</GroupName>
         </Group>
         <Group>
-          <GroupName>::Device</GroupName>
+          <GroupName>::File System</GroupName>
         </Group>
         <Group>
           <GroupName>::RTOS</GroupName>
@@ -624,6 +627,12 @@
           <targetInfo name="Target_1"/>
         </targetInfos>
       </api>
+      <api Capiversion="1.1.0" Cclass="CMSIS-Compiler" Cgroup="File Interface" condition="CortexDevice" exclusive="1">
+        <package name="CMSIS-Compiler" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="ARM" version="2.1.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </api>
       <api Capiversion="1.0.1" Cclass="CMSIS" Cgroup="OS Tick" exclusive="1">
         <package name="CMSIS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="6.2.0"/>
         <targetInfos>
@@ -640,6 +649,12 @@
     <components>
       <component Capiversion="1.3.0" Cclass="CMSIS Driver" Cgroup="CAN" Csub="Custom" Cvendor="ARM" Cversion="1.0.0" custom="1">
         <package name="CMSIS" schemaVersion="1.7.40" url="https://www.keil.com/pack/" vendor="ARM" version="6.2.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </component>
+      <component Cclass="CMSIS-Compiler" Cgroup="CORE" Cvendor="ARM" Cversion="1.1.0" condition="ARMCC CortexDevice">
+        <package name="CMSIS-Compiler" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="ARM" version="2.1.0"/>
         <targetInfos>
           <targetInfo name="Target_1"/>
         </targetInfos>
@@ -716,26 +731,26 @@
           <targetInfo name="Target_1"/>
         </targetInfos>
       </component>
-      <component Cbundle="ARM Compiler" Cclass="Compiler" Cgroup="I/O" Csub="STDERR" Cvariant="ITM" Cvendor="Keil" Cversion="1.2.0" condition="ARMCC Cortex-M with ITM">
-        <package name="ARM_Compiler" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="1.7.2"/>
-        <targetInfos>
-          <targetInfo name="Target_1"/>
-        </targetInfos>
-      </component>
-      <component Cbundle="ARM Compiler" Cclass="Compiler" Cgroup="I/O" Csub="STDIN" Cvariant="ITM" Cvendor="Keil" Cversion="1.2.0" condition="ARMCC Cortex-M with ITM">
-        <package name="ARM_Compiler" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="1.7.2"/>
-        <targetInfos>
-          <targetInfo name="Target_1"/>
-        </targetInfos>
-      </component>
-      <component Cbundle="ARM Compiler" Cclass="Compiler" Cgroup="I/O" Csub="STDOUT" Cvariant="ITM" Cvendor="Keil" Cversion="1.2.0" condition="ARMCC Cortex-M with ITM">
-        <package name="ARM_Compiler" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="1.7.2"/>
+      <component Capiversion="1.0.0" Cclass="CMSIS-Compiler" Cgroup="File Interface" Csub="MDK-MW File System" Cvendor="Keil" Cversion="1.0.1" condition="File System and CMSIS Compiler">
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
         <targetInfos>
           <targetInfo name="Target_1"/>
         </targetInfos>
       </component>
       <component Cclass="Device" Cgroup="CubeMX" Cvendor="Keil" Cversion="1.0.0" condition="STM32F4 CMSIS" generator="CubeMX">
         <package name="STM32F4xx_DFP" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="3.1.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </component>
+      <component Cbundle="MDK" Cclass="File System" Cgroup="CORE" Cvendor="Keil" Cversion="8.0.2" condition="CMSIS Core with RTOS and File System I/O">
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </component>
+      <component Cbundle="MDK" Cclass="File System" Cgroup="Drive" Csub="RAM" Cvendor="Keil" Cversion="8.0.2" condition="File System Core" maxInstances="2">
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
         <targetInfos>
           <targetInfo name="Target_1"/>
         </targetInfos>
@@ -785,6 +800,30 @@
         <component Cclass="CMSIS Driver Validation" Cgroup="USART" Cvendor="ARM" Cversion="2.0.0" condition="CMSIS Driver Validation USART"/>
         <package name="CMSIS-Driver_Validation" schemaVersion="1.7.7" url="http://www.keil.com/pack/" vendor="ARM" version="3.0.0"/>
         <targetInfos/>
+      </file>
+      <file attr="config" category="header" name="Components\FileSystem\Config\FS_Config.h" version="8.0.0">
+        <instance index="0">RTE\File_System\FS_Config.h</instance>
+        <component Cbundle="MDK" Cclass="File System" Cgroup="CORE" Cvendor="Keil" Cversion="8.0.2" condition="CMSIS Core with RTOS and File System I/O"/>
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </file>
+      <file attr="config" category="header" name="Components\FileSystem\Config\FS_Config_RAM.h" version="6.3.0">
+        <instance index="0">RTE\File_System\FS_Config_RAM_0.h</instance>
+        <component Cbundle="MDK" Cclass="File System" Cgroup="Drive" Csub="RAM" Cvendor="Keil" Cversion="8.0.2" condition="File System Core" maxInstances="2"/>
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
+      </file>
+      <file attr="config" category="header" name="Components\FileSystem\Config\FS_Debug.h" version="8.0.0">
+        <instance index="0">RTE\File_System\FS_Debug.h</instance>
+        <component Cbundle="MDK" Cclass="File System" Cgroup="CORE" Cvendor="Keil" Cversion="8.0.2" condition="CMSIS Core with RTOS and File System I/O"/>
+        <package name="MDK-Middleware" schemaVersion="1.7.36" url="https://www.keil.com/pack/" vendor="Keil" version="8.1.0"/>
+        <targetInfos>
+          <targetInfo name="Target_1"/>
+        </targetInfos>
       </file>
       <file attr="config" category="header" name="CMSIS\RTOS2\FreeRTOS\Config\FreeRTOSConfig.h" version="10.7.0">
         <instance index="0">RTE\RTOS\FreeRTOSConfig.h</instance>

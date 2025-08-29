@@ -23,6 +23,8 @@ build:
     fpu: sp
     core: Cortex-M4
   packs:
+    - pack: ARM::CMSIS-Compiler@2.1.0
+      path: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Compiler/2.1.0
     - pack: ARM::CMSIS-Driver_STM32@1.2.0
       path: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0
     - pack: ARM::CMSIS-FreeRTOS@11.2.0
@@ -31,8 +33,8 @@ build:
       path: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0
     - pack: ARM::CMSIS@6.2.0
       path: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0
-    - pack: Keil::ARM_Compiler@1.7.2
-      path: ${CMSIS_PACK_ROOT}/Keil/ARM_Compiler/1.7.2
+    - pack: Keil::MDK-Middleware@8.1.0
+      path: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0
     - pack: Keil::STM32F4xx_DFP@3.1.0
       path: ${CMSIS_PACK_ROOT}/Keil/STM32F4xx_DFP/3.1.0
   optimize: debug
@@ -115,8 +117,10 @@ build:
     - STM32CubeMX/Target_1/STM32CubeMX/Inc
     - STM32CubeMX/Target_1/MX_Device
     - RTE/CMSIS-View
+    - RTE/File_System
     - RTE/RTOS
     - RTE/_Target_1
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-Compiler/2.1.0/include
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Drivers
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Include
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include
@@ -126,10 +130,13 @@ build:
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Core/Include
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Driver/Include
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/RTOS2/Include
+    - ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Include
   add-path-asm:
     - RTE/CMSIS-View
+    - RTE/File_System
     - RTE/RTOS
     - RTE/_Target_1
+    - ${CMSIS_PACK_ROOT}/ARM/CMSIS-Compiler/2.1.0/include
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Drivers
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/CMSIS/RTOS2/FreeRTOS/Include
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS-FreeRTOS/11.2.0/Source/include
@@ -139,6 +146,7 @@ build:
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Core/Include
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Driver/Include
     - ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/RTOS2/Include
+    - ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Include
   output-dirs:
     intdir: tmp
     outdir: out/blinky/Target_1
@@ -157,6 +165,14 @@ build:
           attr: template
           version: 1.0.0
           select: CAN Driver
+    - component: ARM::CMSIS-Compiler:CORE@1.1.0
+      condition: ARMCC CortexDevice
+      from-pack: ARM::CMSIS-Compiler@2.1.0
+      selected-by: ARM::CMSIS-Compiler:CORE
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Compiler/2.1.0/source/armcc/retarget_io.c
+          category: sourceC
+          version: 1.1.0
     - component: ARM::CMSIS-View:Event Recorder&DAP@1.6.0
       condition: EventRecorder
       from-pack: ARM::CMSIS-View@1.2.0
@@ -372,22 +388,15 @@ build:
         - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Driver_STM32/1.2.0/Drivers/GPIO_STM32.h
           category: header
           version: 1.2.0
-    - component: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM@1.2.0
-      condition: ARMCC Cortex-M with ITM
-      from-pack: Keil::ARM_Compiler@1.7.2
-      selected-by: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM
+    - component: Keil::CMSIS-Compiler:File Interface:MDK-MW File System@1.0.1
+      condition: File System and CMSIS Compiler
+      from-pack: Keil::MDK-Middleware@8.1.0
+      selected-by: Keil::CMSIS-Compiler:File Interface:MDK-MW File System
+      implements: CMSIS-Compiler:File Interface@1.1.0
       files:
-        - file: ${CMSIS_PACK_ROOT}/Keil/ARM_Compiler/1.7.2/Source/retarget_io.c
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Interface/retarget_mdk-fs.c
           category: source
-          version: 1.2.0
-    - component: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM@1.2.0
-      condition: ARMCC Cortex-M with ITM
-      from-pack: Keil::ARM_Compiler@1.7.2
-      selected-by: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM
-    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM@1.2.0
-      condition: ARMCC Cortex-M with ITM
-      from-pack: Keil::ARM_Compiler@1.7.2
-      selected-by: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM
+          version: 1.0.1
     - component: Keil::Device:CubeMX@1.0.0
       condition: STM32F4 CMSIS
       from-pack: Keil::STM32F4xx_DFP@3.1.0
@@ -399,6 +408,79 @@ build:
       generator:
         id: CubeMX
         path: STM32CubeMX/Target_1/blinky.cgen.yml
+    - component: Keil::File System&MDK:CORE@8.0.2
+      condition: CMSIS Core with RTOS and File System I/O
+      from-pack: Keil::MDK-Middleware@8.1.0
+      selected-by: Keil::File System&MDK:CORE
+      files:
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/FileSystem.scvd
+          category: other
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Include/rl_fs.h
+          category: header
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_common.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_config.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_debug.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_efs.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_fat.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_fat_elink.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_ioc.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_journal.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_mapi.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_os_rtos2.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_sys.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_time.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_version.c
+          category: source
+          version: 8.0.2
+        - file: RTE/File_System/FS_Config.h
+          category: header
+          attr: config
+          version: 8.0.0
+        - file: RTE/File_System/FS_Debug.h
+          category: header
+          attr: config
+          version: 8.0.0
+    - component: Keil::File System&MDK:Drive:RAM@8.0.2
+      condition: File System Core
+      from-pack: Keil::MDK-Middleware@8.1.0
+      selected-by: Keil::File System&MDK:Drive:RAM
+      files:
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Source/fs_ram_drv.c
+          category: source
+          version: 8.0.2
+        - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Documentation/html/FileSystem/create_app.html#ram_usage
+          category: doc
+          version: 8.0.2
+        - file: RTE/File_System/FS_Config_RAM_0.h
+          category: header
+          attr: config
+          version: 6.3.0
   apis:
     - api: CMSIS Driver:CAN@1.3.0
       from-pack: ARM::CMSIS@6.2.0
@@ -420,6 +502,17 @@ build:
         - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS/6.2.0/CMSIS/Driver/Include/Driver_GPIO.h
           category: header
           version: 1.0.0
+    - api: CMSIS-Compiler:File Interface@1.1.0
+      condition: CortexDevice
+      from-pack: ARM::CMSIS-Compiler@2.1.0
+      implemented-by: Keil::CMSIS-Compiler:File Interface:MDK-MW File System@1.0.1
+      files:
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Compiler/2.1.0/documentation/html/group__fs__interface__api.html
+          category: doc
+          version: 1.1.0
+        - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-Compiler/2.1.0/include/retarget_fs.h
+          category: header
+          version: 1.1.0
     - api: CMSIS:OS Tick@1.0.1
       from-pack: ARM::CMSIS@6.2.0
       implemented-by: ARM::CMSIS:OS Tick:SysTick@1.0.5
@@ -527,15 +620,17 @@ build:
     - file: RTE/_Target_1/RTE_Components.h
       category: header
   licenses:
-    - license: <unknown>
+    - license: <proprietary> END USER LICENSE AGREEMENT FOR ARM SOFTWARE DEVELOPMENT TOOLS
+      license-agreement: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/license_terms/license_agreement.txt
       packs:
-        - pack: Keil::ARM_Compiler@1.7.2
+        - pack: Keil::MDK-Middleware@8.1.0
       components:
-        - component: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM@1.2.0
-        - component: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM@1.2.0
-        - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM@1.2.0
+        - component: Keil::CMSIS-Compiler:File Interface:MDK-MW File System@1.0.1
+        - component: Keil::File System&MDK:CORE@8.0.2
+        - component: Keil::File System&MDK:Drive:RAM@8.0.2
     - license: Apache-2.0
       packs:
+        - pack: ARM::CMSIS-Compiler@2.1.0
         - pack: ARM::CMSIS-Driver_STM32@1.2.0
         - pack: ARM::CMSIS-FreeRTOS@11.2.0
         - pack: ARM::CMSIS-View@1.2.0
@@ -543,6 +638,7 @@ build:
         - pack: Keil::STM32F4xx_DFP@3.1.0
       components:
         - component: ARM::CMSIS Driver:CAN:Custom@1.0.0
+        - component: ARM::CMSIS-Compiler:CORE@1.1.0
         - component: ARM::CMSIS-View:Event Recorder&DAP@1.6.0
         - component: ARM::CMSIS-View:Fault:Record@1.1.0
         - component: ARM::CMSIS-View:Fault:Storage@1.1.0
@@ -556,6 +652,7 @@ build:
         - component: ARM::RTOS&FreeRTOS:Timers@11.2.0
         - component: CMSIS Driver:CAN(API)
         - component: CMSIS Driver:GPIO(API)
+        - component: CMSIS-Compiler:File Interface(API)
         - component: CMSIS:OS Tick(API)
         - component: CMSIS:RTOS2(API)
         - component: Keil::CMSIS Driver:GPIO@1.2.0

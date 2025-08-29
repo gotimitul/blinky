@@ -158,14 +158,19 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>rxBuf</ItemText>
+          <ItemText>fs_buf</ItemText>
+        </Ww>
+        <Ww>
+          <count>1</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>n</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>
           <WinNumber>1</WinNumber>
           <SubType>8</SubType>
-          <ItemText>0x200017f0</ItemText>
+          <ItemText>0x00010000</ItemText>
           <AccSizeX>0</AccSizeX>
         </Mm>
       </MemoryWindow1>
@@ -182,6 +187,11 @@
       <ScvdPack>
         <Filename>C:\Users\gotim\AppData\Local\Arm\Packs\ARM\CMSIS-View\1.2.0\Fault\ARM_Fault.scvd</Filename>
         <Type>ARM::CMSIS-View@1.2.0</Type>
+        <SubType>1</SubType>
+      </ScvdPack>
+      <ScvdPack>
+        <Filename>C:\Users\gotim\AppData\Local\Arm\Packs\Keil\MDK-Middleware\8.1.0\Components\FileSystem\FileSystem.scvd</Filename>
+        <Type>Keil::MDK-Middleware@8.1.0</Type>
         <SubType>1</SubType>
       </ScvdPack>
       <Tracepoint>
@@ -306,7 +316,7 @@
 
   <Group>
     <GroupName>:CubeMX:CubeMX</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -314,7 +324,7 @@
       <GroupNumber>2</GroupNumber>
       <FileNumber>6</FileNumber>
       <FileType>1</FileType>
-      <tvExp>0</tvExp>
+      <tvExp>1</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
       <PathWithFileName>.\STM32CubeMX\Target_1\STM32CubeMX\Src\main.c</PathWithFileName>
@@ -721,7 +731,7 @@
   </Group>
 
   <Group>
-    <GroupName>::CMSIS-View</GroupName>
+    <GroupName>::CMSIS-Compiler</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
@@ -729,7 +739,7 @@
   </Group>
 
   <Group>
-    <GroupName>::Compiler</GroupName>
+    <GroupName>::CMSIS-View</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
@@ -739,6 +749,14 @@
   <Group>
     <GroupName>::Device</GroupName>
     <tvExp>0</tvExp>
+    <tvExpOptDlg>0</tvExpOptDlg>
+    <cbSel>0</cbSel>
+    <RteFlg>1</RteFlg>
+  </Group>
+
+  <Group>
+    <GroupName>::File System</GroupName>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>1</RteFlg>

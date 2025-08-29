@@ -1,11 +1,13 @@
 project:
   packs:
-    - pack: Keil::ARM_Compiler@^1.7.2
     - pack: ARM::CMSIS@^6.2.0
+    - pack: ARM::CMSIS-Compiler@^2.1.0
     - pack: ARM::CMSIS-Driver_STM32@^1.2.0
     - pack: ARM::CMSIS-FreeRTOS@^11.2.0
     - pack: ARM::CMSIS-View@^1.2.0
+    - pack: Keil::MDK-Middleware@^8.1.0
     - pack: Keil::STM32F4xx_DFP@^3.1.0
+    - pack: Keil::MDK-Middleware_Graphics@^1.3.1
     - pack: ARM::CMSIS-NN@^4.0.0
     - pack: ARM::CMSIS-DSP@^1.10.1
   setups:
@@ -71,6 +73,7 @@ project:
         - file: Application/Src/boot_clock.cpp
   components:
     - component: ARM::CMSIS Driver:CAN:Custom
+    - component: ARM::CMSIS-Compiler:CORE
     - component: ARM::CMSIS-View:Event Recorder&DAP
     - component: ARM::CMSIS-View:Fault:Record
     - component: ARM::CMSIS-View:Fault:Storage
@@ -83,7 +86,7 @@ project:
     - component: ARM::RTOS&FreeRTOS:Heap&Heap_4
     - component: ARM::RTOS&FreeRTOS:Timers
     - component: Keil::CMSIS Driver:GPIO
-    - component: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM
-    - component: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM
-    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM
+    - component: Keil::CMSIS-Compiler:File Interface:MDK-MW File System
     - component: Keil::Device:CubeMX
+    - component: Keil::File System&MDK:CORE
+    - component: Keil::File System&MDK:Drive:RAM

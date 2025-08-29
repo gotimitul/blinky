@@ -11,8 +11,6 @@ build-idx:
       clayers:
         - clayer: STM32CubeMX/Target_1/blinky.cgen.yml
       messages:
-        warnings:
-          - "source modules added by multiple components, duplicate ignored:\n  filename: C:/Users/gotim/AppData/Local/Arm/Packs/Keil/ARM_Compiler/1.7.2/Source/retarget_io.c\n    - component: Keil::Compiler&ARM Compiler:I/O:STDERR&ITM@1.2.0\n      from-pack: Keil::ARM_Compiler@1.7.2\n    - component: Keil::Compiler&ARM Compiler:I/O:STDIN&ITM@1.2.0\n      from-pack: Keil::ARM_Compiler@1.7.2\n    - component: Keil::Compiler&ARM Compiler:I/O:STDOUT&ITM@1.2.0\n      from-pack: Keil::ARM_Compiler@1.7.2"
         info:
           - blinky.cbuild-pack.yml - file is already up-to-date
           - blinky+Target_1.cbuild-run.yml - file generated successfully
@@ -20,3 +18,4 @@ build-idx:
       packs-unused:
         - pack: ARM::CMSIS-DSP@1.16.2
         - pack: ARM::CMSIS-NN@4.1.0
+        - pack: Keil::MDK-Middleware_Graphics@1.3.1

@@ -37,6 +37,8 @@ cbuild-run:
       type: scvd
     - file: ${CMSIS_PACK_ROOT}/ARM/CMSIS-View/1.2.0/Fault/ARM_Fault.scvd
       type: scvd
+    - file: ${CMSIS_PACK_ROOT}/Keil/MDK-Middleware/8.1.0/Components/FileSystem/FileSystem.scvd
+      type: scvd
   debugger:
     name: ST-Link@pyOCD
     protocol: swd
