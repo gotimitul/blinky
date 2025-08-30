@@ -13,7 +13,6 @@
 #include "led_thread.h"
 #include "boot_clock.h"
 #include "cmsis_os2.h"
-#include "fs_log.h"
 #include "led.h"
 #include "stdio.h"
 #include "string.h" // IWYU pragma: keep
@@ -24,6 +23,9 @@
 
 #ifdef DEBUG
 #include "eventrecorder.h"
+#endif
+#ifdef FS_LOG
+#include "fs_log.h"
 #endif
 
 uint32_t LedThread::onTime = 500; // Definition of static member variable

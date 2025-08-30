@@ -139,11 +139,7 @@ void UsbLogger::log(const char *msg, uint32_t val) {
     if (n >= LOG_MSG_SIZE) {
       errorMessageSize();
     }
-    while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
-           osErrorResource) // non-blocking enqueue
-    {
-      messageQueueFullHandler();
-    }
+    log(logMsg);
   }
 }
 
@@ -158,11 +154,7 @@ void UsbLogger::log(const char *msg, const char *str) {
     if (n >= LOG_MSG_SIZE) {
       errorMessageSize();
     }
-    while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
-           osErrorResource) // non-blocking enqueue
-    {
-      messageQueueFullHandler();
-    }
+    log(logMsg);
   }
 }
 
@@ -178,11 +170,7 @@ void UsbLogger::log(const char *msg, const char *str, uint32_t val) {
     if (n >= LOG_MSG_SIZE) {
       errorMessageSize();
     }
-    while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
-           osErrorResource) // non-blocking enqueue
-    {
-      messageQueueFullHandler();
-    }
+    log(logMsg);
   }
 }
 
@@ -267,6 +255,7 @@ std::int32_t UsbLogger::usbXferChunk(const char *msg, uint32_t len) {
       osDelay(10); // Wait for endpoint to be ready
     }
     osDelay(10); // Short delay to allow transfer to start
+    /*
     // Wait for USB transfer flag to be set
     if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 100U) != 1U) {
 #if defined(DEBUG) && !defined(FS_LOG)
@@ -275,7 +264,8 @@ std::int32_t UsbLogger::usbXferChunk(const char *msg, uint32_t len) {
       return -1; // Timeout or error occurred
     } else {
       return 0; // Transfer completed successfully
-    }
+    }*/
+    return 0; // Assume success without waiting for flag
   } else
     return -1; // Invalid parameters
 }

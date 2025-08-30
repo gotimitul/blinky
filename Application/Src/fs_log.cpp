@@ -7,7 +7,6 @@
 #include "usb_logger.h"
 #include <cstdint>
 #include <cstring>
-#include <memory>
 #include <stdio.h>
 
 /*----------------------------------------------------------------------------
