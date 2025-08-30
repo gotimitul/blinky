@@ -427,7 +427,9 @@ CompileFlags:
     - '-IC:/Users/gotim/Documents/MDK/blinky/tmp/blinky+Target_1'
     - '-IC:/Users/gotim/Documents/MDK/blinky/RTE/_Target_1'
     - '-IC:/Users/gotim/Documents/MDK/blinky/RTE/CMSIS-View'
+    - '-IC:/Users/gotim/Documents/MDK/blinky/RTE/File_System'
     - '-IC:/Users/gotim/Documents/MDK/blinky/RTE/RTOS'
+    - '-IC:/Users/gotim/AppData/Local/Arm/Packs/ARM/CMSIS-Compiler/2.1.0/include'
     - >-
       -IC:/Users/gotim/AppData/Local/Arm/Packs/ARM/CMSIS-Driver_STM32/1.2.0/Drivers
     - >-
@@ -446,3 +448,5 @@ CompileFlags:
       -IC:/Users/gotim/AppData/Local/Arm/Packs/ARM/CMSIS/6.2.0/CMSIS/Driver/Include
     - >-
       -IC:/Users/gotim/AppData/Local/Arm/Packs/ARM/CMSIS/6.2.0/CMSIS/RTOS2/Include
+    - >-
+      -IC:/Users/gotim/AppData/Local/Arm/Packs/Keil/MDK-Middleware/8.1.0/Components/FileSystem/Include

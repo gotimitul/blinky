@@ -260,6 +260,26 @@ void UsbLogger::loggerCommand(void) {
   }
 }
 
+std::int32_t UsbLogger::usbXferChunk(const char *msg, uint32_t len) {
+  if (msg != nullptr && len > 0) {
+    while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(const_cast<char *>(msg)),
+                           len) != USBD_OK) {
+      osDelay(10); // Wait for endpoint to be ready
+    }
+    osDelay(10); // Short delay to allow transfer to start
+    // Wait for USB transfer flag to be set
+    if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 100U) != 1U) {
+#if defined(DEBUG) && !defined(FS_LOG)
+      printf("Failed: USB chunk transfer: %s, %d\r\n", __FILE__, __LINE__);
+#endif
+      return -1; // Timeout or error occurred
+    } else {
+      return 0; // Transfer completed successfully
+    }
+  } else
+    return -1; // Invalid parameters
+}
+
 /** @brief Checks if USB CDC is connected.
  * This function checks the USB device state to determine if it is configured
  * and ready for communication.

@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>RUN_TIME</Define>
+              <Define>RUN_TIME, FS_LOG</Define>
               <Undefine></Undefine>
               <IncludePath>.\Application\Inc</IncludePath>
             </VariousControls>
@@ -408,6 +408,11 @@
               <FileName>boot_clock.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\Application\Src\boot_clock.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>fs_log.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\Application\Src\fs_log.cpp</FilePath>
             </File>
           </Files>
         </Group>

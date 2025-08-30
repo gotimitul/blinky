@@ -24,9 +24,6 @@
 /* USER CODE BEGIN Includes */
 #include "app.h"
 #include "cmsis_os2.h"
-#include "rl_fs.h"
-#include <stdint.h>
-#include <stdio.h>
 #ifdef DEBUG
 #include "eventrecorder.h"
 #endif
@@ -50,9 +47,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-char fs_buf[100]; // File system working buffer
-int32_t status;   // File system status variable
-int32_t n = 0;    // Number of bytes written/read
+// char fs_buf[100]; // File system working buffer
+// int32_t status;   // File system status variable
+// int32_t n = 0;    // Number of bytes written/read
 /* USER CODE END PV */
 
 /* Private function prototypes
@@ -98,53 +95,8 @@ int main(void) {
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();        // Initialize GPIO
-  MX_USB_DEVICE_Init();  // Initialize USB device
-  status = finit("R0:"); // Initialize File System
-  if (status != fsOK) {
-#ifdef DEBUG
-    // printf io_retarget is not available together with File System
-    // Failed to initialize File System
-#endif
-  } else {
-    status = fmount("R0:"); // Mount RAM Drive
-    if (status == fsNoFileSystem) {
-      // If no file system, format the drive
-      status = fformat("R0:", "FAT32");
-    }
-    if (status != fsOK) {
-#ifdef DEBUG
-      // printf io_retarget is not available together with File System
-      // Failed to mount or format the drive
-#endif
-    } else {
-      // Create or open a log file and write initial entry
-      status =
-          fs_fopen("R0:/log.txt",
-                   FS_FOPEN_RDWR | FS_FOPEN_CREATE); // Create or open log file
-      if (status < 0) {
-#ifdef DEBUG
-        // printf io_retarget is not available together with File System
-        // Failed to open log file
-#endif
-      } else {
-        char buf[] = "Log Start\r\n";
-        n = fs_fwrite(status, buf, 12); // Write initial log entry
-        if (n == 0) {
-#ifdef DEBUG
-          // printf io_retarget is not available together with File System
-          // Failed to write to log file
-#endif
-        } else {
-          fs_fseek(status, 0, SEEK_SET);   // Rewind to start of file
-          n = fs_fsize(status);            // Get file size
-          n = fs_fread(status, fs_buf, n); // Read back to verify
-          fs_fclose(status);               // Close the log file
-        }
-      }
-    }
-  }
-
+  MX_GPIO_Init();       // Initialize GPIO
+  MX_USB_DEVICE_Init(); // Initialize USB device
   /* USER CODE BEGIN 2 */
   osKernelInitialize(); // Initialize CMSIS-RTOS2 kernel
 

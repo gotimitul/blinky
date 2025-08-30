@@ -48,6 +48,10 @@ public:
                           // to the USB CDC interface.
                           // @}
 
+  static std::int32_t
+  usbXferChunk(const char *msg,
+               uint32_t len); // Sends a chunk of data over USB CDC.
+
 private:
   /// @name Internal Mechanics
   /// @{

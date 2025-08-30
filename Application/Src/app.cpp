@@ -13,6 +13,7 @@
 #include "app.h"
 #include "Driver_GPIO.h"
 #include "cmsis_os2.h" // Include CMSIS-RTOS2 header for RTOS functions
+#include "fs_log.h"
 #include "led_thread.h"
 #include "stdio.h"
 #include "usb_logger.h"
@@ -44,6 +45,8 @@ extern "C" void app_main(void *argument) {
   Driver_GPIO0.SetEventTrigger(USER_BUTTON_PIN, ARM_GPIO_TRIGGER_RISING_EDGE);
   // Initialize USB logger for debugging output
   UsbLogger::getInstance().init();
+
+  FsLog::getInstance().init(); // Initialize File System Logger
 
   // Create static LED threads, one for each LED color
   static LedThread blue("blue", LED_BLUE_PIN);

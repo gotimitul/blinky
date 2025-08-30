@@ -13,6 +13,7 @@
 #include "led_thread.h"
 #include "boot_clock.h"
 #include "cmsis_os2.h"
+#include "fs_log.h"
 #include "led.h"
 #include "stdio.h"
 #include "string.h" // IWYU pragma: keep
@@ -189,7 +190,11 @@ void LedThread::run(void) {
 #endif
 
     Led::on(pin); // Turn on the LED
-
+#ifdef FS_LOG
+    FsLog::getInstance().log("%s: LED %s ON for %d ms\r\n",
+                             Time::getInstance().getCurrentTimeString(),
+                             thread_attr.name, getOnTime());
+#endif
     osDelay(getOnTime()); // Delay for the specified time
 
     Led::off(pin); // Turn off the LED
@@ -209,9 +214,15 @@ void LedThread::checkButtonEvent(void) {
   if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
     decreaseOnTime(100U); // Decrease onTime by 100 ms
 #ifdef RUN_TIME           // Log the button press event
+#ifdef FS_LOG
+    FsLog::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
+                             Time::getInstance().getCurrentTimeString(),
+                             getOnTime());
+#else
     UsbLogger::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
                                  Time::getInstance().getCurrentTimeString(),
                                  getOnTime());
+#endif
 #endif
     osDelay(50U);                            // Debounce delay
     osEventFlagsClear(app_events_get(), 1U); // Clear the event flag
