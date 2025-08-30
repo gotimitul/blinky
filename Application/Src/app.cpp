@@ -43,10 +43,14 @@ extern "C" void app_main(void *argument) {
   Driver_GPIO0.Setup(USER_BUTTON_PIN, ARM_GPIO_SignalEvent);
   // Set event trigger for rising edge on user button pin
   Driver_GPIO0.SetEventTrigger(USER_BUTTON_PIN, ARM_GPIO_TRIGGER_RISING_EDGE);
-  // Initialize USB logger for debugging output
-  UsbLogger::getInstance().init();
-
+// Initialize USB logger for debugging output
+#ifdef RUN_TIME
+#ifdef FS_LOG
   FsLog::getInstance().init(); // Initialize File System Logger
+#else
+  UsbLogger::getInstance().init();
+#endif
+#endif
 
   // Create static LED threads, one for each LED color
   static LedThread blue("blue", LED_BLUE_PIN);
