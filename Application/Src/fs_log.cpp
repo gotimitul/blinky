@@ -20,10 +20,12 @@
  */
 
 namespace {
-uint32_t page_count = 0;
+uint32_t cursor_pos = 0;
+uint32_t block_count = 1;
+osMemoryPoolId_t fsMemPoolId;
 osThreadId_t threadId = nullptr; ///< RTOS thread ID for logger
 
-uint64_t stack[2048]
+uint64_t stack[256]
     __attribute__((aligned(64))); ///< Static thread stack (aligned)
 uint64_t cb[32]
     __attribute__((aligned(64))); ///< Static thread control block (aligned)
@@ -36,6 +38,19 @@ constexpr osThreadAttr_t threadAttr = {
     .stack_mem = stack,          // No custom stack memory
     .stack_size = sizeof(stack), // Default size
     .priority = osPriorityLow    // Thread priority
+};
+
+uint64_t fs_buf_mem[256 / 8]
+    __attribute__((aligned(64))); ///< Memory buffer for file system
+uint64_t fs_buf_cb[32]
+    __attribute__((aligned(64))); ///< Control block for file system
+constexpr osMemoryPoolAttr_t fsBufAttr = {
+    .name = "FsLogBuffer",         // Name for debugging
+    .attr_bits = 0U,               // No special attributes
+    .cb_mem = fs_buf_cb,           // No custom control block memory
+    .cb_size = sizeof(fs_buf_cb),  // Default size
+    .mp_mem = fs_buf_mem,          // Pointer to memory for pool
+    .mp_size = sizeof(fs_buf_mem), // Size of the memory buffer
 };
 } // namespace
 
@@ -78,6 +93,9 @@ std::int32_t FsLog::init() {
   } else {
     // Handle thread creation failure if needed
   }
+
+  fsMemPoolId = osMemoryPoolNew(block_count, sizeof(fs_buf_mem),
+                                &fsBufAttr); // 1 block of 256 bytes
   return status;
 }
 
@@ -95,7 +113,7 @@ void FsLog::log(const char *msg) {
       fs_fclose(fd);
       rt_fs_remove("R0:\\log.txt");
       fd = fs_fopen("R0:\\log.txt", FS_FOPEN_CREATE | FS_FOPEN_WR);
-      page_count = 0;
+      cursor_pos = 0;
       n = fs_fwrite(fd, msg, strlen(msg));
     }
     fs_fclose(fd);
@@ -139,27 +157,40 @@ void FsLog::FsLogWrapper(void *argument) {
 void FsLog::fsLogThread() {
   std::int32_t n;
   std::int32_t fd;
-  static char fs_buf[256];
-
+  if (fsMemPoolId == nullptr) {
+    // Handle memory pool creation failure if needed
+    return;
+  }
+  char *fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
   for (;;) {
-    uint32_t cursor_pos = page_count * 256;
     fd = fs_fopen("R0:/log.txt", FS_FOPEN_RD);
     if (fd >= 0) {
       n = fs_fsize(fd); // Get file size
 
-      if (n > cursor_pos + 256) {
+      if (n > cursor_pos) {
         fs_fseek(fd, cursor_pos, SEEK_SET);
-        n = fs_fread(fd, &fs_buf, 256); // Read file content
-                                        //        if (n == 256) {
-        // Successfully read data, process it if needed
-        while (UsbLogger::usbXferChunk(fs_buf, n) == -1) {
-          osDelay(10); // Wait and retry if USB transfer fails
+
+        n = fs_fread(fd, fs_buf,
+                     (n - cursor_pos) < 256 ? n - cursor_pos
+                                            : 256); // Read file content
+        const char *end_ptr = fs_buf + n;
+        const char *start_ptr = fs_buf;
+        while (end_ptr != start_ptr) {
+          end_ptr--; // Trim trailing newlines
+          if (*end_ptr == '\n')
+            break;
         }
-        std::memset(fs_buf, 0, sizeof(fs_buf)); // Clear buffer after use
-        page_count++;
+        n = end_ptr - start_ptr + 1;
+        if (n > 0) {
+          // Successfully read data, process it if needed
+          while (UsbLogger::usbXferChunk(fs_buf, n) == -1) {
+            osDelay(10); // Wait and retry if USB transfer fails
+          }
+          cursor_pos += n;
+        }
       }
+      fs_fclose(fd);
+      osDelay(500); // Placeholder for periodic tasks if needed
     }
-    fs_fclose(fd);
-    osDelay(1000); // Placeholder for periodic tasks if needed
   }
 }

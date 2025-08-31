@@ -50,7 +50,7 @@ extern "C" void app_main(void *argument) {
 #ifdef RUN_TIME
 #ifdef FS_LOG
   FsLog::getInstance().init(); // Initialize File System Logger
-#else
+                               // #else
   UsbLogger::getInstance().init();
 #endif
 #endif
