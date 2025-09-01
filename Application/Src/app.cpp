@@ -49,9 +49,9 @@ extern "C" void app_main(void *argument) {
 // Initialize USB logger for debugging output
 #ifdef RUN_TIME
 #ifdef FS_LOG
+  UsbLogger::getInstance().init();
   FsLog::getInstance().init(); // Initialize File System Logger
                                // #else
-  UsbLogger::getInstance().init();
 #endif
 #endif
 

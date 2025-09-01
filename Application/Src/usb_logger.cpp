@@ -257,7 +257,7 @@ std::int32_t UsbLogger::usbXferChunk(const char *msg, uint32_t len) {
     osDelay(10); // Short delay to allow transfer to start
 
     // Wait for USB transfer flag to be set
-    if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 100U) != 1U) {
+    if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 10U) != 1U) {
 #if defined(DEBUG) && !defined(FS_LOG)
       printf("Failed: USB chunk transfer: %s, %d\r\n", __FILE__, __LINE__);
 #endif
@@ -265,7 +265,6 @@ std::int32_t UsbLogger::usbXferChunk(const char *msg, uint32_t len) {
     } else {
       return 0; // Transfer completed successfully
     }
-    return 0; // Assume success without waiting for flag
   } else
     return -1; // Invalid parameters
 }

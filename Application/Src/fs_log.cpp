@@ -23,6 +23,7 @@ namespace {
 uint32_t cursor_pos = 0;
 uint32_t block_count = 1;
 osMemoryPoolId_t fsMemPoolId;
+osMutexId_t fsMutexId;
 osThreadId_t threadId = nullptr; ///< RTOS thread ID for logger
 
 uint64_t stack[256]
@@ -37,7 +38,7 @@ constexpr osThreadAttr_t threadAttr = {
     .cb_size = sizeof(cb),       // Default size
     .stack_mem = stack,          // No custom stack memory
     .stack_size = sizeof(stack), // Default size
-    .priority = osPriorityLow    // Thread priority
+    .priority = osPriorityLow1   // Thread priority
 };
 
 uint64_t fs_buf_mem[256 / 8]
@@ -51,6 +52,10 @@ constexpr osMemoryPoolAttr_t fsBufAttr = {
     .cb_size = sizeof(fs_buf_cb),  // Default size
     .mp_mem = fs_buf_mem,          // Pointer to memory for pool
     .mp_size = sizeof(fs_buf_mem), // Size of the memory buffer
+};
+constexpr osMutexAttr_t fsMutexAttr = {
+    .name = "FsLogMutex",           // Name for debugging
+    .attr_bits = osMutexPrioInherit // No special attributes
 };
 } // namespace
 
@@ -94,6 +99,10 @@ std::int32_t FsLog::init() {
     // Handle thread creation failure if needed
   }
 
+  fsMutexId = osMutexNew(&fsMutexAttr);
+  if (fsMutexId == nullptr) { // Handle mutex creation failure if needed
+  }
+
   fsMemPoolId = osMemoryPoolNew(block_count, sizeof(fs_buf_mem),
                                 &fsBufAttr); // 1 block of 256 bytes
   return status;
@@ -103,7 +112,11 @@ void FsLog::log(const char *msg) {
   std::int32_t status;
   std::int32_t n;
   std::int32_t fd;
-
+  if (fsMutexId != nullptr) {
+    osMutexAcquire(fsMutexId, osWaitForever);
+  } else {
+    return; // Mutex not created
+  }
   fd = fs_fopen("R0:\\log.txt", FS_FOPEN_APPEND);
   fs_fseek(fd, 0, SEEK_END);
   if (fd >= 0) {
@@ -114,12 +127,15 @@ void FsLog::log(const char *msg) {
       rt_fs_remove("R0:\\log.txt");
       fd = fs_fopen("R0:\\log.txt", FS_FOPEN_CREATE | FS_FOPEN_WR);
       cursor_pos = 0;
+      char init_msg[] = "Log file recreated after write error.\r\n";
+      fs_fwrite(fd, init_msg, sizeof(init_msg));
       n = fs_fwrite(fd, msg, strlen(msg));
     }
     fs_fclose(fd);
   } else {
     // Handle file open error if needed
   }
+  osMutexRelease(fsMutexId);
 }
 
 void FsLog::log(const char *msg, uint32_t val) {
@@ -163,6 +179,7 @@ void FsLog::fsLogThread() {
   }
   char *fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
   for (;;) {
+    osMutexAcquire(fsMutexId, osWaitForever);
     fd = fs_fopen("R0:/log.txt", FS_FOPEN_RD);
     if (fd >= 0) {
       n = fs_fsize(fd); // Get file size
@@ -173,6 +190,8 @@ void FsLog::fsLogThread() {
         n = fs_fread(fd, fs_buf,
                      (n - cursor_pos) < 256 ? n - cursor_pos
                                             : 256); // Read file content
+        fs_fclose(fd);
+        osMutexRelease(fsMutexId);
         const char *end_ptr = fs_buf + n;
         const char *start_ptr = fs_buf;
         while (end_ptr != start_ptr) {
@@ -188,9 +207,13 @@ void FsLog::fsLogThread() {
           }
           cursor_pos += n;
         }
+      } else {
+        fs_fclose(fd);
+        osMutexRelease(fsMutexId);
       }
-      fs_fclose(fd);
-      osDelay(500); // Placeholder for periodic tasks if needed
+    } else {
+      osMutexRelease(fsMutexId);
     }
+    osDelay(50); // Placeholder for periodic tasks if needed
   }
 }
