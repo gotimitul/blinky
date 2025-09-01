@@ -1,4 +1,7 @@
-
+/**
+ * @file fs_log.cpp
+ *
+ */
 
 #include "fs_log.h"
 #include "cmsis_os2.h"
@@ -6,6 +9,7 @@
 #include "rl_fs.h"
 #include "usb_logger.h"
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <stdio.h>
 
@@ -19,7 +23,12 @@
  *      This code is part of the RealView Run-Time Library.
  */
 
+/**
+ */
 namespace {
+const char *drive_r0 = "R0:";
+const char *file_name = "log.txt";
+char file_path[16];
 uint32_t cursor_pos = 0;
 uint32_t block_count = 1;
 osMemoryPoolId_t fsMemPoolId;
@@ -70,22 +79,31 @@ FsLog &FsLog::getInstance() {
   return instance;
 }
 
+static auto FsLogWrapper = [](void *argument) {
+  if (argument != nullptr) {
+    FsLog *logger = static_cast<FsLog *>(argument);
+    logger->fsLogThread();
+  }
+};
+
 /**
  */
 std::int32_t FsLog::init() {
   // Initialization code if needed
   std::int32_t status = 0;
-  status = finit("R0:"); // Initialize File System
+  std::snprintf(file_path, sizeof(file_path), "%s\\%s", drive_r0, file_name);
+
+  status = finit(drive_r0); // Initialize File System
   if (status == fsOK) {
     // Try to mount the file system
-    status = fmount("R0:");
+    status = fmount(drive_r0);
     if (status == fsNoFileSystem) {
       // If no file system, format the drive
-      status = fformat("R0:", "FAT32");
+      status = fformat(drive_r0, "FAT32");
       if (status == fsOK) {
-        status = fmount("R0:"); // Try to mount again after formatting
+        status = fmount(drive_r0); // Try to mount again after formatting
         if (status == fsOK) {
-          int32_t fd = fs_fopen("R0:\\log.txt", FS_FOPEN_CREATE | FS_FOPEN_WR);
+          int32_t fd = fs_fopen(file_path, FS_FOPEN_CREATE | FS_FOPEN_WR);
           fs_fclose(fd);
           log("Log file system initialized.\r\n");
         }
@@ -117,15 +135,15 @@ void FsLog::log(const char *msg) {
   } else {
     return; // Mutex not created
   }
-  fd = fs_fopen("R0:\\log.txt", FS_FOPEN_APPEND);
+  fd = fs_fopen(file_path, FS_FOPEN_APPEND);
   fs_fseek(fd, 0, SEEK_END);
   if (fd >= 0) {
     n = fs_fwrite(fd, msg, strlen(msg));
     if (n <= 0) {
       // Handle write error if needed
       fs_fclose(fd);
-      rt_fs_remove("R0:\\log.txt");
-      fd = fs_fopen("R0:\\log.txt", FS_FOPEN_CREATE | FS_FOPEN_WR);
+      rt_fs_remove(file_path);
+      fd = fs_fopen(file_path, FS_FOPEN_CREATE | FS_FOPEN_WR);
       cursor_pos = 0;
       char init_msg[] = "Log file recreated after write error.\r\n";
       fs_fwrite(fd, init_msg, sizeof(init_msg));
@@ -161,13 +179,6 @@ void FsLog::log(const char *msg, const char *str, const char *str2,
   char logMsg[64];
   snprintf(logMsg, sizeof(logMsg), msg, str, str2, val);
   log(logMsg);
-}
-
-void FsLog::FsLogWrapper(void *argument) {
-  if (argument != nullptr) {
-    FsLog *logger = static_cast<FsLog *>(argument);
-    logger->fsLogThread();
-  }
 }
 
 void FsLog::fsLogThread() {
