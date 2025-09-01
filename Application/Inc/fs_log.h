@@ -32,8 +32,6 @@ private:
   FsLog(const FsLog &) = delete;
   FsLog &operator=(const FsLog &) = delete;
   ~FsLog() = default;
-
-  //  static void FsLogWrapper(void *argument);
 };
 
 extern "C" {

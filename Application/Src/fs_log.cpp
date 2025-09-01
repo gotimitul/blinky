@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <stdint.h>
 #include <stdio.h>
 
 /*----------------------------------------------------------------------------
@@ -79,7 +80,7 @@ FsLog &FsLog::getInstance() {
   return instance;
 }
 
-static auto FsLogWrapper = [](void *argument) {
+auto FsLogWrapper = [](void *argument) {
   if (argument != nullptr) {
     FsLog *logger = static_cast<FsLog *>(argument);
     logger->fsLogThread();
@@ -126,7 +127,7 @@ std::int32_t FsLog::init() {
   return status;
 }
 
-void FsLog::log(const char *msg) {
+auto fs_write = [](const char *msg) {
   std::int32_t status;
   std::int32_t n;
   std::int32_t fd;
@@ -154,31 +155,33 @@ void FsLog::log(const char *msg) {
     // Handle file open error if needed
   }
   osMutexRelease(fsMutexId);
-}
+};
+
+void FsLog::log(const char *msg) { fs_write(msg); }
 
 void FsLog::log(const char *msg, uint32_t val) {
   char logMsg[64];
   snprintf(logMsg, sizeof(logMsg), msg, val);
-  log(logMsg);
+  fs_write(logMsg);
 }
 
 void FsLog::log(const char *msg, const char *str) {
   char logMsg[64];
   snprintf(logMsg, sizeof(logMsg), msg, str);
-  log(logMsg);
+  fs_write(logMsg);
 }
 
 void FsLog::log(const char *msg, const char *str, uint32_t val) {
   char logMsg[64];
   snprintf(logMsg, sizeof(logMsg), msg, str, val);
-  log(logMsg);
+  fs_write(logMsg);
 }
 
 void FsLog::log(const char *msg, const char *str, const char *str2,
                 uint32_t val) {
   char logMsg[64];
   snprintf(logMsg, sizeof(logMsg), msg, str, str2, val);
-  log(logMsg);
+  fs_write(logMsg);
 }
 
 void FsLog::fsLogThread() {
