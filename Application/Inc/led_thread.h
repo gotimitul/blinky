@@ -43,9 +43,8 @@ private:
 
   osThreadAttr_t thread_attr; ///< Thread attributes used by osThreadNew
 
-  void start(void);            // It creates a new thread
-  void run(void);              // It contains the control logic for an LED.
-  void checkButtonEvent(void); // It checks for button press events.
+  void start(void); // It creates a new thread
+  void run(void);   // It contains the control logic for an LED.
 
 public:
   // Constructor initializes the LED pin and thread attributes

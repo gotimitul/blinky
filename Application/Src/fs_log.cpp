@@ -8,9 +8,11 @@
 #include "retarget_fs.h"
 #include "rl_fs.h"
 #include "usb_logger.h"
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -89,10 +91,16 @@ auto FsLogWrapper = [](void *argument) {
 
 /**
  */
-std::int32_t FsLog::init() {
+void FsLog::init() {
   // Initialization code if needed
+  fsInit = 0;
   std::int32_t status = 0;
-  std::snprintf(file_path, sizeof(file_path), "%s\\%s", drive_r0, file_name);
+  int32_t n = std::snprintf(file_path, sizeof(file_path), "%s\\%s", drive_r0,
+                            file_name);
+  if (n == 0) {
+    fsInit = -1;
+    return;
+  }
 
   status = finit(drive_r0); // Initialize File System
   if (status == fsOK) {
@@ -105,93 +113,169 @@ std::int32_t FsLog::init() {
         status = fmount(drive_r0); // Try to mount again after formatting
         if (status == fsOK) {
           int32_t fd = fs_fopen(file_path, FS_FOPEN_CREATE | FS_FOPEN_WR);
-          fs_fclose(fd);
-          log("Log file system initialized.\r\n");
+          if (fd > 0) {
+            fs_fclose(fd);
+            log("Log file system initialized.\r\n");
+          } else {
+            // file with a defined name and path could not be created.
+            fsInit = -1;
+            return;
+          }
+        } else {
+          // Media driver not initialized.
+          fsInit = -1;
+          return;
         }
+      } else {
+        // Undefined drive or formatting failed.
+        fsInit = -1;
+        return;
       }
+    } else {
+      // Media driver not initialied.
+      fsInit = -1;
+      return;
     }
+  } else {
+    // Drive can not be initialized.
+    UsbLogger::getInstance().log("RAM drive can not be initialized.\r\n");
+    fsInit = -1;
+    return;
   }
   threadId = osThreadNew(FsLogWrapper, this, &threadAttr);
   if (threadId != nullptr) {
     // Thread created successfully
   } else {
     // Handle thread creation failure if needed
+    fsInit = -1;
+    return;
   }
 
   fsMutexId = osMutexNew(&fsMutexAttr);
-  if (fsMutexId == nullptr) { // Handle mutex creation failure if needed
+  if (fsMutexId == nullptr) {
+    // Handle mutex creation failure if needed
+    fsInit = -1;
+    return;
   }
 
   fsMemPoolId = osMemoryPoolNew(block_count, sizeof(fs_buf_mem),
                                 &fsBufAttr); // 1 block of 256 bytes
-  return status;
+  if (fsMemPoolId == nullptr) {
+    // failed to pool a memory block.
+    fsInit = -1;
+    return;
+  }
+  fsInit = 0;
+  return;
 }
 
-auto fs_write = [](const char *msg) {
+auto fs_write = +[](const char *msg) {
   std::int32_t status;
-  std::int32_t n;
   std::int32_t fd;
   if (fsMutexId != nullptr) {
     osMutexAcquire(fsMutexId, osWaitForever);
   } else {
     return; // Mutex not created
   }
-  fd = fs_fopen(file_path, FS_FOPEN_APPEND);
-  fs_fseek(fd, 0, SEEK_END);
-  if (fd >= 0) {
-    n = fs_fwrite(fd, msg, strlen(msg));
-    if (n <= 0) {
+
+  auto fsWrite = [&fd](const char *buf) {
+    return fs_fwrite(fd, buf, strlen(buf));
+  };
+
+  auto fs_recreate = [&fd, &fsWrite]() {
+    std::uint8_t retries = 3;
+    do {
       // Handle write error if needed
       fs_fclose(fd);
       rt_fs_remove(file_path);
       fd = fs_fopen(file_path, FS_FOPEN_CREATE | FS_FOPEN_WR);
-      cursor_pos = 0;
-      char init_msg[] = "Log file recreated after write error.\r\n";
-      fs_fwrite(fd, init_msg, sizeof(init_msg));
-      n = fs_fwrite(fd, msg, strlen(msg));
+      if (fd >= 0) {
+        if (fsWrite("Log file recreated after write error.\r\n") > 0) {
+          return 0;
+        }
+      }
+    } while (--retries > 0);
+    return -1;
+  };
+
+  fd = fs_fopen(file_path, FS_FOPEN_APPEND);
+  if (fd >= 0) {
+    if (fs_fseek(fd, 0, SEEK_END) >= 0) {
+      if (ffree(drive_r0) < strlen(msg)) {
+        if (fs_recreate() == NULL) {
+          fsWrite(msg);
+          fs_fclose(fd);
+          cursor_pos = 0;
+        } else {
+          UsbLogger::getInstance().log(
+              "Failed to recreate log file after multiple attempts.\r\n");
+        }
+      } else {
+        fsWrite(msg);
+        fs_fclose(fd);
+      }
     }
-    fs_fclose(fd);
   } else {
     // Handle file open error if needed
+    UsbLogger::getInstance().log("Failed to open the requested file.\r\n");
   }
   osMutexRelease(fsMutexId);
 };
 
-void FsLog::log(const char *msg) { fs_write(msg); }
+void FsLog::log(const char *msg) {
+  if (fsInit == 0) {
+    fs_write(msg);
+  }
+}
 
 void FsLog::log(const char *msg, uint32_t val) {
-  char logMsg[64];
-  snprintf(logMsg, sizeof(logMsg), msg, val);
-  fs_write(logMsg);
+  if (fsInit == 0) {
+    char logMsg[64];
+    snprintf(logMsg, sizeof(logMsg), msg, val);
+    fs_write(logMsg);
+  }
 }
 
 void FsLog::log(const char *msg, const char *str) {
-  char logMsg[64];
-  snprintf(logMsg, sizeof(logMsg), msg, str);
-  fs_write(logMsg);
+  if (fsInit == 0) {
+    char logMsg[64];
+    snprintf(logMsg, sizeof(logMsg), msg, str);
+    fs_write(logMsg);
+  }
 }
 
 void FsLog::log(const char *msg, const char *str, uint32_t val) {
-  char logMsg[64];
-  snprintf(logMsg, sizeof(logMsg), msg, str, val);
-  fs_write(logMsg);
+  if (fsInit == 0) {
+    char logMsg[64];
+    snprintf(logMsg, sizeof(logMsg), msg, str, val);
+    fs_write(logMsg);
+  }
 }
 
 void FsLog::log(const char *msg, const char *str, const char *str2,
                 uint32_t val) {
-  char logMsg[64];
-  snprintf(logMsg, sizeof(logMsg), msg, str, str2, val);
-  fs_write(logMsg);
+  if (fsInit == 0) {
+    char logMsg[64];
+    snprintf(logMsg, sizeof(logMsg), msg, str, str2, val);
+    fs_write(logMsg);
+  }
 }
 
 void FsLog::fsLogThread() {
   std::int32_t n;
   std::int32_t fd;
+  constexpr uint32_t FS_DATA_PAKET_SIZE = 256;
+  if (fsInit != 0) {
+    return;
+  }
   if (fsMemPoolId == nullptr) {
     // Handle memory pool creation failure if needed
     return;
   }
   char *fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
+  if (fs_buf == 0) {
+    return;
+  }
   for (;;) {
     osMutexAcquire(fsMutexId, osWaitForever);
     fd = fs_fopen("R0:/log.txt", FS_FOPEN_RD);
@@ -202,8 +286,9 @@ void FsLog::fsLogThread() {
         fs_fseek(fd, cursor_pos, SEEK_SET);
 
         n = fs_fread(fd, fs_buf,
-                     (n - cursor_pos) < 256 ? n - cursor_pos
-                                            : 256); // Read file content
+                     (n - cursor_pos) < FS_DATA_PAKET_SIZE
+                         ? n - cursor_pos
+                         : FS_DATA_PAKET_SIZE); // Read file content
         fs_fclose(fd);
         osMutexRelease(fsMutexId);
         const char *end_ptr = fs_buf + n;

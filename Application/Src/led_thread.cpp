@@ -171,6 +171,26 @@ void LedThread::thread_entry(void *argument) {
   thread->run();
 }
 
+auto checkButtonEvent = [](void *arg) {
+  LedThread *thread = static_cast<LedThread *>(arg);
+  if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
+    thread->decreaseOnTime(100U); // Decrease onTime by 100 ms
+#ifdef RUN_TIME                   // Log the button press event
+#ifdef FS_LOG
+    FsLog::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
+                             Time::getInstance().getCurrentTimeString(),
+                             thread->getOnTime());
+#else
+    UsbLogger::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
+                                 Time::getInstance().getCurrentTimeString(),
+                                 getOnTime());
+#endif
+#endif
+    osDelay(50U);                            // Debounce delay
+    osEventFlagsClear(app_events_get(), 1U); // Clear the event flag
+  }
+};
+
 /**
  * @brief Main control loop for the LED thread
  *
@@ -206,27 +226,8 @@ void LedThread::run(void) {
 #endif
     // Release semaphore for next thread
     osSemaphoreRelease(sem);
-    checkButtonEvent(); // Check for button press events
+    checkButtonEvent(this); // Check for button press events
     // Small delay to prevent aggressive rescheduling
     osDelay(1);
-  }
-}
-
-void LedThread::checkButtonEvent(void) {
-  if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
-    decreaseOnTime(100U); // Decrease onTime by 100 ms
-#ifdef RUN_TIME           // Log the button press event
-#ifdef FS_LOG
-    FsLog::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
-                             Time::getInstance().getCurrentTimeString(),
-                             getOnTime());
-#else
-    UsbLogger::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
-                                 Time::getInstance().getCurrentTimeString(),
-                                 getOnTime());
-#endif
-#endif
-    osDelay(50U);                            // Debounce delay
-    osEventFlagsClear(app_events_get(), 1U); // Clear the event flag
   }
 }

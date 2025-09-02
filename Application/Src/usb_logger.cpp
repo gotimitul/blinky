@@ -110,6 +110,29 @@ void UsbLogger::loggerThreadWrapper(void *argument) {
   static_cast<UsbLogger *>(argument)->loggerThread();
 }
 
+/// Handler for message size errors
+auto errorMsgTooBig = +[](void) {
+#ifdef DEBUG
+  printf("Warning: Message Size Exceeded. Last Message Truncated: %s, %d\r\n",
+         __FILE__, __LINE__);
+#endif
+};
+
+/** @brief Handler for full message queue
+ * This function is called when the message queue is full and a new message
+ * cannot be added. It removes the oldest message to make space for the new
+ * message and logs a warning.
+ */
+
+auto messageQueueFullHandler = +[](void) {
+  char logBuf[LOG_MSG_SIZE];
+  osMessageQueueGet(msgQueueId, logBuf, 0, 0); // Try to clear the queue
+#ifdef DEBUG
+  printf("Warning: Message Queue Full. Last Message Removed: %s, %d\r\n",
+         __FILE__, __LINE__);
+#endif
+};
+
 /** @brief Log a simple message string.
  * @param msg The message string to log.
  */
@@ -118,7 +141,7 @@ void UsbLogger::log(const char *msg) {
     char logMsg[LOG_MSG_SIZE];
     int n = snprintf(logMsg, LOG_MSG_SIZE, "%s", msg);
     if (n >= LOG_MSG_SIZE) {
-      errorMessageSize();
+      errorMsgTooBig();
     }
     while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
            osErrorResource) // non-blocking enqueue
@@ -137,7 +160,7 @@ void UsbLogger::log(const char *msg, uint32_t val) {
     char logMsg[LOG_MSG_SIZE];
     int n = snprintf(logMsg, LOG_MSG_SIZE, msg, val);
     if (n >= LOG_MSG_SIZE) {
-      errorMessageSize();
+      errorMsgTooBig();
     }
     log(logMsg);
   }
@@ -152,7 +175,7 @@ void UsbLogger::log(const char *msg, const char *str) {
     char logMsg[LOG_MSG_SIZE];
     int n = snprintf(logMsg, LOG_MSG_SIZE, msg, str);
     if (n >= LOG_MSG_SIZE) {
-      errorMessageSize();
+      errorMsgTooBig();
     }
     log(logMsg);
   }
@@ -168,7 +191,7 @@ void UsbLogger::log(const char *msg, const char *str, uint32_t val) {
     char logMsg[LOG_MSG_SIZE];
     int n = snprintf(logMsg, LOG_MSG_SIZE, msg, str, val);
     if (n >= LOG_MSG_SIZE) {
-      errorMessageSize();
+      errorMsgTooBig();
     }
     log(logMsg);
   }
@@ -284,29 +307,6 @@ bool UsbLogger::usbIsConnected(void) {
     // USB is not connected
     return false;
   }
-}
-
-/// Handler for message size errors
-void UsbLogger::errorMessageSize(void) {
-#ifdef DEBUG
-  printf("Warning: Message Size Exceeded. Last Message Truncated: %s, %d\r\n",
-         __FILE__, __LINE__);
-#endif
-}
-
-/** @brief Handler for full message queue
- * This function is called when the message queue is full and a new message
- * cannot be added. It removes the oldest message to make space for the new
- * message and logs a warning.
- */
-
-void UsbLogger::messageQueueFullHandler(void) {
-  char logBuf[LOG_MSG_SIZE];
-  osMessageQueueGet(msgQueueId, logBuf, 0, 0); // Try to clear the queue
-#ifdef DEBUG
-  printf("Warning: Message Queue Full. Last Message Removed: %s, %d\r\n",
-         __FILE__, __LINE__);
-#endif
 }
 
 /* "C" type functions --------------------------------------------------------*/

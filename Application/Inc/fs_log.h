@@ -13,7 +13,7 @@ class FsLog {
 public:
   static FsLog &getInstance();
 
-  std::int32_t init();
+  void init();
 
   void log(const char *msg);
 
@@ -32,6 +32,8 @@ private:
   FsLog(const FsLog &) = delete;
   FsLog &operator=(const FsLog &) = delete;
   ~FsLog() = default;
+
+  int32_t fsInit;
 };
 
 extern "C" {
