@@ -69,6 +69,26 @@ constexpr osMutexAttr_t fsMutexAttr = {
     .name = "FsLogMutex",           // Name for debugging
     .attr_bits = osMutexPrioInherit // No special attributes
 };
+
+static std::int32_t fsWrite(int &fd, const char *buf) {
+  return fs_fwrite(fd, buf, strlen(buf));
+};
+
+static int32_t fs_recreate(int32_t &fd) {
+  std::uint8_t retries = 3;
+  do {
+    // Handle write error if needed
+    fs_fclose(fd);
+    rt_fs_remove(file_path);
+    fd = fs_fopen(file_path, FS_FOPEN_CREATE | FS_FOPEN_WR);
+    if (fd >= 0) {
+      if (fsWrite(fd, "Log file recreated after write error.\r\n") > 0) {
+        return 0;
+      }
+    }
+  } while (--retries > 0);
+  return -1;
+};
 } // namespace
 
 FsLog::FsLog() {}
@@ -84,8 +104,7 @@ FsLog &FsLog::getInstance() {
 
 auto FsLogWrapper = [](void *argument) {
   if (argument != nullptr) {
-    FsLog *logger = static_cast<FsLog *>(argument);
-    logger->fsLogThread();
+    static_cast<FsLog *>(argument)->fsLogThread();
   }
 };
 
@@ -169,57 +188,53 @@ void FsLog::init() {
   return;
 }
 
-auto fs_write = +[](const char *msg) {
+void fs_write(const char *msg) {
   std::int32_t status;
   std::int32_t fd;
-  if (fsMutexId != nullptr) {
-    osMutexAcquire(fsMutexId, osWaitForever);
-  } else {
-    return; // Mutex not created
+  if (fsMutexId == nullptr) {
+    return;
   }
+  osMutexAcquire(fsMutexId, osWaitForever);
 
-  auto fsWrite = [&fd](const char *buf) {
-    return fs_fwrite(fd, buf, strlen(buf));
-  };
-
-  auto fs_recreate = [&fd, &fsWrite]() {
-    std::uint8_t retries = 3;
-    do {
-      // Handle write error if needed
-      fs_fclose(fd);
-      rt_fs_remove(file_path);
-      fd = fs_fopen(file_path, FS_FOPEN_CREATE | FS_FOPEN_WR);
-      if (fd >= 0) {
-        if (fsWrite("Log file recreated after write error.\r\n") > 0) {
-          return 0;
-        }
-      }
-    } while (--retries > 0);
-    return -1;
+  auto append_msg = [&](const char *msg) {
+    int32_t status = fsWrite(fd, msg);
+    fs_fclose(fd);
+    return status;
   };
 
   fd = fs_fopen(file_path, FS_FOPEN_APPEND);
   if (fd >= 0) {
     if (fs_fseek(fd, 0, SEEK_END) >= 0) {
       if (ffree(drive_r0) < strlen(msg)) {
-        if (fs_recreate() == NULL) {
-          fsWrite(msg);
-          fs_fclose(fd);
+        if (fs_recreate(fd) == NULL) {
+          fd = append_msg(msg);
           cursor_pos = 0;
+          osMutexRelease(fsMutexId);
         } else {
+          osMutexRelease(fsMutexId);
           UsbLogger::getInstance().log(
               "Failed to recreate log file after multiple attempts.\r\n");
+          return;
         }
       } else {
-        fsWrite(msg);
-        fs_fclose(fd);
+        fd = append_msg(msg);
+        osMutexRelease(fsMutexId);
       }
+    } else {
+      osMutexRelease(fsMutexId);
+      UsbLogger::getInstance().log(
+          "Failed to set the cursor at the end of the file.\r\n");
+      return;
     }
   } else {
+    osMutexRelease(fsMutexId);
     // Handle file open error if needed
     UsbLogger::getInstance().log("Failed to open the requested file.\r\n");
+    return;
   }
-  osMutexRelease(fsMutexId);
+  if (fd < 0) {
+    UsbLogger::getInstance().log("Failed to write in the log file.\r\n");
+  }
 };
 
 void FsLog::log(const char *msg) {
@@ -231,7 +246,10 @@ void FsLog::log(const char *msg) {
 void FsLog::log(const char *msg, uint32_t val) {
   if (fsInit == 0) {
     char logMsg[64];
-    snprintf(logMsg, sizeof(logMsg), msg, val);
+    int n = snprintf(logMsg, sizeof(logMsg), msg, val);
+    if (n > sizeof(logMsg)) {
+      // Warning: Message Size Exceeded. Last Message Truncated.
+    }
     fs_write(logMsg);
   }
 }
@@ -239,7 +257,10 @@ void FsLog::log(const char *msg, uint32_t val) {
 void FsLog::log(const char *msg, const char *str) {
   if (fsInit == 0) {
     char logMsg[64];
-    snprintf(logMsg, sizeof(logMsg), msg, str);
+    int n = snprintf(logMsg, sizeof(logMsg), msg, str);
+    if (n > sizeof(logMsg)) {
+      // Warning: Message Size Exceeded. Last Message Truncated.
+    }
     fs_write(logMsg);
   }
 }
@@ -247,7 +268,10 @@ void FsLog::log(const char *msg, const char *str) {
 void FsLog::log(const char *msg, const char *str, uint32_t val) {
   if (fsInit == 0) {
     char logMsg[64];
-    snprintf(logMsg, sizeof(logMsg), msg, str, val);
+    int n = snprintf(logMsg, sizeof(logMsg), msg, str, val);
+    if (n > sizeof(logMsg)) {
+      // Warning: Message Size Exceeded. Last Message Truncated.
+    }
     fs_write(logMsg);
   }
 }
@@ -256,7 +280,10 @@ void FsLog::log(const char *msg, const char *str, const char *str2,
                 uint32_t val) {
   if (fsInit == 0) {
     char logMsg[64];
-    snprintf(logMsg, sizeof(logMsg), msg, str, str2, val);
+    int n = snprintf(logMsg, sizeof(logMsg), msg, str, str2, val);
+    if (n > sizeof(logMsg)) {
+      // Warning: Message Size Exceeded. Last Message Truncated.
+    }
     fs_write(logMsg);
   }
 }
