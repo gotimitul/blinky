@@ -138,12 +138,7 @@ auto messageQueueFullHandler = +[](void) {
  */
 void UsbLogger::log(const char *msg) {
   if (msgQueueId != nullptr && msg != nullptr) {
-    char logMsg[LOG_MSG_SIZE];
-    int n = snprintf(logMsg, LOG_MSG_SIZE, "%s", msg);
-    if (n >= LOG_MSG_SIZE) {
-      errorMsgTooBig();
-    }
-    while (osMessageQueuePut(msgQueueId, logMsg, 0, 0) ==
+    while (osMessageQueuePut(msgQueueId, msg, 0, 0) ==
            osErrorResource) // non-blocking enqueue
     {
       messageQueueFullHandler();
@@ -316,7 +311,7 @@ extern "C" {
  * This function is called from the USB CDC interrupt handler to signal that
  * data has been transmitted and the logger thread can proceed.
  */
-void usbXferFlagSet(void) {
+auto usbXferFlagSet = []() {
   // Set the USB transfer flag to indicate data is ready to be sent
   if (usbXferFlag != nullptr) {
     uint32_t returnFlag = osEventFlagsSet(usbXferFlag, 1U);
@@ -327,7 +322,7 @@ void usbXferFlagSet(void) {
 #endif
     }
   }
-}
+};
 
 /** @brief USB transfer complete callback
  *
