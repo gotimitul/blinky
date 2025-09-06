@@ -1,6 +1,7 @@
 /**
  * @file led_thread.h
  * @brief Thread-enabled LED controller class
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @defgroup led_thread LED Thread
@@ -24,8 +25,9 @@
  * @class LedThread
  * @brief RTOS-threaded LED controller class
  *
- * Inherits from the `Led` class and runs an internal thread that toggles the
- * LED. Uses a semaphore for synchronized access to shared GPIO lines.
+ * Controls an LED using a dedicated RTOS thread. Provides static methods to
+ * adjust the LED on-time within defined limits. Uses a semaphore for
+ * synchronized access.
  */
 class LedThread {
 private:

@@ -1,6 +1,7 @@
 /**
  * @file led.h
  * @brief LED control abstraction using GPIO pins
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @defgroup led LED Driver
@@ -25,14 +26,17 @@
 class Led {
 private:
 public:
+  static Led &getInstance() {
+    static Led instance; // Guaranteed to be destroyed.
+                         // Instantiated on first use.
+    return instance;
+  }
   ///< Default constructor
   Led() = default;
-  // Static method to turn on an LED on a given GPIO pin
-  static void on(uint32_t pin);
-  // Static method to turn off an LED on a given GPIO pin
-  static void off(uint32_t pin);
-  // Static method to toggle an LED on a given GPIO pin
-  static void toggle(uint32_t pin);
+
+  void on(uint32_t pin);     /*!< Turn on LED */
+  void off(uint32_t pin);    /*!< Turn off LED */
+  void toggle(uint32_t pin); /*!< Toggle LED state */
 };
 
 extern "C" {

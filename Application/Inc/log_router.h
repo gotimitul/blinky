@@ -3,8 +3,8 @@
  * @file log_router.h
  * @brief Header file for LogRouter class to route log messages to USB and
  * filesystem.
- * @author Your Name
- * @date 2024-06-20
+ * @author Mitul Goti
+ * @date 2025-08-07
  * @version 1.0
  * @note This class is designed to be thread-safe.
  * @see LogRouter::getInstance()

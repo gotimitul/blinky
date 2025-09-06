@@ -1,6 +1,7 @@
 /**
  * @file boot_clock.cpp
  * @brief Implementation of Time class for system timekeeping
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @ingroup boot_clock

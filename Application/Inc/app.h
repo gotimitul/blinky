@@ -1,6 +1,7 @@
 /**
  * @file app.h
  * @brief Application header file for RTOS-based LED control
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @defgroup app Application API

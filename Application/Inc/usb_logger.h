@@ -21,59 +21,35 @@
  * @class UsbLogger
  * @ingroup UsbLogger
  * @brief Singleton class for USB CDC logging using CMSIS-RTOS2.
- *
- * This class provides a global thread-safe logger that uses a background thread
- * to send messages over USB CDC interface.
+ * @details
+ * Provides a thread-safe logger using a background thread to send messages over
+ * USB CDC.
  */
 class UsbLogger {
 public:
-  /// @name Public API
-  /// @{
-
-  static UsbLogger &
-  getInstance(); // Returns the singleton instance of UsbLogger.
-
-  void init(); // Initializes the logger's message queue.
-
-  void log(const char *msg); // Logs a message to the USB CDC interface.
-
-  static std::int32_t
-  usbXferChunk(const char *msg,
-               uint32_t len); // Sends a chunk of data over USB CDC.
+  static UsbLogger &getInstance(); /*!< Get singleton instance */
+  void init();                     /*!< Initialize logger */
+  void log(const char *msg);       /*!< Log a message */
+  static std::int32_t usbXferChunk(const char *msg,
+                                   uint32_t len); /*!< Send data chunk */
 
 private:
-  /// @name Internal Mechanics
-  /// @{
-
-  UsbLogger(); ///< Private constructor for singleton pattern.
-  UsbLogger(const UsbLogger &) =
-      delete; ///< Delete copy constructor to prevent copying.
-  UsbLogger &operator=(const UsbLogger &) =
-      delete; ///< Delete assignment operator to prevent assignment.
-
-  static void
-  loggerThreadWrapper(void *argument); // Static wrapper to call loggerThread
-                                       // from C-style function pointer.
-
-  void loggerThread(); // Thread function that waits for messages and sends
-                       // them via USB CDC.
-
-  void loggerCommand(void); // Thread function that waits for commands and sends
-                            // them via USB CDC.
-
-  bool usbIsConnected(void); // Checks if USB CDC is connected.
-
-  /// @}
+  UsbLogger();                           // Singleton
+  UsbLogger(const UsbLogger &) = delete; /*!< Prevent copy construction */
+  UsbLogger &operator=(const UsbLogger &) = delete; /*!< Prevent assignment */
+  static void loggerThreadWrapper(void *argument);  /*!< Thread wrapper */
+  void loggerThread();       /*!< Logger thread function */
+  void loggerCommand();      /*!< Command handling function */
+  bool usbIsConnected(void); /*!< Check if USB is connected */
 };
 
 extern "C" {
 #endif
 
-int8_t usbXferCompleteCallback(
-    uint8_t *Buf, uint32_t *Len,
-    uint8_t epnum); // Callback when USB transfer is complete.
-
-void usb_logger_c_api(const char *msg); // C-style function to log a message
+int8_t
+usbXferCompleteCallback(uint8_t *Buf, uint32_t *Len,
+                        uint8_t epnum); /*!< USB transfer complete callback */
+void usb_logger_c_api(const char *msg); /*!< C API for logging */
 
 #ifdef __cplusplus
 }
@@ -81,4 +57,4 @@ void usb_logger_c_api(const char *msg); // C-style function to log a message
 
 #endif // USB_LOGGER_H
 
-/** @} */ // end of UsbLogger group
+/** @} */ //

@@ -2,6 +2,7 @@
  * @file app.cpp
  * @brief Application main function: initializes threads and synchronization
  * mechanisms
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @ingroup app
@@ -53,7 +54,7 @@ extern "C" void app_main(void *argument) {
   FsLog::getInstance().init(); // Initialize File System Logger
                                // #else
   LogRouter::getInstance().enableUsbLogging(true);
-  LogRouter::getInstance().enableFsLogging(false);
+  LogRouter::getInstance().enableFsLogging(true);
 #endif
 
   // Create static LED threads, one for each LED color

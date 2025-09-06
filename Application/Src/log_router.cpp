@@ -1,6 +1,8 @@
 /**
  * @file log_router.cpp
  * @brief LogRouter implementation for routing log messages
+ * to USB and filesystem.
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @ingroup LogRouter
