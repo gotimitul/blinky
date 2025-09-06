@@ -200,34 +200,59 @@ void UsbLogger::loggerThread() {
 /**
  * @brief Thread function that waits for commands and sends them via USB CDC.
  * @details
- *   - Receives commands from USB CDC.
- *   - Parses and applies LED on-time commands.
- *   - Logs command results or errors.
+ *   - Waits for commands from the USB CDC interface.
+ *   - Parses commands to adjust LED on-time or replay logs.
+ *   - Sends appropriate responses or error messages via USB CDC.
+ *   - Uses a small buffer to read commands and checks for integer values.
+ *   - Validates command values and applies changes to the LED thread.
+ *   - Logs actions and errors using the LogRouter.
  */
 void UsbLogger::loggerCommand(void) {
   static char rxBuf[10];
   uint32_t rxLen = 4;
+
+  /* Helper lambda to check if a string represents a valid integer */
+  auto isInteger = [](const char *str) {
+    if (str == nullptr || *str == '\0') {
+      return false;
+    }
+    char *endptr = nullptr;
+    strtol(str, &endptr, 10);
+    return (*endptr == '\0');
+  };
+
   // Check for received command from USB CDC
   if (USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf),
                                      &rxLen) == USBD_OK) {
-    uint32_t temp = 0;
-    sscanf(rxBuf, "%u", &temp); // Parse received command as integer
-    // Validate and apply LED on-time command
-    if (temp >= LED_ON_TIME_MIN && temp <= LED_ON_TIME_MAX) {
-      LedThread::setOnTime(temp);
+    if (isInteger(rxBuf)) {
+      uint32_t temp = 0;
+      sscanf(rxBuf, "%u", &temp); // Parse received command as integer
+      // Validate and apply LED on-time command
+      if (temp >= LED_ON_TIME_MIN && temp <= LED_ON_TIME_MAX) {
+        LedThread::setOnTime(temp);
 #ifdef RUN_TIME
-      LogRouter::getInstance().log(
-          "%s: Received USB command. New ON Time: %d ms\r\n",
-          Time::getInstance().getCurrentTimeString(), LedThread::getOnTime());
+        LogRouter::getInstance().log(
+            "%s: Received USB command. New ON Time: %d ms\r\n",
+            Time::getInstance().getCurrentTimeString(), LedThread::getOnTime());
 #endif
-    } else if (temp != 0) {
-      LogRouter::getInstance().log(
-          "Invalid ON Time received: %d. Enter between 100 and 2000.\r\n",
-          temp);
+      } else if (temp != 0) {
+#ifdef RUN_TIME
+        LogRouter::getInstance().log(
+            "Invalid ON Time received: %d. Enter between 100 and 2000.\r\n",
+            temp);
+#endif
 #ifdef DEBUG
-      printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
+        printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
 #endif
+      }
+    } else if (strcmp(rxBuf, "log") == 0) {
+      LogRouter::getInstance().replayFsLogsToUsb();
+    } else {
+      if (strlen(rxBuf) > 0) {
+        LogRouter::getInstance().log("Invalid command received: %s\r\n", rxBuf);
+      }
     }
+
     std::memset(rxBuf, 0, 10); // Clear receive buffer
   }
 }
