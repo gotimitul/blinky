@@ -17,13 +17,7 @@ public:
 
   void log(const char *msg);
 
-  void log(const char *msg, uint32_t val);
-
-  void log(const char *msg, const char *str);
-
-  void log(const char *msg, const char *str, uint32_t val);
-
-  void log(const char *msg, const char *str, const char *str2, uint32_t val);
+  void replayLogsToUsb();
 
   void fsLogThread();
 

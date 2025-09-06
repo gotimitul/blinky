@@ -11,6 +11,7 @@
 #include "boot_clock.h"
 #include "cmsis_os2.h"
 #include "led_thread.h"
+#include "log_router.h"
 #include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
 #include "usbd_def.h"
@@ -146,52 +147,6 @@ void UsbLogger::log(const char *msg) {
   }
 }
 
-/** @brief Log a message with an integer value.
- * @param msg Format string for the log message.
- * @param val Integer value to include in the log message.
- */
-void UsbLogger::log(const char *msg, uint32_t val) {
-  if (msgQueueId != nullptr && msg != nullptr) {
-    char logMsg[LOG_MSG_SIZE];
-    int n = snprintf(logMsg, LOG_MSG_SIZE, msg, val);
-    if (n >= LOG_MSG_SIZE) {
-      errorMsgTooBig();
-    }
-    log(logMsg);
-  }
-}
-
-/** @brief Log a message with a string value.
- * @param msg Format string for the log message.
- * @param str String value to include in the log message.
- */
-void UsbLogger::log(const char *msg, const char *str) {
-  if (msgQueueId != nullptr && msg != nullptr && str != nullptr) {
-    char logMsg[LOG_MSG_SIZE];
-    int n = snprintf(logMsg, LOG_MSG_SIZE, msg, str);
-    if (n >= LOG_MSG_SIZE) {
-      errorMsgTooBig();
-    }
-    log(logMsg);
-  }
-}
-
-/** @brief Log a message with a string and integer value.
- * @param msg Format string for the log message.
- * @param str String value to include in the log message.
- * @param val Integer value to include in the log message.
- */
-void UsbLogger::log(const char *msg, const char *str, uint32_t val) {
-  if (msgQueueId != nullptr && msg != nullptr && str != nullptr) {
-    char logMsg[LOG_MSG_SIZE];
-    int n = snprintf(logMsg, LOG_MSG_SIZE, msg, str, val);
-    if (n >= LOG_MSG_SIZE) {
-      errorMsgTooBig();
-    }
-    log(logMsg);
-  }
-}
-
 /** @brief Main logger thread function
  *
  * This function runs in its own thread and continuously checks the message
@@ -250,12 +205,12 @@ void UsbLogger::loggerCommand(void) {
     if (temp >= LED_ON_TIME_MIN && temp <= LED_ON_TIME_MAX) {
       LedThread::setOnTime(temp);
 #ifdef RUN_TIME
-      UsbLogger::getInstance().log(
+      LogRouter::getInstance().log(
           "%s: Received USB command. New ON Time: %d ms\r\n",
           Time::getInstance().getCurrentTimeString(), LedThread::getOnTime());
 #endif
     } else if (temp != 0) {
-      UsbLogger::getInstance().log(
+      LogRouter::getInstance().log(
           "Invalid ON Time received: %d. Enter between 100 and 2000.\r\n",
           temp);
 #ifdef DEBUG
@@ -355,10 +310,10 @@ void usb_logger_c_api(const char *msg) {
 #ifdef DEBUG
     printf("usb_logger_c_api: msg is null: %s, %d\r\n", __FILE__, __LINE__);
 #elif RUN_TIME
-    UsbLogger::getInstance().log("usb_logger_c_api: msg is null\r\n");
+    LogRouter::getInstance().log("usb_logger_c_api: msg is null\r\n");
 #endif
     return; // Safety check for null message
   }
-  UsbLogger::getInstance().log(msg);
+  LogRouter::getInstance().log(msg);
 }
 } // extern "C"

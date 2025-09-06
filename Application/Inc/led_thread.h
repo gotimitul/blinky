@@ -36,7 +36,7 @@ private:
   osThreadId_t thread_id = nullptr; ///< CMSIS RTOS thread ID
   osSemaphoreId_t sem;              ///< Shared semaphore pointer
 
-  uint64_t stack[64]
+  uint64_t stack[128]
       __attribute__((aligned(64))); ///< Static thread stack (aligned)
   uint64_t cb[32]
       __attribute__((aligned(64))); ///< Static thread control block (aligned)

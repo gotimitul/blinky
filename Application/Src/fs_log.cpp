@@ -37,6 +37,7 @@ uint32_t block_count = 1;
 osMemoryPoolId_t fsMemPoolId;
 osMutexId_t fsMutexId;
 osThreadId_t threadId = nullptr; ///< RTOS thread ID for logger
+char *fs_buf = nullptr;          ///< Buffer for file system operations
 
 uint64_t stack[256]
     __attribute__((aligned(64))); ///< Static thread stack (aligned)
@@ -101,12 +102,12 @@ FsLog &FsLog::getInstance() {
   static FsLog instance;
   return instance;
 }
-
+/*
 auto FsLogWrapper = [](void *argument) {
   if (argument != nullptr) {
     static_cast<FsLog *>(argument)->fsLogThread();
   }
-};
+};*/
 
 /**
  */
@@ -134,38 +135,35 @@ void FsLog::init() {
           int32_t fd = fs_fopen(file_path, FS_FOPEN_CREATE | FS_FOPEN_WR);
           if (fd > 0) {
             fs_fclose(fd);
-            log("Log file system initialized.\r\n");
+            this->log("Log file system initialized.\r\n");
           } else {
             // file with a defined name and path could not be created.
+            UsbLogger::getInstance().log("Failed to create log file.\r\n");
             fsInit = -1;
             return;
           }
         } else {
           // Media driver not initialized.
+          UsbLogger::getInstance().log(
+              "Failed to mount the formatted drive.\r\n");
           fsInit = -1;
           return;
         }
       } else {
         // Undefined drive or formatting failed.
+        UsbLogger::getInstance().log("Failed to format the drive.\r\n");
         fsInit = -1;
         return;
       }
     } else {
       // Media driver not initialied.
+      UsbLogger::getInstance().log("Failed to mount the drive.\r\n");
       fsInit = -1;
       return;
     }
   } else {
     // Drive can not be initialized.
     UsbLogger::getInstance().log("RAM drive can not be initialized.\r\n");
-    fsInit = -1;
-    return;
-  }
-  threadId = osThreadNew(FsLogWrapper, this, &threadAttr);
-  if (threadId != nullptr) {
-    // Thread created successfully
-  } else {
-    // Handle thread creation failure if needed
     fsInit = -1;
     return;
   }
@@ -183,6 +181,8 @@ void FsLog::init() {
     // failed to pool a memory block.
     fsInit = -1;
     return;
+  } else {
+    fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
   }
   fsInit = 0;
   return;
@@ -203,7 +203,7 @@ void fs_write(const char *msg) {
   };
 
   fd = fs_fopen(file_path, FS_FOPEN_APPEND);
-  if (fd >= 0) {
+  if (fd > 0) {
     if (fs_fseek(fd, 0, SEEK_END) >= 0) {
       if (ffree(drive_r0) < strlen(msg)) {
         if (fs_recreate(fd) == NULL) {
@@ -243,48 +243,12 @@ void FsLog::log(const char *msg) {
   }
 }
 
-void FsLog::log(const char *msg, uint32_t val) {
+void FsLog::replayLogsToUsb() {
   if (fsInit == 0) {
-    char logMsg[64];
-    int n = snprintf(logMsg, sizeof(logMsg), msg, val);
-    if (n > sizeof(logMsg)) {
-      // Warning: Message Size Exceeded. Last Message Truncated.
-    }
-    fs_write(logMsg);
-  }
-}
-
-void FsLog::log(const char *msg, const char *str) {
-  if (fsInit == 0) {
-    char logMsg[64];
-    int n = snprintf(logMsg, sizeof(logMsg), msg, str);
-    if (n > sizeof(logMsg)) {
-      // Warning: Message Size Exceeded. Last Message Truncated.
-    }
-    fs_write(logMsg);
-  }
-}
-
-void FsLog::log(const char *msg, const char *str, uint32_t val) {
-  if (fsInit == 0) {
-    char logMsg[64];
-    int n = snprintf(logMsg, sizeof(logMsg), msg, str, val);
-    if (n > sizeof(logMsg)) {
-      // Warning: Message Size Exceeded. Last Message Truncated.
-    }
-    fs_write(logMsg);
-  }
-}
-
-void FsLog::log(const char *msg, const char *str, const char *str2,
-                uint32_t val) {
-  if (fsInit == 0) {
-    char logMsg[64];
-    int n = snprintf(logMsg, sizeof(logMsg), msg, str, str2, val);
-    if (n > sizeof(logMsg)) {
-      // Warning: Message Size Exceeded. Last Message Truncated.
-    }
-    fs_write(logMsg);
+    // Replay the logs from the filesystem to USB
+    UsbLogger::getInstance().log("Replaying logs to USB...\n");
+    osDelay(10); // Small delay to ensure USB is ready
+    FsLog::getInstance().fsLogThread();
   }
 }
 
@@ -299,14 +263,19 @@ void FsLog::fsLogThread() {
     // Handle memory pool creation failure if needed
     return;
   }
-  char *fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
-  if (fs_buf == 0) {
+  if (fsMutexId == nullptr) {
     return;
+  }
+  if (fs_buf == nullptr) {
+    fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
+    if (fs_buf == nullptr) {
+      return;
+    }
   }
   for (;;) {
     osMutexAcquire(fsMutexId, osWaitForever);
     fd = fs_fopen("R0:/log.txt", FS_FOPEN_RD);
-    if (fd >= 0) {
+    if (fd > 0) {
       n = fs_fsize(fd); // Get file size
 
       if (n > cursor_pos) {
@@ -326,7 +295,7 @@ void FsLog::fsLogThread() {
             break;
         }
         n = end_ptr - start_ptr + 1;
-        if (n > 0) {
+        if (n > 1) {
           // Successfully read data, process it if needed
           while (UsbLogger::usbXferChunk(fs_buf, n) == -1) {
             osDelay(10); // Wait and retry if USB transfer fails
@@ -336,10 +305,13 @@ void FsLog::fsLogThread() {
       } else {
         fs_fclose(fd);
         osMutexRelease(fsMutexId);
+        return; // No new data to read, exit the thread
       }
     } else {
+      UsbLogger::getInstance().log("Failed to open log file for reading.\r\n");
       osMutexRelease(fsMutexId);
     }
     osDelay(50); // Placeholder for periodic tasks if needed
   }
+  return;
 }

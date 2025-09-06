@@ -37,17 +37,6 @@ public:
 
   void log(const char *msg); // Logs a message to the USB CDC interface.
 
-  void log(const char *msg, uint32_t val); // Logs a message with an integer
-                                           // value to the USB CDC interface.
-
-  void log(const char *msg, const char *str); // Logs a message with a string
-                                              // value to the USB CDC interface.
-
-  void log(const char *msg, const char *str,
-           uint32_t val); // Logs a message with a string and an integer value
-                          // to the USB CDC interface.
-                          // @}
-
   static std::int32_t
   usbXferChunk(const char *msg,
                uint32_t len); // Sends a chunk of data over USB CDC.

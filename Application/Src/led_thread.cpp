@@ -14,6 +14,7 @@
 #include "boot_clock.h"
 #include "cmsis_os2.h"
 #include "led.h"
+#include "log_router.h"
 #include "stdio.h"
 #include "string.h" // IWYU pragma: keep
 #include "usb_logger.h"
@@ -55,7 +56,7 @@ osSemaphoreId_t shared_semaphore(void) {
       printf("Failed to create shared semaphore: %s, %d\r\n", __FILE__,
              __LINE__);
 #elif RUN_TIME
-      UsbLogger::getInstance().log("Failed to create shared semaphore\r\n");
+      LogRouter::getInstance().log("Failed to create shared semaphore\r\n");
 #endif
     }
   });
@@ -84,7 +85,7 @@ osEventFlagsId_t app_events_get() {
     std::printf("Failed to create event flags for button press: %s, %d\r\n",
                 __FILE__, __LINE__);
 #elif RUN_TIME
-    UsbLogger::getInstance().log("Failed to create event flags for button "
+    LogRouter::getInstance().log("Failed to create event flags for button "
                                  "press\r\n");
 #endif
     return nullptr; // Return null if creation failed
@@ -139,7 +140,7 @@ void LedThread::start(void) {
     printf("Failed to create LED thread %s. %s, %d\r\n", thread_attr.name,
            __FILE__, __LINE__);
 #elif RUN_TIME
-    UsbLogger::getInstance().log("Failed to create LED thread %s\r\n",
+    LogRouter::getInstance().log("Failed to create LED thread %s\r\n",
                                  thread_attr.name);
 #endif
     return; // If thread creation failed, exit start method
@@ -161,7 +162,7 @@ void LedThread::thread_entry(void *argument) {
     printf("LedThread::thread_entry: argument is null: %s, %d\r\n", __FILE__,
            __LINE__);
 #elif RUN_TIME
-    UsbLogger::getInstance().log(
+    LogRouter::getInstance().log(
         "LedThread::thread_entry: argument is null\r\n");
 #endif
     osThreadExit();
@@ -174,18 +175,13 @@ void LedThread::thread_entry(void *argument) {
 auto checkButtonEvent = [](void *arg) {
   LedThread *thread = static_cast<LedThread *>(arg);
   if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
-    thread->decreaseOnTime(100U); // Decrease onTime by 100 ms
-#ifdef RUN_TIME                   // Log the button press event
-#ifdef FS_LOG
-    FsLog::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
-                             Time::getInstance().getCurrentTimeString(),
-                             thread->getOnTime());
-#else
-    UsbLogger::getInstance().log("%s: Button pressed. New ON Time: %d ms\r\n",
-                                 Time::getInstance().getCurrentTimeString(),
-                                 getOnTime());
-#endif
-#endif
+    /*    thread->decreaseOnTime(100U); // Decrease onTime by 100 ms
+    #ifdef RUN_TIME                   // Log the button press event
+        LogRouter::getInstance().log("%s: Button pressed. New ON Time: %d
+    ms\r\n", Time::getInstance().getCurrentTimeString(), thread->getOnTime());
+    #endif
+    */
+    LogRouter::getInstance().replayFsLogsToUsb();
     osDelay(50U);                            // Debounce delay
     osEventFlagsClear(app_events_get(), 1U); // Clear the event flag
   }
@@ -212,11 +208,11 @@ void LedThread::run(void) {
 #endif
 
     Led::on(pin); // Turn on the LED
-#ifdef FS_LOG
-    FsLog::getInstance().log("%s: LED %s ON for %d ms\r\n",
-                             Time::getInstance().getCurrentTimeString(),
-                             thread_attr.name, getOnTime());
-#endif
+
+    LogRouter::getInstance().log("%s: LED %s ON for %d ms\r\n",
+                                 Time::getInstance().getCurrentTimeString(),
+                                 thread_attr.name, getOnTime());
+
     osDelay(getOnTime()); // Delay for the specified time
 
     Led::off(pin); // Turn off the LED

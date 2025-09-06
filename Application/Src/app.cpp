@@ -14,6 +14,7 @@
 #include "Driver_GPIO.h"
 #include "cmsis_os2.h" // Include CMSIS-RTOS2 header for RTOS functions
 #include "led_thread.h"
+#include "log_router.h"
 #include "stdio.h"
 #include "usb_logger.h"
 #include <cstdint>
@@ -48,11 +49,11 @@ extern "C" void app_main(void *argument) {
   Driver_GPIO0.SetEventTrigger(USER_BUTTON_PIN, ARM_GPIO_TRIGGER_RISING_EDGE);
 // Initialize USB logger for debugging output
 #ifdef RUN_TIME
-#ifdef FS_LOG
   UsbLogger::getInstance().init();
   FsLog::getInstance().init(); // Initialize File System Logger
                                // #else
-#endif
+  LogRouter::getInstance().enableUsbLogging(true);
+  LogRouter::getInstance().enableFsLogging(false);
 #endif
 
   // Create static LED threads, one for each LED color
@@ -84,7 +85,7 @@ void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
             "Failed to set event flag for button press: file: %s, line: %d\r\n",
             __FILE__, __LINE__);
 #elif RUN_TIME
-        UsbLogger::getInstance().log(
+        LogRouter::getInstance().log(
             "Failed to set event flag for button press\r\n");
 #endif
       }
@@ -94,7 +95,7 @@ void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
              "%d\r\n",
              __FILE__, __LINE__);
 #elif RUN_TIME
-      UsbLogger::getInstance().log(
+      LogRouter::getInstance().log(
           "Failed to get event flags ID for button press\r\n");
 #endif
     }
