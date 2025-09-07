@@ -52,9 +52,6 @@ extern "C" void app_main(void *argument) {
 #ifdef RUN_TIME
   UsbLogger::getInstance().init();
   FsLog::getInstance().init(); // Initialize File System Logger
-                               // #else
-  LogRouter::getInstance().enableUsbLogging(true);
-  LogRouter::getInstance().enableFsLogging(true);
 #endif
 
   // Create static LED threads, one for each LED color

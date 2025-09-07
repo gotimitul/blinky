@@ -50,9 +50,14 @@ void LogRouter::log(const char *msg) {
 #endif
     return; // Stop logging if message is null
   }
-  Logger *logger = fsLoggingEnabled
-                       ? static_cast<Logger *>(&FsLog::getInstance())
-                       : static_cast<Logger *>(&UsbLogger::getInstance());
+  Logger *logger;
+  if (fsLoggingEnabled) {
+    logger = static_cast<Logger *>(&FsLog::getInstance());
+  } else if (usbLoggingEnabled) {
+    logger = static_cast<Logger *>(&UsbLogger::getInstance());
+  } else {
+    return; // No logging enabled
+  }
   logger->log(msg);
 }
 
@@ -102,8 +107,4 @@ void LogRouter::log(const char *msg, const char *str, const char *str2,
 
 /** @brief Replay filesystem logs to USB if filesystem logging is enabled.
  */
-void LogRouter::replayFsLogsToUsb() {
-  if (fsLoggingEnabled) { /* Replay FS logs to USB */
-    FsLog::getInstance().replayLogsToUsb();
-  }
-}
+void LogRouter::replayFsLogsToUsb() { FsLog::getInstance().replayLogsToUsb(); }

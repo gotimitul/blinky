@@ -32,6 +32,14 @@ constexpr uint32_t LOG_QUEUE_LENGTH = 32; /*!< Number of messages in queue */
 osThreadId_t threadId = nullptr;         /*!< RTOS thread ID for logger */
 osMessageQueueId_t msgQueueId = nullptr; /*!< Message queue for log strings */
 osEventFlagsId_t usbXferFlag = nullptr;  /*!< Event flags for USB transfer */
+const char *helpMsg = "Commands:\r\n"
+                      "  <number> : Set LED ON time in ms (100-2000)\r\n"
+                      "  fsLog out: Replay file system logs to USB\r\n"
+                      "  fsLog on : Enable file system logging\r\n"
+                      "  fsLog off: Disable file system logging\r\n"
+                      "  log on   : Enable USB logging\r\n"
+                      "  log off  : Disable USB logging\r\n"
+                      "  help     : Show this help message\r\n";
 
 uint64_t log_queue_mem[LOG_QUEUE_LENGTH * LOG_MSG_SIZE / 8]
     __attribute__((aligned(64))); /*!< Memory buffer for message queue */
@@ -246,8 +254,20 @@ void UsbLogger::loggerCommand(void) {
         printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
 #endif
       }
-    } else if (strcmp(rxBuf, "log") == 0) {
+    } else if (strcmp(rxBuf, "fsLog out") == 0) {
       LogRouter::getInstance().replayFsLogsToUsb();
+    } else if (strcmp(rxBuf, "fsLog off") == 0) {
+      LogRouter::getInstance().enableFsLogging(false);
+    } else if (strcmp(rxBuf, "fsLog on") == 0) {
+      LogRouter::getInstance().enableFsLogging(true);
+      LogRouter::getInstance().enableUsbLogging(false);
+    } else if (strcmp(rxBuf, "log off") == 0) {
+      LogRouter::getInstance().enableUsbLogging(false);
+    } else if (strcmp(rxBuf, "log on") == 0) {
+      LogRouter::getInstance().enableUsbLogging(true);
+      LogRouter::getInstance().enableFsLogging(false);
+    } else if (strcmp(rxBuf, "help") == 0) {
+      usbXferChunk(helpMsg, strlen(helpMsg));
     } else {
       if (strlen(rxBuf) > 0) {
         LogRouter::getInstance().log("Invalid command received: %s\r\n", rxBuf);
