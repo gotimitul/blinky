@@ -207,6 +207,6 @@ void LedThread::run(void) {
     osSemaphoreRelease(sem);
     checkButtonEvent(this); /* Check for button press events */
     /* Small delay to prevent aggressive rescheduling */
-    osDelay(1);
+    osThreadYield();
   }
 }
