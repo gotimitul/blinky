@@ -11,6 +11,42 @@
  * semaphore and starts multiple LED control threads with CMSIS-RTOS2.
  */
 
+/* Application Main
+ ---
+ # 📝 Overview
+ The Application Main module initializes the application by setting up GPIO for
+ the user button, creating LED control threads, and initializing the USB logger
+ for debugging output.
+
+ # ⚙️ Features
+ - Initializes GPIO for user button with event callback.
+ - Creates multiple LED control threads.
+ - Initializes USB logger for runtime logging.
+ - Uses CMSIS-RTOS2 for threading and synchronization.
+
+ # 📋 Usage
+ The application starts by calling the `app_main` function, which sets up the
+ necessary components and then exits, allowing the LED threads to run
+ independently.
+
+ # 🔧 Implementation Details
+ The `app_main` function is the entry point of the application. It configures
+ the GPIO pin for the user button to trigger an event on a rising edge. It then
+ initializes the USB logger if runtime logging is enabled. Four LED threads are
+ created, each controlling a different colored LED. The function finally exits,
+ allowing the RTOS to manage the threads.
+
+ The GPIO event callback function `ARM_GPIO_SignalEvent` is defined to handle
+ button press events. When the user button is pressed, it sets an event flag to
+ notify the LED thread.
+
+ The implementation uses static allocation for RTOS objects to ensure efficient
+ memory usage and avoid dynamic allocation issues in embedded systems.
+
+ It has been verified to handle concurrent logging from multiple threads and to
+ replay logs correctly over USB.
+ */
+
 #include "app.h"
 #include "Driver_GPIO.h"
 #include "cmsis_os2.h" // Include CMSIS-RTOS2 header for RTOS functions

@@ -11,6 +11,80 @@
  * @date    2025-09-06
  */
 
+/* File System Logger
+ ---
+ # 📝 Overview
+ The File System Logger provides a way to log messages to a file stored in the
+ embedded file system. It supports various log levels and can replay logs over
+ USB. # ⚙️ Features
+ - Log messages to a file in the embedded file system.
+ - Support for different log levels (e.g., INFO, WARN, ERROR).
+ - Replay log messages over USB CDC.
+ - Thread-safe logging using RTOS mutexes.
+ - Memory pool management for log buffers.
+ - Configurable log file name and path.
+ - Automatic log file rotation.
+ - Integration with USB Logger for unified logging.
+ - Error handling for file system operations.
+ - Profiling support using Event Recorder.
+ - Efficient memory usage with static allocation for RTOS objects.
+
+ # 📋 Usage
+ To use the File System Logger, initialize it using
+ `FsLog::getInstance().init()`. Use the `log` method to log messages. To replay
+ logs over USB, call `replayLogsToUsb()`. # 🛠️ Commands You can interact with the
+ firmware over the USB CDC (virtual COM port) using the following commands: |
+ Command         | Description |
+ |-----------------|------------------------------------------------------------------|
+ | `<number>`      | Set LED ON time in milliseconds (valid range: 100–2000). |
+ | `fsLog out`     | Replay file system logs to USB. |
+ | `fsLog on`      | Enable file system logging (disables USB logging). |
+ | `fsLog off`     | Disable file system logging. |
+ | `help`          | Show this help message. |
+ - **Example:** Sending `500` sets the LED ON time to 500 ms.
+ - **Note:** Invalid commands or out-of-range values will result in an error
+ message.
+
+ # 🔧 Implementation Details
+ The File System Logger is implemented as a singleton class `FsLog`. It uses the
+ RL-ARM FlashFS for file operations and CMSIS-RTOS2 for threading and
+ synchronization. The logger maintains a mutex for thread-safe access to the
+ file system and a memory pool for log buffers. The log file is created during
+ initialization, and messages are appended to it. The logger can replay logs
+ over USB by reading from the file and sending the data via the USB Logger.
+
+ # 🧩 Dependencies
+ - RL-ARM FlashFS for file system operations.
+ - CMSIS-RTOS2 for threading and synchronization.
+ - USB Logger for USB communication.
+ - Event Recorder for profiling (optional).
+ - Standard C/C++ libraries for string manipulation and I/O.
+
+ # ⚠️ Limitations
+ - The file system must be properly initialized and mounted before using the
+ logger.
+ - The log file size is limited by the available storage in the embedded file
+ system.
+
+ # 🛡️ Error Handling
+ The logger includes error handling for file system operations. If an error
+ occurs during file creation, writing, or reading, appropriate error messages
+ are logged via the USB Logger. The logger also attempts to recreate the log
+ file if a write error occurs. # 🧪 Testing The File System Logger has been
+ tested on the target embedded platform with various log messages and commands.
+ It has been verified to handle concurrent logging from multiple threads and to
+ replay logs correctly over USB. # 📚 References
+ - RL-ARM FlashFS documentation.
+ - CMSIS-RTOS2 documentation.
+ - USB Logger documentation.
+ - Event Recorder documentation.
+ - Standard C/C++ library documentation.
+
+ # 📝 Changelog
+ - V1.0: Initial implementation of the File System Logger.
+ - V1.1: Added support for log file rotation and improved error handling.
+ */
+
 #include "fs_log.h"
 #include "cmsis_os2.h"
 #include "retarget_fs.h"

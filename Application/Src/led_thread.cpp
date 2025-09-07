@@ -12,6 +12,42 @@
  *   communication and safe GPIO access.
  */
 
+/* LED Thread
+ ---
+  This module provides a thread-based approach to control LEDs using
+ CMSIS-RTOS2. # 📝 Overview The LED Thread module allows for concurrent control
+ of multiple LEDs, each managed by its own thread. It uses a shared semaphore to
+ ensure that only one thread can access the GPIO pins at a time, preventing
+ conflicts and ensuring safe operation.
+
+  # ⚙️ Features
+  - Each LED is controlled by a separate thread.
+  - Shared semaphore for mutual exclusion on GPIO access.
+  - Event flags for inter-thread communication (e.g., button press events).
+  - Configurable LED on-time duration.
+  - Thread-safe design using CMSIS-RTOS2 primitives.
+
+  # 📋 Usage
+  To use the LED Thread module, create instances of the `LedThread` class,
+  specifying the thread name and associated GPIO pin for each LED. The threads
+  will automatically handle the blinking behavior based on the configured
+  on-time duration.
+
+  # 🔧 Implementation Details
+  The `LedThread` class encapsulates the functionality for controlling an LED in
+  its own thread. It uses CMSIS-RTOS2 APIs to create and manage threads. A
+ shared semaphore is used to ensure that only one thread can access the GPIO
+ pins at a time, preventing conflicts and ensuring safe operation. The class
+ also provides a static method to retrieve a shared semaphore instance, ensuring
+ that it is created only once. Event flags are used to signal button press
+ events to the LED threads, allowing them to respond accordingly. The LED
+ on-time duration is configurable via a static member variable, allowing all LED
+ threads to share the same on-time setting. The implementation includes error
+ handling for thread and semaphore creation, logging errors via the USB Logger
+ if enabled. The module is designed for embedded applications using CMSIS-RTOS2
+ and is suitable for systems with multiple LEDs requiring concurrent control.
+*/
+
 #include "led_thread.h"
 #include "boot_clock.h"
 #include "cmsis_os2.h"

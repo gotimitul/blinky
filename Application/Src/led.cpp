@@ -10,6 +10,31 @@
  * input.
  */
 
+/* LED Control
+ ---
+ This module provides an interface for controlling LEDs connected to GPIO pins.
+
+ # 📝 Overview
+ The LED control module allows for easy manipulation of LED states
+ (on/off/toggle) through a simple API. It abstracts the underlying GPIO
+ operations, providing a higher-level interface for LED control.
+
+ # ⚙️ Features
+ - Turn LEDs on and off.
+ - Toggle LED states.
+
+ # 📋 Usage
+ To use the LED control module, create an instance of the `Led` class and call
+ the desired methods (on, off, toggle) with the appropriate GPIO pin number.
+
+ # 🔧 Implementation Details
+ The `Led` class uses the CMSIS-compliant `ARM_DRIVER_GPIO` interface to
+ manipulate GPIO pins. The `toggle` method reads the current state of the pin
+ and sets it to the opposite state.
+ The implementation ensures that the GPIO driver is properly initialized and
+ configured before performing any operations.
+*/
+
 #include "led.h"
 #include "Driver_GPIO.h" // CMSIS-Driver GPIO interface
 

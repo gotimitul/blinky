@@ -10,6 +10,29 @@
  * minutes, seconds, and milliseconds since system start.
  */
 
+/* Boot Clock
+ ---
+ # 📝 Overview
+ The Boot Clock module provides a way to keep track of system time since boot.
+ It uses the RTOS tick count to calculate the elapsed time in hours, minutes,
+ seconds, and milliseconds.
+
+ # ⚙️ Features
+ - Retrieve current system time in a human-readable format.
+ - Uses RTOS tick count for accurate timekeeping.
+
+ # 📋 Usage
+ To use the Boot Clock module, obtain the singleton instance using
+ `Time::getInstance()`. Call `getCurrentTimeString()` to get the current time as
+ a formatted string.
+
+ # 🔧 Implementation Details
+ The Time class is implemented as a singleton to ensure a single instance
+ throughout the application. It uses the CMSIS-RTOS2 API to get the system tick
+ count and calculates the elapsed time. The time is formatted as "HH:MM:SS.mmm"
+ where HH is hours, MM is minutes, SS is seconds, and mmm is milliseconds.
+*/
+
 #include "boot_clock.h"
 #include "cmsis_os2.h"
 #include <cstdint>

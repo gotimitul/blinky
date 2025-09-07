@@ -7,6 +7,53 @@
  * @ingroup UsbLogger
  */
 
+/* USB Logger
+  ---
+  # 📝 Overview
+  The USB Logger provides a way to log messages over a USB CDC (virtual COM
+port) connection. It supports various commands to control logging behavior and
+interact with the firmware.
+
+  # ⚙️ Features
+  - Log messages to USB CDC.
+  - Command interface for controlling LED on-time and logging options.
+  - Thread-safe logging using RTOS primitives.
+  - Replay file system logs to USB.
+  - Handles USB transfer completion events.
+  - Queue management for log messages.
+  - Error handling for message size and queue overflow.
+  - Profiling support using Event Recorder.
+  - Configurable LED on-time via USB commands.
+  - Help command to list available commands.
+  - Integration with LogRouter for flexible logging destinations.
+  - Supports enabling/disabling USB and file system logging.
+  - Simple command parsing for user interaction.
+
+  # 📋 Usage
+  To use the USB Logger, connect to the device via a USB CDC terminal (e.g.,
+PuTTY, Tera Term) and send commands as text input. The following commands are
+supported:
+
+  # 🛠️ Commands
+
+You can interact with the firmware over the USB CDC (virtual COM port) using the
+following commands:
+
+| Command         | Description |
+|-----------------|------------------------------------------------------------------|
+| `<number>`      | Set LED ON time in milliseconds (valid range: 100–2000). |
+| `fsLog out`     | Replay file system logs to USB. |
+| `fsLog on`      | Enable file system logging (disables USB logging). |
+| `fsLog off`    | Disable file system logging. |
+| `log on`       | Enable USB logging (disables file system logging). |
+| `log off`      | Disable USB logging. |
+| `help`         | Show this help message. |
+
+- **Example:** Sending `500` sets the LED ON time to 500 ms.
+- **Note:** Invalid commands or out-of-range values will result in an error
+message being logged over USB.
+  --- */
+
 /** @brief Include necessary headers for USB logging */
 #include "usb_logger.h"
 #include "EventRecorder.h"

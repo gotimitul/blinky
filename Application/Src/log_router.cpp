@@ -8,6 +8,40 @@
  * @ingroup LogRouter
  */
 
+/* Log Router
+ ---
+ The Log Router is responsible for routing log messages to the appropriate
+ logging mechanism, either USB or file system. It manages the logging
+ state and provides a unified interface for logging.
+
+  # 📝 Overview
+  The Log Router provides a way to route log messages to either USB CDC or the
+ file system, depending on the logging state. It supports enabling/disabling
+ logging for each mechanism and ensures that log messages are sent to the
+ correct destination. # ⚙️ Features
+  - Route log messages to USB CDC or file system.
+  - Enable/disable logging for each mechanism.
+  - Unified logging interface.
+  - Thread-safe logging using RTOS primitives.
+  - Integration with existing logging classes (UsbLogger and FsLog).
+  - Support for formatted log messages with variable arguments.
+
+  # 📋 Usage
+  To use the Log Router, obtain the singleton instance using
+ `LogRouter::getInstance()`. Use the `log` method to log messages, which will be
+ routed based on the enabled logging mechanisms. Enable or disable logging for
+ USB or file system using `enableUsbLogging` and `enableFsLogging`.
+
+  # 🔧 Implementation Details
+  The Log Router is implemented as a singleton class `LogRouter`. It maintains
+ flags to track the enabled state of USB and file system logging. The `log`
+ method checks these flags and routes the log message to the appropriate logging
+ class. The class provides multiple overloads of the `log` method to support
+ different types of log messages, including formatted strings with variable
+ arguments. The Log Router integrates with the `UsbLogger` and `FsLog` classes,
+ which handle the actual logging to USB and file system, respectively.
+ */
+
 #include "log_router.h"
 #include "fs_log.h"
 #include "logger.h"
