@@ -1,6 +1,7 @@
 /**
  * @file usb_logger.cpp
  * @brief Implementation of UsbLogger for USB CDC logging
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @ingroup UsbLogger

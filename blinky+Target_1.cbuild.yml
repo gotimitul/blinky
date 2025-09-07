@@ -551,6 +551,8 @@ build:
           category: sourceCpp
         - file: Application/Src/fs_log.cpp
           category: sourceCpp
+        - file: Application/Src/log_router.cpp
+          category: sourceCpp
     - group: CubeMX
       files:
         - file: STM32CubeMX/Target_1/STM32CubeMX/Src/main.c

@@ -15,8 +15,6 @@
 #include <cstdint>
 #include <cstdio>
 
-namespace {} // namespace
-
 /** @brief Get the singleton instance of Time
  * This method returns a reference to the single instance of the Time class.
  * @return Reference to the Time instance.

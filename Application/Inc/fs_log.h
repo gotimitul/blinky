@@ -12,32 +12,33 @@
 
 #include "stdint.h"
 #include <cstdint>
+#include <logger.h>
 #ifdef __cplusplus
 
 /**
- * @class   FsLog
- * @brief   Singleton class for file system logging.
- * @details
- * Provides methods for initializing the file system logger, logging messages,
- * and replaying logs to USB. Thread safety is ensured using RTOS primitives.
+ * @class FsLog
+ * @brief Singleton class for file system logging.
+ * @details This class provides methods for logging messages to the file system,
+ *          replaying logs to USB, and managing thread-safe access using RTOS
+ *          primitives.
  */
-class FsLog {
+class FsLog : public Logger {
 public:
   static FsLog &getInstance();
 
-  void init();
+  void init(); /*!< Initialize logger */
 
-  void log(const char *msg);
+  void log(const char *msg) override; /*!< Log a message */
 
-  void replayLogsToUsb();
+  void replayLogsToUsb(); /*!< Replay logs to USB */
 
-  void fsLogThread();
+  void fsLogThread(); /*!< Logger thread function */
 
 private:
-  FsLog();
-  FsLog(const FsLog &) = delete;
-  FsLog &operator=(const FsLog &) = delete;
-  ~FsLog() = default;
+  FsLog();                                  /*!< Singleton */
+  FsLog(const FsLog &) = delete;            /*!< Prevent copy construction */
+  FsLog &operator=(const FsLog &) = delete; /*!< Prevent assignment */
+  ~FsLog() = default;                       /*!< Default destructor */
 
   int32_t fsInit; /*!< Initialization status of the file system logger */
 };

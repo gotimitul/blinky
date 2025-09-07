@@ -30,7 +30,7 @@
 uint32_t LedThread::onTime = 500; /*!< Definition of static member variable */
 
 /**
- * @namespace
+ * @namespace App
  * @brief Namespace for application events and synchronization mechanisms.
  * @details
  *   Contains functions and variables related to event flags and semaphores

@@ -7,9 +7,9 @@ project:
     - pack: ARM::CMSIS-View@^1.2.0
     - pack: Keil::MDK-Middleware@^8.1.0
     - pack: Keil::STM32F4xx_DFP@^3.1.0
+    - pack: Keil::MDK-Middleware_Graphics@^1.3.1
     - pack: ARM::CMSIS-NN@^4.0.0
     - pack: ARM::CMSIS-DSP@^1.10.1
-    - pack: Keil::MDK-Middleware_Graphics@^1.3.1
   setups:
     - setup: Options for Target_1
       processor:
@@ -73,6 +73,7 @@ project:
         - file: Application/Src/usb_logger.cpp
         - file: Application/Src/boot_clock.cpp
         - file: Application/Src/fs_log.cpp
+        - file: Application/Src/log_router.cpp
   components:
     - component: ARM::CMSIS Driver:CAN:Custom
     - component: ARM::CMSIS-Compiler:CORE

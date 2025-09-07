@@ -4,7 +4,7 @@
  * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
- * @defgroup led LED Driver
+ * @defgroup led LED_Driver
  *
  * @{
  */
@@ -31,8 +31,6 @@ public:
                          // Instantiated on first use.
     return instance;
   }
-  ///< Default constructor
-  Led() = default;
 
   void on(uint32_t pin);     /*!< Turn on LED */
   void off(uint32_t pin);    /*!< Turn off LED */

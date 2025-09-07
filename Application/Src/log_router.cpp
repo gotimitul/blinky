@@ -10,6 +10,7 @@
 
 #include "log_router.h"
 #include "fs_log.h"
+#include "logger.h"
 #include "usb_logger.h"
 #include <cstdio>
 
@@ -43,19 +44,16 @@ void LogRouter::enableFsLogging(bool enable) { fsLoggingEnabled = enable; }
  * @param msg The message string to log.
  */
 void LogRouter::log(const char *msg) {
-  using LogFunc = void (*)(const char *); // Function pointer type for logging
-  LogFunc logFunc = nullptr;              // Initialize to null
-  // Determine which logging mechanism to use
-  // Priority: File system logging if enabled, otherwise USB logging
-  if (fsLoggingEnabled) {
-    logFunc = [](const char *m) { FsLog::getInstance().log(m); };
-  } else if (usbLoggingEnabled) {
-    logFunc = [](const char *m) { UsbLogger::getInstance().log(m); };
+  if (msg == nullptr) {
+#ifdef DEBUG
+    printf("LogRouter::log: msg is null: %s, %d\r\n", __FILE__, __LINE__);
+#endif
+    return; // Stop logging if message is null
   }
-  // Call the selected logging function if available
-  if (logFunc) {
-    logFunc(msg);
-  }
+  Logger *logger = fsLoggingEnabled
+                       ? static_cast<Logger *>(&FsLog::getInstance())
+                       : static_cast<Logger *>(&UsbLogger::getInstance());
+  logger->log(msg);
 }
 
 /** @brief Log a message with an integer value.

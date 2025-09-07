@@ -1,60 +1,60 @@
-
 /**
  * @file log_router.h
- * @brief Header file for LogRouter class to route log messages to USB and
- * filesystem.
- * @author Mitul Goti
- * @date 2025-08-07
+ * @brief Routes log messages to USB and/or filesystem sinks.
  * @version 1.0
- * @note This class is designed to be thread-safe.
- * @see LogRouter::getInstance()
+ * @date 2025-08-07
+ *
+ * @defgroup LogRouter Log Router
+ * @brief Facade that selects active sinks (USB, FS) and forwards log messages.
+ * @{
  */
 
 #ifndef LOG_ROUTER_H
 #define LOG_ROUTER_H
 
-#include "stdint.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
-
 /**
- * LogRouter is a singleton class responsible for routing log messages
- * to different output channels (e.g., USB, filesystem).
- * It provides methods to enable or disable logging to specific channels
- * and to log messages with various formats.
- * It also includes a method to replay filesystem logs to USB.
+ * @class LogRouter
+ * @ingroup LogRouter
+ * @brief Singleton facade that forwards logs to enabled sinks.
+ *
+ * @details
+ * Priority of forwarding may be implementation-defined; current logic prefers
+ * FS when enabled, else USB.
  */
 class LogRouter {
 public:
-  static LogRouter &getInstance(); // Get the singleton instance
+  /** @brief Get the singleton instance. */
+  static LogRouter &getInstance();
 
-  void enableUsbLogging(bool enable); // Enable or disable USB logging
-  void enableFsLogging(bool enable);  // Enable or disable filesystem logging
+  /** @brief Enable or disable USB logging. */
+  void enableUsbLogging(bool enable);
 
-  void log(const char *msg); // Log a simple message
+  /** @brief Enable or disable filesystem logging. */
+  void enableFsLogging(bool enable);
 
-  void log(const char *msg,
-           uint32_t val); // Log a message with a single integer value
+  /** @name Logging API */
+  ///@{
+  void log(const char *msg);
+  void log(const char *msg, uint32_t val);
+  void log(const char *msg, const char *str);
+  void log(const char *msg, const char *str, uint32_t val);
+  void log(const char *msg, const char *str, const char *str2, uint32_t val);
+  ///@}
 
-  void log(const char *msg,
-           const char *str); // Log a message with a single string
-
-  void log(const char *msg, const char *str,
-           uint32_t val); // Log a message with a string and an integer
-
-  void log(const char *msg, const char *str, const char *str2,
-           uint32_t val); // Log a message with two strings and an integer
-
-  void replayFsLogsToUsb(); // Replay filesystem logs to USB
+  /** @brief If FS logging is enabled, request replay of FS logs to USB. */
+  void replayFsLogsToUsb();
 
 private:
-  LogRouter(); // Private constructor for singleton pattern
+  LogRouter();
   LogRouter(const LogRouter &) = delete;
   LogRouter &operator=(const LogRouter &) = delete;
   ~LogRouter() = default;
 
-  bool usbLoggingEnabled = false; // USB logging is disabled by default
-  bool fsLoggingEnabled = false;  // Filesystem logging is disabled by default
+  bool usbLoggingEnabled = false; /**< USB sink flag. */
+  bool fsLoggingEnabled = false;  /**< FS sink flag. */
 };
 
 extern "C" {
@@ -64,3 +64,5 @@ extern "C" {
 }
 #endif
 #endif // LOG_ROUTER_H
+
+/** @} */ // end of group LogRouter

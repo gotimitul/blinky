@@ -4,7 +4,8 @@
  * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
- * @ingroup boot_clock
+ * @defgroup boot_clock boot_clock
+ * @{
  * This file declares the Time class which provides system time in a
  * human-readable format. It uses the RTOS tick count to calculate hours,
  * minutes, seconds, and milliseconds since system start.
@@ -26,16 +27,16 @@
  */
 class Time {
 public:
-  static Time &getInstance(); // Get the singleton instance
+  static Time &getInstance(); ///< Get singleton instance
 
-  char *getCurrentTimeString(void); // Get current time as formatted string
+  char *getCurrentTimeString(void); ///< Get current time as formatted string
 
 private:
-  Time() {};                   // Private constructor for singleton pattern
-  Time(const Time &) = delete; // Delete copy constructor
-  Time &operator=(const Time &) = delete; // Delete copy assignment operator
+  Time() {};                   ///< Private constructor for singleton pattern
+  Time(const Time &) = delete; ///< Delete copy constructor
+  Time &operator=(const Time &) = delete; ///< Delete copy assignment operator
 
-  char timeString[16]; // Buffer to hold formatted time string
+  char timeString[16]; ///< Buffer to hold formatted time string
 }; // End of Time class
 
 extern "C" {
@@ -45,4 +46,5 @@ extern "C" {
 }
 #endif
 
-#endif // BOOT_CLOCK_H
+#endif    // BOOT_CLOCK_H
+/** @} */ // end of boot_clock

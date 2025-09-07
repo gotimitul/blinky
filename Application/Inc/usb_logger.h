@@ -13,23 +13,24 @@
 #ifndef USB_LOGGER_H
 #define USB_LOGGER_H
 
+#include <logger.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
 
 /**
- * @class UsbLogger
- * @ingroup UsbLogger
- * @brief Singleton class for USB CDC logging using CMSIS-RTOS2.
+ * @class   UsbLogger
+ * @brief   Singleton class for USB CDC logging.
  * @details
- * Provides a thread-safe logger using a background thread to send messages over
- * USB CDC.
+ *   Provides methods for initializing the USB logger, logging messages, and
+ *   handling USB communication.
+ *   Thread safety is ensured using RTOS primitives.
  */
-class UsbLogger {
+class UsbLogger : public Logger {
 public:
-  static UsbLogger &getInstance(); /*!< Get singleton instance */
-  void init();                     /*!< Initialize logger */
-  void log(const char *msg);       /*!< Log a message */
+  static UsbLogger &getInstance();    /*!< Get singleton instance */
+  void init();                        /*!< Initialize logger */
+  void log(const char *msg) override; /*!< Log a message */
   static std::int32_t usbXferChunk(const char *msg,
                                    uint32_t len); /*!< Send data chunk */
 
@@ -38,8 +39,10 @@ private:
   UsbLogger(const UsbLogger &) = delete; /*!< Prevent copy construction */
   UsbLogger &operator=(const UsbLogger &) = delete; /*!< Prevent assignment */
   static void loggerThreadWrapper(void *argument);  /*!< Thread wrapper */
-  void loggerThread();       /*!< Logger thread function */
-  void loggerCommand();      /*!< Command handling function */
+  void loggerThread();  /*!< Logger thread function */
+  void loggerCommand(); /*!< Command handling function */
+
+  /** @brief Check if USB is connected */
   bool usbIsConnected(void); /*!< Check if USB is connected */
 };
 
