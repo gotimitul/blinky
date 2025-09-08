@@ -15,10 +15,13 @@
 /* LED Thread
  ---
   This module provides a thread-based approach to control LEDs using
- CMSIS-RTOS2. # 📝 Overview The LED Thread module allows for concurrent control
- of multiple LEDs, each managed by its own thread. It uses a shared semaphore to
- ensure that only one thread can access the GPIO pins at a time, preventing
- conflicts and ensuring safe operation.
+ CMSIS-RTOS2.
+
+ # 📝 Overview
+ The LED Thread module allows for concurrent control of multiple LEDs, each
+ managed by its own thread. It uses a shared semaphore to ensure that only one
+ thread can access the GPIO pins at a time, preventing conflicts and ensuring
+ safe operation.
 
   # ⚙️ Features
   - Each LED is controlled by a separate thread.
@@ -34,18 +37,22 @@
   on-time duration.
 
   # 🔧 Implementation Details
-  The `LedThread` class encapsulates the functionality for controlling an LED in
-  its own thread. It uses CMSIS-RTOS2 APIs to create and manage threads. A
+ The `LedThread` class encapsulates the functionality for controlling an LED in
+ its own thread. It uses CMSIS-RTOS2 APIs to create and manage threads. A
  shared semaphore is used to ensure that only one thread can access the GPIO
  pins at a time, preventing conflicts and ensuring safe operation. The class
  also provides a static method to retrieve a shared semaphore instance, ensuring
- that it is created only once. Event flags are used to signal button press
- events to the LED threads, allowing them to respond accordingly. The LED
- on-time duration is configurable via a static member variable, allowing all LED
- threads to share the same on-time setting. The implementation includes error
- handling for thread and semaphore creation, logging errors via the USB Logger
- if enabled. The module is designed for embedded applications using CMSIS-RTOS2
- and is suitable for systems with multiple LEDs requiring concurrent control.
+ that it is created only once.
+
+ Event flags are used to signal button press events to the LED threads, allowing
+ them to respond accordingly. The LED on-time duration is configurable via a
+ static member variable, allowing all LED threads to share the same on-time
+ setting.
+
+ The implementation includes error handling for thread and semaphore
+ creation, logging errors via the USB Logger if enabled. The module is designed
+ for embedded applications using CMSIS-RTOS2 and is suitable for systems with
+ multiple LEDs requiring concurrent control.
 */
 
 #include "led_thread.h"
@@ -54,7 +61,6 @@
 #include "led.h"
 #include "log_router.h"
 #include "stdio.h"
-#include "string.h" // IWYU pragma: keep
 #include <cstdint>
 #include <cstring>
 #include <mutex>
@@ -121,8 +127,8 @@ osEventFlagsId_t app_events_get() {
     std::printf("Failed to create event flags for button press: %s, %d\r\n",
                 __FILE__, __LINE__);
 #elif RUN_TIME
-    LogRouter::getInstance().log("Failed to create event flags for button "
-                                 "press\r\n");
+    LogRouter::getInstance().log(
+        "Failed to create event flags for button press\r\n");
 #endif
     return nullptr;
   }
@@ -190,17 +196,21 @@ void LedThread::thread_entry(void *argument) {
   thread->run();
 }
 
+/**
+ * @brief Check for button press events.
+ * @details
+ *   Checks for a button press event. If detected, it replays the file system
+ * logs to USB. Debounces the button press and clears the event flag.
+ * @note This function is non-blocking and returns immediately if no event is
+ *       detected.
+ * @param arg Pointer to the LED thread instance.
+ */
 auto checkButtonEvent = [](void *arg) {
   LedThread *thread = static_cast<LedThread *>(arg);
   if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
-    /*
-    thread->decreaseOnTime(100U); // Decrease onTime by 100 ms
-    #ifdef RUN_TIME
-        LogRouter::getInstance().log("%s: Button pressed. New ON Time: %d
-    ms\r\n", Time::getInstance().getCurrentTimeString(), thread->getOnTime());
-    #endif
-    */
-    LogRouter::getInstance().replayFsLogsToUsb();
+#ifdef FS_LOG
+    LogRouter::getInstance().replayFsLogsToUsb(); /* Replay logs to USB */
+#endif
     osDelay(50U);                            /* Debounce delay */
     osEventFlagsClear(app_events_get(), 1U); /* Clear the event flag */
   }
@@ -226,11 +236,12 @@ void LedThread::run(void) {
       EventStartA(10);
 #endif
 
-    Led::getInstance().on(pin);
+    Led::getInstance().on(pin); /* Turn LED on */
 
-    LogRouter::getInstance().log("%s: LED %s ON for %d ms\r\n",
-                                 Time::getInstance().getCurrentTimeString(),
-                                 thread_attr.name, getOnTime());
+    LogRouter::getInstance().log(
+        "%s: LED %s ON for %d ms\r\n",
+        BootClock::getInstance().getCurrentTimeString(), thread_attr.name,
+        getOnTime());
 
     osDelay(getOnTime());
 

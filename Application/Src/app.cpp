@@ -53,6 +53,7 @@
 #include "led_thread.h"
 #include "log_router.h"
 #include "stdio.h"
+#include "stm32f4xx.h" // IWYU pragma: keep
 #include "usb_logger.h"
 #include <cstdint>
 
@@ -75,6 +76,7 @@ constexpr uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
  * @brief Main application thread entry
  * This function initializes the GPIO for the user button, sets up event
  * triggers, initializes the USB logger, and creates LED threads.
+ * This function is C-compatible and can be called from C code.
  * @param argument Unused (reserved for future extensions)
  */
 extern "C" void app_main(void *argument) {
@@ -84,9 +86,10 @@ extern "C" void app_main(void *argument) {
   Driver_GPIO0.Setup(USER_BUTTON_PIN, ARM_GPIO_SignalEvent);
   // Set event trigger for rising edge on user button pin
   Driver_GPIO0.SetEventTrigger(USER_BUTTON_PIN, ARM_GPIO_TRIGGER_RISING_EDGE);
-// Initialize USB logger for debugging output
 #ifdef RUN_TIME
-  UsbLogger::getInstance().init();
+  UsbLogger::getInstance().init(); // Initialize USB Logger for runtime logging
+#endif
+#if defined(FS_LOG) && !defined(DEBUG)
   FsLog::getInstance().init(); // Initialize File System Logger
 #endif
 

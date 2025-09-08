@@ -1,11 +1,12 @@
 /**
  * @file boot_clock.cpp
- * @brief Implementation of Time class for system timekeeping
+ * @brief Implementation of BootClock class for system timekeeping
  * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @ingroup boot_clock
- * This file implements the Time class which provides system time in a
+ * @details
+ * This file implements the BootClock class which provides system time in a
  * human-readable format. It uses the RTOS tick count to calculate hours,
  * minutes, seconds, and milliseconds since system start.
  */
@@ -23,11 +24,11 @@
 
  # 📋 Usage
  To use the Boot Clock module, obtain the singleton instance using
- `Time::getInstance()`. Call `getCurrentTimeString()` to get the current time as
- a formatted string.
+ `BootClock::getInstance()`. Call `getCurrentTimeString()` to get the current
+ time as a formatted string.
 
  # 🔧 Implementation Details
- The Time class is implemented as a singleton to ensure a single instance
+ The BootClock class is implemented as a singleton to ensure a single instance
  throughout the application. It uses the CMSIS-RTOS2 API to get the system tick
  count and calculates the elapsed time. The time is formatted as "HH:MM:SS.mmm"
  where HH is hours, MM is minutes, SS is seconds, and mmm is milliseconds.
@@ -38,12 +39,13 @@
 #include <cstdint>
 #include <cstdio>
 
-/** @brief Get the singleton instance of Time
- * This method returns a reference to the single instance of the Time class.
- * @return Reference to the Time instance.
+/** @brief Get the singleton instance of BootClock
+ * This method returns a reference to the single instance of the BootClock
+ * class.
+ * @return Reference to the BootClock instance.
  */
-Time &Time::getInstance() {
-  static Time instance;
+BootClock &BootClock::getInstance() {
+  static BootClock instance;
   return instance;
 }
 
@@ -52,7 +54,7 @@ Time &Time::getInstance() {
  * SS is seconds, and mmm is milliseconds since system start.
  * @return Pointer to a static string containing the formatted time.
  */
-char *Time::getCurrentTimeString(void) {
+char *BootClock::getCurrentTimeString(void) {
   std::uint32_t totalMilliseconds = osKernelGetTickCount();
   std::uint32_t hours = (totalMilliseconds / 3600000) % 24;
   std::uint32_t minutes = (totalMilliseconds / 60000) % 60;

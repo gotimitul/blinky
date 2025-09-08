@@ -4,6 +4,8 @@
  * @version 1.0
  * @date 2025-08-07
  * @author Mitul Goti
+ * @defgroup Logger Logger Interface
+ * @{
  * @details Logger interface for different logging mechanisms.
  *   This header defines the Logger abstract base class which can be extended
  *   by various logging implementations such as USB logging and file system
@@ -33,4 +35,5 @@ extern "C" {
 }
 #endif
 
-#endif // LOGGER_H
+#endif    // LOGGER_H
+/** @} */ // end of logger

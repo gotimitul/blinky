@@ -1,14 +1,15 @@
 /**
  * @file    fs_log.cpp
  * @brief   File system logging implementation for embedded application.
+ * @author  Mitul Goti
+ * @version V1.0
+ * @date    2025-09-06
+ * @ingroup Logger
+ * @{
  * @details
  * This module provides logging functionality using the RL-ARM FlashFS.
  * It supports log file creation, writing, and replaying logs to USB.
  * Thread safety is ensured using RTOS mutexes and memory pools.
- *
- * @author  Mitul Goti
- * @version V1.0
- * @date    2025-09-06
  */
 
 /* File System Logger
@@ -18,7 +19,6 @@
  embedded file system. It supports various log levels and can replay logs over
  USB. # ⚙️ Features
  - Log messages to a file in the embedded file system.
- - Support for different log levels (e.g., INFO, WARN, ERROR).
  - Replay log messages over USB CDC.
  - Thread-safe logging using RTOS mutexes.
  - Memory pool management for log buffers.
@@ -27,12 +27,13 @@
  - Integration with USB Logger for unified logging.
  - Error handling for file system operations.
  - Profiling support using Event Recorder.
- - Efficient memory usage with static allocation for RTOS objects.
 
  # 📋 Usage
  To use the File System Logger, initialize it using
  `FsLog::getInstance().init()`. Use the `log` method to log messages. To replay
- logs over USB, call `replayLogsToUsb()`. # 🛠️ Commands You can interact with the
+ logs over USB, call `replayLogsToUsb()`.
+
+ # 🛠️ Commands You can interact with the
  firmware over the USB CDC (virtual COM port) using the following commands: |
  Command         | Description |
  |-----------------|------------------------------------------------------------------|
@@ -49,13 +50,16 @@
  The File System Logger is implemented as a singleton class `FsLog`. It uses the
  RL-ARM FlashFS for file operations and CMSIS-RTOS2 for threading and
  synchronization. The logger maintains a mutex for thread-safe access to the
- file system and a memory pool for log buffers. The log file is created during
- initialization, and messages are appended to it. The logger can replay logs
- over USB by reading from the file and sending the data via the USB Logger.
+ file system and a memory pool for log buffers.
+
+ The log file is created during initialization, and messages are appended to it.
+ If a write error occurs or the file system is full, the logger attempts to
+ recreate the log file. The logger can replay logs over USB by reading from
+ the file and sending the data via the USB Logger.
 
  # 🧩 Dependencies
  - RL-ARM FlashFS for file system operations.
- - CMSIS-RTOS2 for threading and synchronization.
+ - CMSIS-RTOS2 for memory management, mutexes, and synchronization.
  - USB Logger for USB communication.
  - Event Recorder for profiling (optional).
  - Standard C/C++ libraries for string manipulation and I/O.
@@ -70,19 +74,11 @@
  The logger includes error handling for file system operations. If an error
  occurs during file creation, writing, or reading, appropriate error messages
  are logged via the USB Logger. The logger also attempts to recreate the log
- file if a write error occurs. # 🧪 Testing The File System Logger has been
- tested on the target embedded platform with various log messages and commands.
- It has been verified to handle concurrent logging from multiple threads and to
- replay logs correctly over USB. # 📚 References
- - RL-ARM FlashFS documentation.
- - CMSIS-RTOS2 documentation.
- - USB Logger documentation.
- - Event Recorder documentation.
- - Standard C/C++ library documentation.
+ file if a write error occurs.
 
- # 📝 Changelog
- - V1.0: Initial implementation of the File System Logger.
- - V1.1: Added support for log file rotation and improved error handling.
+ # 🧪 Testing The File System Logger has been tested on the target embedded
+ platform with various log messages and commands. It has been verified to handle
+ concurrent logging from multiple threads and to replay logs correctly over USB.
  */
 
 #include "fs_log.h"
@@ -113,24 +109,6 @@ osMemoryPoolId_t fsMemPoolId;      /*!< Memory pool ID for log buffer */
 osMutexId_t fsMutexId;             /*!< Mutex ID for file system access */
 osThreadId_t threadId = nullptr;   /*!< RTOS thread ID for logger */
 char *fs_buf = nullptr;            /*!< Buffer for file system operations */
-
-uint64_t stack[256]
-    __attribute__((aligned(64))); /*!< Static thread stack (aligned) */
-uint64_t cb[32]
-    __attribute__((aligned(64))); /*!< Static thread control block (aligned) */
-
-/**
- * @brief   Thread attributes for the logger thread.
- */
-constexpr osThreadAttr_t threadAttr = {
-    .name = "FsLogThread",       /*!< Name for debugging */
-    .attr_bits = 0U,             /*!< No special thread attributes */
-    .cb_mem = cb,                /*!< Control block memory */
-    .cb_size = sizeof(cb),       /*!< Control block size */
-    .stack_mem = stack,          /*!< Stack memory */
-    .stack_size = sizeof(stack), /*!< Stack size */
-    .priority = osPriorityLow1   /*!< Thread priority */
-};
 
 uint64_t fs_buf_mem[256 / 8]
     __attribute__((aligned(64))); /*!< Memory buffer for file system */
@@ -163,7 +141,7 @@ constexpr osMutexAttr_t fsMutexAttr = {
  * @param   buf Buffer to write.
  * @return  Number of bytes written or negative value on error.
  */
-static std::int32_t fsWrite(int &fd, const char *buf) {
+static std::int32_t fs_write(int &fd, const char *buf) {
   return fs_fwrite(fd, buf, strlen(buf));
 }
 
@@ -180,7 +158,7 @@ static int32_t fs_recreate(int32_t &fd) {
     fd = fs_fopen(file_path,
                   FS_FOPEN_CREATE | FS_FOPEN_WR); /* Recreate log file */
     if (fd >= 0) {
-      if (fsWrite(fd, "Log file recreated after write error.\r\n") > 0) {
+      if (fs_write(fd, "Log file recreated after write error.\r\n") > 0) {
         return 0;
       }
     }
@@ -288,7 +266,7 @@ void FsLog::init() {
  * @brief   Write a message to the log file.
  * @param   msg Null-terminated string to write.
  */
-void fs_write(const char *msg) {
+void logsToFs(const char *msg) {
   std::int32_t status;
   std::int32_t fd;
   if (fsMutexId == nullptr) {
@@ -298,7 +276,7 @@ void fs_write(const char *msg) {
   osMutexAcquire(fsMutexId, osWaitForever);
   /* Open log file in append mode */
   auto append_msg = [&](const char *msg) {
-    int32_t status = fsWrite(fd, msg);
+    int32_t status = fs_write(fd, msg);
     fs_fclose(fd);
     return status;
   };
@@ -350,7 +328,7 @@ void fs_write(const char *msg) {
  */
 void FsLog::log(const char *msg) {
   if (fsInit == 0) {
-    fs_write(msg);
+    logsToFs(msg);
   }
 }
 
@@ -362,18 +340,18 @@ void FsLog::replayLogsToUsb() {
   if (fsInit == 0) {
     UsbLogger::getInstance().log("Replaying logs to USB...\n");
     osDelay(10); /* Small delay to ensure USB is ready */
-    FsLog::getInstance().fsLogThread();
+    FsLog::getInstance().fsLogsToUsb();
   }
 }
 
 /**
- * @brief   Logger thread function for replaying logs.
+ * @brief   Logger function to send logs to USB.
  * @details
  *  - Reads new log data from the file.
  *  - Sends data to USB in chunks.
  *  - Updates cursor position.
  */
-void FsLog::fsLogThread() {
+void FsLog::fsLogsToUsb() {
   std::int32_t n;
   std::int32_t fd;
   constexpr uint32_t FS_DATA_PAKET_SIZE = 256;
@@ -434,3 +412,5 @@ void FsLog::fsLogThread() {
   }
   return;
 }
+
+/** @} */ // end of Logger

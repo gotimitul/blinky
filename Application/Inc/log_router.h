@@ -1,11 +1,13 @@
 /**
  * @file log_router.h
  * @brief Routes log messages to USB and/or filesystem sinks.
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
- *
- * @defgroup LogRouter Log Router
- * @brief Facade that selects active sinks (USB, FS) and forwards log messages.
+ * @ingroup Logger
+ * @details This file provides the interface for the LogRouter class,
+ *          which is responsible for routing log messages to the appropriate
+ *          logging sinks (USB and filesystem).
  * @{
  */
 
@@ -65,4 +67,4 @@ extern "C" {
 #endif
 #endif // LOG_ROUTER_H
 
-/** @} */ // end of group LogRouter
+/** @} */ // end of group Logger

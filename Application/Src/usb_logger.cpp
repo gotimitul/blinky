@@ -4,7 +4,11 @@
  * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
- * @ingroup UsbLogger
+ * @ingroup Logger
+ * @details This file provides the implementation for the UsbLogger class,
+ *          which is responsible for logging messages to a USB CDC interface.
+ *          Thread safety is ensured using RTOS primitives.
+ * @{
  */
 
 /* USB Logger
@@ -200,7 +204,7 @@ auto messageQueueFullHandler = +[](void) {
  *   - If the queue is full, removes the oldest message and retries.
  */
 void UsbLogger::log(const char *msg) {
-  if (msgQueueId != nullptr && msg != nullptr) {
+  if (msgQueueId != nullptr) {
     while (osMessageQueuePut(msgQueueId, msg, 0, 0) ==
            osErrorResource) // non-blocking enqueue, remove oldest if full
     {
@@ -288,27 +292,32 @@ void UsbLogger::loggerCommand(void) {
         LedThread::setOnTime(temp);
 #ifdef RUN_TIME
         LogRouter::getInstance().log(
-            "%s: Received USB command. New ON Time: %d ms\r\n",
-            Time::getInstance().getCurrentTimeString(), LedThread::getOnTime());
+            "%s: Received USB command. New ON BootClock: %d ms\r\n",
+            BootClock::getInstance().getCurrentTimeString(),
+            LedThread::getOnTime());
 #endif
       } else if (temp != 0) {
 #ifdef RUN_TIME
-        LogRouter::getInstance().log(
-            "Invalid ON Time received: %d. Enter between 100 and 2000.\r\n",
-            temp);
+        LogRouter::getInstance().log("Invalid ON BootClock received: %d. Enter "
+                                     "between 100 and 2000.\r\n",
+                                     temp);
 #endif
 #ifdef DEBUG
-        printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
+        printf("Invalid ON BootClock received: %s, %d\r\n", __FILE__, __LINE__);
 #endif
       }
-    } else if (strcmp(rxBuf, "fsLog out") == 0) {
+    }
+#ifdef FS_LOG
+    else if (strcmp(rxBuf, "fsLog out") == 0) {
       LogRouter::getInstance().replayFsLogsToUsb();
     } else if (strcmp(rxBuf, "fsLog off") == 0) {
       LogRouter::getInstance().enableFsLogging(false);
     } else if (strcmp(rxBuf, "fsLog on") == 0) {
       LogRouter::getInstance().enableFsLogging(true);
       LogRouter::getInstance().enableUsbLogging(false);
-    } else if (strcmp(rxBuf, "log off") == 0) {
+    }
+#endif
+    else if (strcmp(rxBuf, "log off") == 0) {
       LogRouter::getInstance().enableUsbLogging(false);
     } else if (strcmp(rxBuf, "log on") == 0) {
       LogRouter::getInstance().enableUsbLogging(true);
@@ -412,14 +421,7 @@ int8_t usbXferCompleteCallback(uint8_t *Buf, uint32_t *Len, uint8_t epnum) {
  * @details Calls the LogRouter to log the message.
  */
 void usb_logger_c_api(const char *msg) {
-  if (msg == nullptr) {
-#ifdef DEBUG
-    printf("usb_logger_c_api: msg is null: %s, %d\r\n", __FILE__, __LINE__);
-#elif RUN_TIME
-    LogRouter::getInstance().log("usb_logger_c_api: msg is null\r\n");
-#endif
-    return;
-  }
   LogRouter::getInstance().log(msg); // Route log message
 }
 } // extern "C"
+/** @} */ // end of Logger

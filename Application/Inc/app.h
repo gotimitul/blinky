@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-#include "stm32f4xx_hal.h" // IWYU pragma: keep
-
 void app_main(void *argument); // Main application thread function
 
 #ifdef __cplusplus

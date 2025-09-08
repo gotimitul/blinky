@@ -1,10 +1,11 @@
 /**
  * @file led.cpp
  * @brief Implementation of the Led class for GPIO-based LED control
+ * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @ingroup led
- *
+ * @details
  * This file defines the toggle method of the Led class, using the
  * CMSIS-compliant ARM GPIO driver to change the LED state based on its current
  * input.
@@ -31,6 +32,7 @@
  The `Led` class uses the CMSIS-compliant `ARM_DRIVER_GPIO` interface to
  manipulate GPIO pins. The `toggle` method reads the current state of the pin
  and sets it to the opposite state.
+
  The implementation ensures that the GPIO driver is properly initialized and
  configured before performing any operations.
 */

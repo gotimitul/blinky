@@ -3,11 +3,11 @@
  * @brief UsbLogger class for USB CDC-based logging (CMSIS-RTOS2)
  * @version 1.0
  * @date 2025-08-07
- * @author
- *
- * @defgroup UsbLogger USB CDC Logger
- * @brief Thread-safe USB logger class for transmitting messages over USB CDC.
+ * @author  Mitul Goti
+ * @ingroup Logger
  * @{
+ * @details This file provides the interface for the UsbLogger class,
+ *          which is responsible for logging messages to a USB CDC interface.
  */
 
 #ifndef USB_LOGGER_H
@@ -35,7 +35,7 @@ public:
                                    uint32_t len); /*!< Send data chunk */
 
 private:
-  UsbLogger();                           // Singleton
+  UsbLogger(); /*!< Private constructor for Singleton */
   UsbLogger(const UsbLogger &) = delete; /*!< Prevent copy construction */
   UsbLogger &operator=(const UsbLogger &) = delete; /*!< Prevent assignment */
   static void loggerThreadWrapper(void *argument);  /*!< Thread wrapper */
@@ -60,4 +60,4 @@ void usb_logger_c_api(const char *msg); /*!< C API for logging */
 
 #endif // USB_LOGGER_H
 
-/** @} */ //
+/** @} */ // end of Logger

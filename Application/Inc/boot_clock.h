@@ -1,12 +1,13 @@
 /**
  * @file boot_clock.h
- * @brief Declaration of Time class for system timekeeping
+ * @brief Declaration of BootClock class for system timekeeping
  * @author Mitul Goti
  * @version 1.0
  * @date 2025-08-07
  * @defgroup boot_clock boot_clock
  * @{
- * This file declares the Time class which provides system time in a
+ * @details
+ * This file declares the BootClock class which provides system time in a
  * human-readable format. It uses the RTOS tick count to calculate hours,
  * minutes, seconds, and milliseconds since system start.
  */
@@ -19,25 +20,26 @@
 #ifdef __cplusplus
 
 /**
- * @class Time
+ * @class BootClock
  * @brief Singleton class for system timekeeping
  * This class provides methods to get the current system time formatted
  * as a string. It uses the RTOS tick count to compute hours, minutes,
  * seconds, and milliseconds since system start.
  */
-class Time {
+class BootClock {
 public:
-  static Time &getInstance(); ///< Get singleton instance
+  static BootClock &getInstance(); ///< Get singleton instance
 
   char *getCurrentTimeString(void); ///< Get current time as formatted string
 
 private:
-  Time() {};                   ///< Private constructor for singleton pattern
-  Time(const Time &) = delete; ///< Delete copy constructor
-  Time &operator=(const Time &) = delete; ///< Delete copy assignment operator
+  BootClock() {}; ///< Private constructor for singleton pattern
+  BootClock(const BootClock &) = delete; ///< Delete copy constructor
+  BootClock &
+  operator=(const BootClock &) = delete; ///< Delete copy assignment operator
 
   char timeString[16]; ///< Buffer to hold formatted time string
-}; // End of Time class
+}; // End of BootClock class
 
 extern "C" {
 #endif
