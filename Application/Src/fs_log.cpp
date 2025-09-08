@@ -141,7 +141,7 @@ constexpr osMutexAttr_t fsMutexAttr = {
  * @param   buf Buffer to write.
  * @return  Number of bytes written or negative value on error.
  */
-static std::int32_t fs_write(int &fd, const char *buf) {
+static std::int32_t fs_write(int32_t &fd, const char *buf) {
   return fs_fwrite(fd, buf, strlen(buf));
 }
 
@@ -208,33 +208,29 @@ void FsLog::init() {
     status = fmount(drive_r0); /* Try to mount the file system */
     if (status == fsNoFileSystem) {
       status = fformat(drive_r0, "FAT32"); /* Format if no file system */
+    }
+    if (status == fsOK) {
+      status = fmount(drive_r0); /* Mount again after formatting */
       if (status == fsOK) {
-        status = fmount(drive_r0); /* Mount again after formatting */
-        if (status == fsOK) {
-          int32_t fd = fs_fopen(
-              file_path, FS_FOPEN_CREATE | FS_FOPEN_WR); /* Create log file */
-          // Check if file was created successfully
-          if (fd > 0) {
-            fs_fclose(fd); /* Close the file after creation */
-            this->log("Log file system initialized.\r\n");
-          } else {
-            UsbLogger::getInstance().log("Failed to create log file.\r\n");
-            fsInit = -1; /* Mark initialization failure */
-            return;
-          }
+        int32_t fd = fs_fopen(file_path, FS_FOPEN_CREATE |
+                                             FS_FOPEN_WR); /* Create log file */
+        // Check if file was created successfully
+        if (fd >= 0) {
+          fs_fclose(fd); /* Close the file after creation */
+          this->log("Log file system initialized.\r\n");
         } else {
-          UsbLogger::getInstance().log(
-              "Failed to mount the formatted drive.\r\n");
+          UsbLogger::getInstance().log("Failed to create log file.\r\n");
           fsInit = -1; /* Mark initialization failure */
           return;
         }
       } else {
-        UsbLogger::getInstance().log("Failed to format the drive.\r\n");
+        UsbLogger::getInstance().log(
+            "Failed to mount the formatted drive.\r\n");
         fsInit = -1; /* Mark initialization failure */
         return;
       }
     } else {
-      UsbLogger::getInstance().log("Failed to mount the drive.\r\n");
+      UsbLogger::getInstance().log("Failed to format the drive.\r\n");
       fsInit = -1; /* Mark initialization failure */
       return;
     }
@@ -282,17 +278,18 @@ void logsToFs(const char *msg) {
   };
 
   fd = fs_fopen(file_path, FS_FOPEN_APPEND);
-  if (fd > 0) {
+  if (fd >= 0) {
     /* Move cursor to end of file */
     if (fs_fseek(fd, 0, SEEK_END) >= 0) {
       /* Check free space whether it is greater than the message size */
       if (ffree(drive_r0) < strlen(msg)) {
         /* Not enough space, attempt to recreate the log file */
-        if (fs_recreate(fd) == NULL) {
-          fd = append_msg(msg); /* Retry writing the message in the new file */
-          cursor_pos = 0;       /* Reset cursor position */
+        if (fs_recreate(fd) == 0) {
+          int32_t n =
+              append_msg(msg); /* Retry writing the message in the new file */
+          cursor_pos = 0;      /* Reset cursor position */
           osMutexRelease(fsMutexId);
-          if (fd < 0) {
+          if (n < 0) {
             UsbLogger::getInstance().log(
                 "Failed to write in the new log file.\r\n");
           }
@@ -303,9 +300,9 @@ void logsToFs(const char *msg) {
           return;
         }
       } else {
-        fd = append_msg(msg);
+        int32_t n = append_msg(msg);
         osMutexRelease(fsMutexId);
-        if (fd < 0) {
+        if (n < 0) {
           UsbLogger::getInstance().log("Failed to write in the log file.\r\n");
         }
       }
@@ -338,7 +335,7 @@ void FsLog::log(const char *msg) {
  */
 void FsLog::replayLogsToUsb() {
   if (fsInit == 0) {
-    UsbLogger::getInstance().log("Replaying logs to USB...\n");
+    UsbLogger::getInstance().usbXferChunk("Replaying logs to USB...\n", 28);
     osDelay(10); /* Small delay to ensure USB is ready */
     FsLog::getInstance().fsLogsToUsb();
   }
@@ -370,46 +367,38 @@ void FsLog::fsLogsToUsb() {
       return;
     }
   }
-  for (;;) {
-    osMutexAcquire(fsMutexId, osWaitForever);
-    fd = fs_fopen("R0:/log.txt", FS_FOPEN_RD);
-    if (fd > 0) {
-      n = fs_fsize(fd); /* Get file size */
+  fd = fs_fopen(file_path, FS_FOPEN_RD);
+  if (fd >= 0) {
+    n = fs_fsize(fd); /* Get file size */
+    while (n > cursor_pos) {
+      osMutexAcquire(fsMutexId, osWaitForever);
+      fs_fseek(fd, cursor_pos, SEEK_SET);
 
-      if (n > cursor_pos) {
-        fs_fseek(fd, cursor_pos, SEEK_SET);
-
-        n = fs_fread(fd, fs_buf,
-                     (n - cursor_pos) < FS_DATA_PAKET_SIZE
-                         ? n - cursor_pos
-                         : FS_DATA_PAKET_SIZE); /* Read file content */
-        fs_fclose(fd);
-        osMutexRelease(fsMutexId);
-        const char *end_ptr = fs_buf + n;
-        const char *start_ptr = fs_buf;
-        while (end_ptr != start_ptr) {
-          end_ptr--; /* Trim trailing newlines */
-          if (*end_ptr == '\n')
-            break;
-        }
-        n = end_ptr - start_ptr + 1;
-        if (n > 1) {
-          while (UsbLogger::usbXferChunk(fs_buf, n) == -1) {
-            osDelay(10); /* Wait and retry if USB transfer fails */
-          }
-          cursor_pos += n;
-        }
-      } else {
-        fs_fclose(fd);
-        osMutexRelease(fsMutexId);
-        return; /* No new data to read, exit the thread */
-      }
-    } else {
-      UsbLogger::getInstance().log("Failed to open log file for reading.\r\n");
+      int32_t m = fs_fread(fd, fs_buf,
+                           (m - cursor_pos) < FS_DATA_PAKET_SIZE
+                               ? m - cursor_pos
+                               : FS_DATA_PAKET_SIZE); /* Read file content */
+                                                      //     fs_fclose(fd);
       osMutexRelease(fsMutexId);
+      const char *end_ptr = fs_buf + m;
+      const char *start_ptr = fs_buf;
+      while (end_ptr != start_ptr) {
+        end_ptr--; /* Trim trailing newlines */
+        if (*end_ptr == '\n')
+          break;
+      }
+      m = end_ptr - start_ptr + 1;
+      if (m > 1) {
+        while (UsbLogger::getInstance().usbXferChunk(fs_buf, m) == -1) {
+          osDelay(10); /* Wait and retry if USB transfer fails */
+        }
+        cursor_pos += m;
+      }
     }
-    osDelay(50); /* Placeholder for periodic tasks if needed */
+  } else {
+    UsbLogger::getInstance().log("Failed to open log file for reading.\r\n");
   }
+  fs_fclose(fd);
   return;
 }
 

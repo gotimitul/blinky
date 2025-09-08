@@ -44,7 +44,7 @@ private:
   ~FsLog() = default;                       /*!< Default destructor */
   void fsLogsToUsb();                       /*!< Logger thread function */
 
-  int32_t fsInit; /*!< Initialization status of the file system logger */
+  int32_t fsInit = -1; /*!< Initialization status of the file system logger */
 };
 
 extern "C" {

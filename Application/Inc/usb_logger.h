@@ -31,8 +31,8 @@ public:
   static UsbLogger &getInstance();    /*!< Get singleton instance */
   void init();                        /*!< Initialize logger */
   void log(const char *msg) override; /*!< Log a message */
-  static std::int32_t usbXferChunk(const char *msg,
-                                   uint32_t len); /*!< Send data chunk */
+  std::int32_t usbXferChunk(const char *msg,
+                            uint32_t len); /*!< Send data chunk */
 
 private:
   UsbLogger(); /*!< Private constructor for Singleton */
