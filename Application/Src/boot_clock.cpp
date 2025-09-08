@@ -6,32 +6,39 @@
  * @date 2025-08-07
  * @ingroup boot_clock
  * @details
- * This file implements the BootClock class which provides system time in a
- * human-readable format. It uses the RTOS tick count to calculate hours,
- * minutes, seconds, and milliseconds since system start.
+ * This file defines the methods of the BootClock class which provides system
+ * time in a human-readable format. It uses the RTOS tick count to calculate
+ * hours, minutes, seconds, and milliseconds since system start.
+ * The implementation includes a method to set the RTC time based on a provided
+ * string in "hh:mm:ss" format.
  */
 
 /* Boot Clock
  ---
  # 📝 Overview
- The Boot Clock module provides a way to keep track of system time since boot.
- It uses the RTOS tick count to calculate the elapsed time in hours, minutes,
- seconds, and milliseconds.
+  The Boot Clock module provides a way to retrieve the current system time in a
+ human-readable format. It uses the RTOS tick count to calculate the elapsed
+ time since system start.
 
  # ⚙️ Features
  - Retrieve current system time in a human-readable format.
  - Uses RTOS tick count for accurate timekeeping.
+ - Set RTC time based on "hh:mm:ss" input.
 
  # 📋 Usage
  To use the Boot Clock module, obtain the singleton instance using
  `BootClock::getInstance()`. Call `getCurrentTimeString()` to get the current
- time as a formatted string.
+ time as a formatted string. To set the RTC time, use the `setRTC()` method
+ with a string in "hh:mm:ss" format.
 
  # 🔧 Implementation Details
  The BootClock class is implemented as a singleton to ensure a single instance
  throughout the application. It uses the CMSIS-RTOS2 API to get the system tick
  count and calculates the elapsed time. The time is formatted as "HH:MM:SS.mmm"
  where HH is hours, MM is minutes, SS is seconds, and mmm is milliseconds.
+
+ The `setRTC()` method parses a string in "hh:mm:ss" format and adjusts the
+ clock offset accordingly. It validates the input to ensure correct time values.
 */
 
 #include "boot_clock.h"
@@ -55,7 +62,7 @@ BootClock &BootClock::getInstance() {
  * @return Pointer to a static string containing the formatted time.
  */
 char *BootClock::getCurrentTimeString(void) {
-  std::uint32_t totalMilliseconds = osKernelGetTickCount();
+  std::uint32_t totalMilliseconds = osKernelGetTickCount() + clock_offset;
   std::uint32_t hours = (totalMilliseconds / 3600000) % 24;
   std::uint32_t minutes = (totalMilliseconds / 60000) % 60;
   std::uint32_t seconds = (totalMilliseconds / 1000) % 60;
@@ -64,4 +71,30 @@ char *BootClock::getCurrentTimeString(void) {
   snprintf(timeString, sizeof(timeString), "%02u:%02u:%02u.%03u", hours,
            minutes, seconds, milliseconds);
   return timeString;
+}
+
+/** @brief Set the RTC time based on a provided string.
+ * The input string should be in the format "hh:mm:ss".
+ * @param buf Pointer to a string containing the time in "hh:mm:ss" format.
+ * @return 0 on success, -1 on error (invalid format or values).
+ */
+std::int32_t BootClock::setRTC(char *buf) {
+
+  std::uint32_t hours, minutes, seconds;
+  if (std::sscanf(buf, "%2u:%2u:%2u", &hours, &minutes, &seconds) != 3) {
+    return -1; // Parsing error
+  }
+
+  if (hours >= 24 || minutes >= 60 || seconds >= 60) {
+    return -1; // Invalid time values
+  }
+
+  clock_offset = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) -
+                 osKernelGetTickCount();
+
+  // Note: osKernelSetTickCount is not part of CMSIS-RTOS2 standard.
+  // This is a placeholder for setting the tick count.
+  // osKernelSetTickCount(totalMilliseconds);
+
+  return 0; // Success
 }

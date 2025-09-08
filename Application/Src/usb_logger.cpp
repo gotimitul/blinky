@@ -45,13 +45,14 @@ following commands:
 
 | Command         | Description |
 |-----------------|------------------------------------------------------------------|
-| `<number>`      | Set LED ON time in milliseconds (valid range: 100–2000). |
-| `fsLog out`     | Replay file system logs to USB. |
-| `fsLog on`      | Enable file system logging (disables USB logging). |
-| `fsLog off`    | Disable file system logging. |
-| `log on`       | Enable USB logging (disables file system logging). |
-| `log off`      | Disable USB logging. |
-| `help`         | Show this help message. |
+| 'set on time'   | Set LED ON time in milliseconds (valid range: 100–2000). |
+| 'fsLog out'     | Replay file system logs to USB. |
+| 'fsLog on'      | Enable file system logging (disables USB logging). |
+| 'fsLog off'     | Disable file system logging. |
+| 'log on'       | Enable USB logging (disables file system logging). |
+| 'log off'      | Disable USB logging. |
+| 'set clock'    | Prompt to set clock time in hh:mm:ss format. |
+| 'help'         | Show this help message. |
 
 - **Example:** Sending `500` sets the LED ON time to 500 ms.
 - **Note:** Invalid commands or out-of-range values will result in an error
@@ -84,12 +85,13 @@ osThreadId_t threadId = nullptr;         /*!< RTOS thread ID for logger */
 osMessageQueueId_t msgQueueId = nullptr; /*!< Message queue for log strings */
 osEventFlagsId_t usbXferFlag = nullptr;  /*!< Event flags for USB transfer */
 const char *helpMsg = "Commands:\r\n"
-                      "  <number> : Set LED ON time in ms (100-2000)\r\n"
+                      "  set on time: Set LED ON time (100-2000 ms)\r\n"
                       "  fsLog out: Replay file system logs to USB\r\n"
                       "  fsLog on : Enable file system logging\r\n"
                       "  fsLog off: Disable file system logging\r\n"
                       "  log on   : Enable USB logging\r\n"
                       "  log off  : Disable USB logging\r\n"
+                      "  set clock: Set clock time (24-hour format)\r\n"
                       "  help     : Show this help message\r\n";
 
 uint64_t log_queue_mem[LOG_QUEUE_LENGTH * LOG_MSG_SIZE / 8]
@@ -284,7 +286,9 @@ void UsbLogger::loggerCommand(void) {
   // Check for received command from USB CDC
   if (USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf),
                                      &rxLen) == USBD_OK) {
-    if (isInteger(rxBuf)) {
+    if (std::strcmp(rxBuf, "set on time") == 0) {
+      usbXferChunk("Set LED ON time (100-2000 ms):\r\n", 30);
+    } else if (isInteger(rxBuf)) {
       uint32_t temp = 0;
       sscanf(rxBuf, "%u", &temp); // Parse received command as integer
       // Validate and apply LED on-time command
@@ -292,18 +296,18 @@ void UsbLogger::loggerCommand(void) {
         LedThread::setOnTime(temp);
 #ifdef RUN_TIME
         LogRouter::getInstance().log(
-            "%s: Received USB command. New ON BootClock: %d ms\r\n",
+            "%s: Received USB command. New ON Time: %d ms\r\n",
             BootClock::getInstance().getCurrentTimeString(),
             LedThread::getOnTime());
 #endif
       } else if (temp != 0) {
 #ifdef RUN_TIME
-        LogRouter::getInstance().log("Invalid ON BootClock received: %d. Enter "
-                                     "between 100 and 2000.\r\n",
-                                     temp);
+        usbXferChunk("Invalid ON Time received: %d. Enter "
+                     "between 100 and 2000.\r\n",
+                     temp);
 #endif
 #ifdef DEBUG
-        printf("Invalid ON BootClock received: %s, %d\r\n", __FILE__, __LINE__);
+        printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
 #endif
       }
     }
@@ -324,12 +328,23 @@ void UsbLogger::loggerCommand(void) {
       LogRouter::getInstance().enableFsLogging(false);
     } else if (strcmp(rxBuf, "help") == 0) {
       usbXferChunk(helpMsg, strlen(helpMsg));
+    } else if (strcmp(rxBuf, "set clock") == 0) {
+      usbXferChunk("Set clock format: hh:mm:ss\r\n", 26);
+    } else if (strlen(rxBuf) == 8 && *(rxBuf + 2) == ':' &&
+               *(rxBuf + 5) == ':') {
+      if (BootClock::getInstance().setRTC(rxBuf) == 0) {
+        usbXferChunk("Clock time set successfully\r\n", 30);
+      } else {
+        usbXferChunk("Failed to set clock time\r\n", 29);
+      }
     } else {
-      if (strlen(rxBuf) > 0) {
-        LogRouter::getInstance().log("Invalid command received: %s\r\n", rxBuf);
+      if (strlen(rxBuf) > 1) {
+#ifdef RUN_TIME
+        usbXferChunk("Invalid command. Type 'help' for list of commands\r\n",
+                     48);
+#endif
       }
     }
-
     std::memset(rxBuf, 0, 10); // Clear receive buffer
   }
 }
