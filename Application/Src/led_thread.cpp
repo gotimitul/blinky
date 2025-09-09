@@ -56,7 +56,6 @@
 */
 
 #include "led_thread.h"
-#include "boot_clock.h"
 #include "cmsis_os2.h"
 #include "led.h"
 #include "log_router.h"
@@ -99,7 +98,7 @@ osSemaphoreId_t shared_semaphore(void) {
       printf("Failed to create shared semaphore: %s, %d\r\n", __FILE__,
              __LINE__);
 #elif RUN_TIME
-      LogRouter::getInstance().log("Failed to create shared semaphore\r\n");
+      LogRouter::getInstance().log("Program Fault: Failed to create shared semaphore\r\n");
 #endif
     }
   });
@@ -128,7 +127,7 @@ osEventFlagsId_t app_events_get() {
                 __FILE__, __LINE__);
 #elif RUN_TIME
     LogRouter::getInstance().log(
-        "Failed to create event flags for button press\r\n");
+        "Program Fault: Failed to create event flags for button press\r\n");
 #endif
     return nullptr;
   }
@@ -170,8 +169,8 @@ void LedThread::start(void) {
     printf("Failed to create LED thread %s. %s, %d\r\n", thread_attr.name,
            __FILE__, __LINE__);
 #elif RUN_TIME
-    LogRouter::getInstance().log("Failed to create LED thread %s\r\n",
-                                 thread_attr.name);
+    LogRouter::getInstance().log(
+        "Program Fault: Failed to create LED thread %s\r\n", thread_attr.name);
 #endif
     return;
   }
@@ -188,7 +187,7 @@ void LedThread::thread_entry(void *argument) {
            __LINE__);
 #elif RUN_TIME
     LogRouter::getInstance().log(
-        "LedThread::thread_entry: argument is null\r\n");
+        "Program Fault: LedThread::thread_entry: argument is null\r\n");
 #endif
     osThreadExit();
   }
@@ -238,10 +237,8 @@ void LedThread::run(void) {
 
     Led::getInstance().on(pin); /* Turn LED on */
 
-    LogRouter::getInstance().log(
-        "%s: LED %s ON for %d ms\r\n",
-        BootClock::getInstance().getCurrentTimeString(), thread_attr.name,
-        getOnTime());
+    LogRouter::getInstance().log("Event: LED %s ON for %d ms\r\n",
+                                 thread_attr.name, getOnTime());
 
     osDelay(getOnTime());
 

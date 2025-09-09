@@ -123,7 +123,7 @@ void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
             __FILE__, __LINE__);
 #elif RUN_TIME
         LogRouter::getInstance().log(
-            "Failed to set event flag for button press\r\n");
+            "Program Fault: Failed to set event flag for button press\r\n");
 #endif
       }
     } else {
@@ -133,7 +133,7 @@ void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
              __FILE__, __LINE__);
 #elif RUN_TIME
       LogRouter::getInstance().log(
-          "Failed to get event flags ID for button press\r\n");
+          "Program Fault: Failed to get event flags ID for button press\r\n");
 #endif
     }
   }

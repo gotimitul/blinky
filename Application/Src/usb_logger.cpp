@@ -105,8 +105,8 @@ using CommandHandler =
 void handleSetOnTime(const char *args) {
   UNUSED(args);
   // Replying with prompt to set LED ON time
-  UsbLogger::getInstance().usbXferChunk("Set LED ON time (100-2000 ms):\r\n",
-                                        30);
+  UsbLogger::getInstance().usbXferChunk(
+      "Reply: Set LED ON time (100-2000 ms):\r\n", 40);
 }
 
 /** @brief Handle 'fsLog out' command
@@ -114,8 +114,10 @@ void handleSetOnTime(const char *args) {
  */
 void handleFsLogOut(const char *args) {
   UNUSED(args);
+#ifdef FS_LOG
   // Calling LogRouter to replay file system logs to USB
   LogRouter::getInstance().replayFsLogsToUsb();
+#endif
 }
 
 /** @brief Handle 'fsLog on' command
@@ -123,9 +125,11 @@ void handleFsLogOut(const char *args) {
  */
 void handleFsLogOn(const char *args) {
   UNUSED(args);
+#ifdef FS_LOG
   // Calling LogRouter to enable file system logging
   LogRouter::getInstance().enableFsLogging(true);
   LogRouter::getInstance().enableUsbLogging(false);
+#endif
 }
 
 /** @brief Handle 'fsLog off' command
@@ -133,8 +137,10 @@ void handleFsLogOn(const char *args) {
  */
 void handleFsLogOff(const char *args) {
   UNUSED(args);
+#ifdef FS_LOG
   // Calling LogRouter to disable file system logging
   LogRouter::getInstance().enableFsLogging(false);
+#endif
 }
 
 /** @brief Handle 'log on' command
@@ -146,7 +152,8 @@ void handleLogOn(const char *args) {
   LogRouter::getInstance().enableUsbLogging(true);
   LogRouter::getInstance().enableFsLogging(false);
 
-  LogRouter::getInstance().log("Max Log storage capacity is 32 messages.\r\n");
+  LogRouter::getInstance().log(
+      "Info: Max Log storage capacity is 32 messages.\r\n");
 }
 
 /** @brief Handle 'log off' command
@@ -164,7 +171,8 @@ void handleLogOff(const char *args) {
 void handleSetClock(const char *args) {
   UNUSED(args);
   // Replying with prompt to set clock time
-  UsbLogger::getInstance().usbXferChunk("Set clock time (hh:mm:ss):\r\n", 30);
+  UsbLogger::getInstance().usbXferChunk("Reply: Set clock time (hh:mm:ss):\r\n",
+                                        40);
 }
 
 /** @brief Handle 'help' command
@@ -387,14 +395,12 @@ void UsbLogger::loggerCommand(void) {
       if (temp >= LED_ON_TIME_MIN && temp <= LED_ON_TIME_MAX) {
         LedThread::setOnTime(temp);
 #ifdef RUN_TIME
-        LogRouter::getInstance().log(
-            "%s: Received USB command. New ON Time: %d ms\r\n",
-            BootClock::getInstance().getCurrentTimeString(),
-            LedThread::getOnTime());
+        LogRouter::getInstance().log("Event: New ON Time: %d ms\r\n",
+                                     LedThread::getOnTime());
 #endif
       } else if (temp != 0) {
 #ifdef RUN_TIME
-        usbXferChunk("Invalid ON Time received: %d. Enter "
+        usbXferChunk("Reply: Invalid ON Time received: %d. Enter "
                      "between 100 and 2000.\r\n",
                      temp);
 #endif
@@ -405,15 +411,15 @@ void UsbLogger::loggerCommand(void) {
     } else if (strlen(rxBuf) == 8 && *(rxBuf + 2) == ':' &&
                *(rxBuf + 5) == ':') {
       if (BootClock::getInstance().setRTC(rxBuf) == 0) {
-        usbXferChunk("Clock time set successfully\r\n", 30);
+        usbXferChunk("Reply: Clock time set successfully\r\n", 40);
       } else {
-        usbXferChunk("Failed to set clock time\r\n", 29);
+        usbXferChunk("Reply: Failed to set clock time\r\n", 36);
       }
     } else {
       if (strlen(rxBuf) > 1) {
 #ifdef RUN_TIME
-        usbXferChunk("Invalid command. Type 'help' for list of commands\r\n",
-                     48);
+        usbXferChunk(
+            "Reply: Invalid command. Type 'help' for list of commands\r\n", 60);
 #endif
       }
     }
