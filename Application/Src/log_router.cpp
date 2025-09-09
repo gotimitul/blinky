@@ -52,10 +52,12 @@
  */
 
 #include "log_router.h"
+#include "boot_clock.h"
 #include "fs_log.h"
 #include "logger.h"
 #include "usb_logger.h"
 #include <cstdio>
+#include <cstring>
 
 /** @brief Get the singleton instance of LogRouter
  * This method returns a reference to the single instance of the LogRouter
@@ -90,10 +92,37 @@ void LogRouter::log(const char *msg) {
   // Validate input message
   if (msg == nullptr) {
 #if defined(DEBUG) && !defined(FS_LOG)
-    printf("LogRouter::log: msg is null: %s, %d\r\n", __FILE__, __LINE__);
+    printf("LogRouter::log: msg pointer is null: %s, %d\r\n", __FILE__,
+           __LINE__);
 #endif
     return;
   }
+  if (strlen(msg) == 0) {
+#if defined(DEBUG) && !defined(FS_LOG)
+    printf("LogRouter::log: msg is empty: %s, %d\r\n", __FILE__, __LINE__);
+#endif
+    msg = "Warning: Log message is empty.\r\n"; // Default message
+  }
+  const char *keywords[] = {"Warning",        "Error",         "Fail",
+                            "Critical",       "Overflow",      "Event",
+                            "Hardware Fault", "Program Fault", "System Fault"};
+
+  bool needTimeStamp = false;
+  for (const auto &keyword : keywords) {
+    if (strstr(msg, keyword) != nullptr) {
+      needTimeStamp = true;
+      break;
+    }
+  }
+
+  char logBuffer[256];
+  if (needTimeStamp) {
+    const char *timeStamp = BootClock::getInstance().getCurrentTimeString();
+    snprintf(logBuffer, sizeof(logBuffer), "[%s] %s", timeStamp, msg);
+  } else {
+    snprintf(logBuffer, sizeof(logBuffer), "%s", msg);
+  }
+
   Logger *logger; // Pointer to the selected logger
   // Determine which logger to use based on enabled flags
   if (fsLoggingEnabled) {
@@ -105,7 +134,7 @@ void LogRouter::log(const char *msg) {
   } else {
     return; // No logging enabled
   }
-  logger->log(msg); // Route log message
+  logger->log(logBuffer); // Route log message
 }
 
 /** @brief Log a message with an integer value.

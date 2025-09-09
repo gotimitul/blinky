@@ -219,23 +219,24 @@ void FsLog::init() {
           fs_fclose(fd); /* Close the file after creation */
           this->log("Log file system initialized.\r\n");
         } else {
-          UsbLogger::getInstance().log("Failed to create log file.\r\n");
+          UsbLogger::getInstance().log("Error: Failed to create log file.\r\n");
           fsInit = -1; /* Mark initialization failure */
           return;
         }
       } else {
         UsbLogger::getInstance().log(
-            "Failed to mount the formatted drive.\r\n");
+            "Error: Failed to mount the formatted drive.\r\n");
         fsInit = -1; /* Mark initialization failure */
         return;
       }
     } else {
-      UsbLogger::getInstance().log("Failed to format the drive.\r\n");
+      UsbLogger::getInstance().log("Error: Failed to format the drive.\r\n");
       fsInit = -1; /* Mark initialization failure */
       return;
     }
   } else {
-    UsbLogger::getInstance().log("RAM drive can not be initialized.\r\n");
+    UsbLogger::getInstance().log(
+        "Error: RAM drive can not be initialized.\r\n");
     fsInit = -1; /* Mark initialization failure */
     return;
   }
@@ -291,30 +292,32 @@ void logsToFs(const char *msg) {
           osMutexRelease(fsMutexId);
           if (n < 0) {
             UsbLogger::getInstance().log(
-                "Failed to write in the new log file.\r\n");
+                "Error: Failed to write in the new log file.\r\n");
           }
         } else {
           osMutexRelease(fsMutexId);
-          UsbLogger::getInstance().log(
-              "Failed to recreate log file after multiple attempts.\r\n");
+          UsbLogger::getInstance().log("Error: Failed to recreate log file "
+                                       "after multiple attempts.\r\n");
           return;
         }
       } else {
         int32_t n = append_msg(msg);
         osMutexRelease(fsMutexId);
         if (n < 0) {
-          UsbLogger::getInstance().log("Failed to write in the log file.\r\n");
+          UsbLogger::getInstance().log(
+              "Error: Failed to write in the log file.\r\n");
         }
       }
     } else {
       osMutexRelease(fsMutexId);
       UsbLogger::getInstance().log(
-          "Failed to set the cursor at the end of the file.\r\n");
+          "Error: Failed to set the cursor at the end of the file.\r\n");
       return;
     }
   } else {
     osMutexRelease(fsMutexId);
-    UsbLogger::getInstance().log("Failed to open the requested file.\r\n");
+    UsbLogger::getInstance().log(
+        "Error: Failed to open the requested file.\r\n");
     return;
   }
 }
@@ -335,7 +338,8 @@ void FsLog::log(const char *msg) {
  */
 void FsLog::replayLogsToUsb() {
   if (fsInit == 0) {
-    UsbLogger::getInstance().usbXferChunk("Replaying logs to USB...\n", 28);
+    UsbLogger::getInstance().usbXferChunk("Reply: Replaying logs to USB...\n",
+                                          36);
     osDelay(10); /* Small delay to ensure USB is ready */
     FsLog::getInstance().fsLogsToUsb();
   }
@@ -396,7 +400,8 @@ void FsLog::fsLogsToUsb() {
       }
     }
   } else {
-    UsbLogger::getInstance().log("Failed to open log file for reading.\r\n");
+    UsbLogger::getInstance().log(
+        "Error: Failed to open log file for reading.\r\n");
   }
   fs_fclose(fd);
   return;
