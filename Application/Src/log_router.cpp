@@ -123,7 +123,7 @@ void LogRouter::log(const char *msg) {
     snprintf(logBuffer, sizeof(logBuffer), "%s", msg);
   }
 
-  Logger *logger; // Pointer to the selected logger
+  Logger *logger = nullptr; // Pointer to the selected logger
   // Determine which logger to use based on enabled flags
   if (fsLoggingEnabled) {
 #if defined(FS_LOG) && !defined(DEBUG)
@@ -134,7 +134,9 @@ void LogRouter::log(const char *msg) {
   } else {
     return; // No logging enabled
   }
-  logger->log(logBuffer); // Route log message
+  if (logger != nullptr) {
+    logger->log(logBuffer); // Route log message
+  }
 }
 
 /** @brief Log a message with an integer value.
@@ -181,7 +183,7 @@ void LogRouter::log(const char *msg, const char *str, const char *str2,
   log(logBuffer);
 }
 
-/** @brief Replay filesystem logs to USB if filesystem logging is enabled.
+/** @brief Replay filesystem logs to USB.
  */
 void LogRouter::replayFsLogsToUsb() { FsLog::getInstance().replayLogsToUsb(); }
 
