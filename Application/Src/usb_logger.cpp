@@ -71,8 +71,8 @@ message being logged over USB.
 #include "usbd_def.h"
 #include <cstdint>
 #include <cstring>
-#include <stdint.h>
-#include <string.h>
+#include <functional>
+#include <map>
 
 /** Anonymous namespace for internal linkage
  * @details Contains internal variables and helper functions for UsbLogger.
@@ -84,15 +84,105 @@ constexpr uint32_t LOG_QUEUE_LENGTH = 32; /*!< Number of messages in queue */
 osThreadId_t threadId = nullptr;         /*!< RTOS thread ID for logger */
 osMessageQueueId_t msgQueueId = nullptr; /*!< Message queue for log strings */
 osEventFlagsId_t usbXferFlag = nullptr;  /*!< Event flags for USB transfer */
-const char *helpMsg = "Commands:\r\n"
-                      "  set on time: Set LED ON time (100-2000 ms)\r\n"
-                      "  fsLog out: Replay file system logs to USB\r\n"
-                      "  fsLog on : Enable file system logging\r\n"
-                      "  fsLog off: Disable file system logging\r\n"
-                      "  log on   : Enable USB logging\r\n"
-                      "  log off  : Disable USB logging\r\n"
-                      "  set clock: Set clock time (24-hour format)\r\n"
-                      "  help     : Show this help message\r\n";
+
+const char *helpMsg =
+    "Commands:\r\n"
+    "  set on time: Set LED ON time (100-2000 ms)\r\n"
+    "  fsLog out: Replay file system logs to USB\r\n"
+    "  fsLog on : Enable file system logging\r\n"
+    "  fsLog off: Disable file system logging\r\n"
+    "  log on   : Enable USB logging\r\n"
+    "  log off  : Disable USB logging\r\n"
+    "  set clock: Set clock time (24-hour format)\r\n"
+    "  help     : Show this help message\r\n"; /*!< Help message */
+
+using CommandHandler =
+    std::function<void(const char *)>; /*!< Command handler type */
+
+/** @brief Handle 'set on time' command
+ * @param args Command arguments (not used)
+ */
+void handleSetOnTime(const char *args) {
+  UNUSED(args);
+  // Replying with prompt to set LED ON time
+  UsbLogger::getInstance().usbXferChunk("Set LED ON time (100-2000 ms):\r\n",
+                                        30);
+}
+
+/** @brief Handle 'fsLog out' command
+ * @param args Command arguments (not used)
+ */
+void handleFsLogOut(const char *args) {
+  UNUSED(args);
+  // Calling LogRouter to replay file system logs to USB
+  LogRouter::getInstance().replayFsLogsToUsb();
+}
+
+/** @brief Handle 'fsLog on' command
+ * @param args Command arguments (not used)
+ */
+void handleFsLogOn(const char *args) {
+  UNUSED(args);
+  // Calling LogRouter to enable file system logging
+  LogRouter::getInstance().enableFsLogging(true);
+  LogRouter::getInstance().enableUsbLogging(false);
+}
+
+/** @brief Handle 'fsLog off' command
+ * @param args Command arguments (not used)
+ */
+void handleFsLogOff(const char *args) {
+  UNUSED(args);
+  // Calling LogRouter to disable file system logging
+  LogRouter::getInstance().enableFsLogging(false);
+}
+
+/** @brief Handle 'log on' command
+ * @param args Command arguments (not used)
+ */
+void handleLogOn(const char *args) {
+  UNUSED(args);
+  // Calling LogRouter for enabling USB logging using MemoryPool
+  LogRouter::getInstance().enableUsbLogging(true);
+  LogRouter::getInstance().enableFsLogging(false);
+
+  LogRouter::getInstance().log("Max Log storage capacity is 32 messages.\r\n");
+}
+
+/** @brief Handle 'log off' command
+ * @param args Command arguments (not used)
+ */
+void handleLogOff(const char *args) {
+  UNUSED(args);
+  // Calling LogRouter for disabling USB logging
+  LogRouter::getInstance().enableUsbLogging(false);
+}
+
+/** @brief Handle 'set clock' command
+ * @param args Command arguments (not used)
+ */
+void handleSetClock(const char *args) {
+  UNUSED(args);
+  // Replying with prompt to set clock time
+  UsbLogger::getInstance().usbXferChunk("Set clock time (hh:mm:ss):\r\n", 30);
+}
+
+/** @brief Handle 'help' command
+ * @param args Command arguments (not used)
+ */
+void handleHelp(const char *args) {
+  UNUSED(args);
+  // Replying with help command message
+  UsbLogger::getInstance().usbXferChunk(helpMsg, strlen(helpMsg));
+}
+
+// Map of command strings to their corresponding handler functions
+const std::map<std::string, CommandHandler> commandMap = {
+    {"set on time", handleSetOnTime}, {"fsLog out", handleFsLogOut},
+    {"fsLog on", handleFsLogOn},      {"fsLog off", handleFsLogOff},
+    {"log on", handleLogOn},          {"log off", handleLogOff},
+    {"set clock", handleSetClock},    {"help", handleHelp},
+};
 
 uint64_t log_queue_mem[LOG_QUEUE_LENGTH * LOG_MSG_SIZE / 8]
     __attribute__((aligned(64))); /*!< Memory buffer for message queue */
@@ -270,7 +360,7 @@ void UsbLogger::loggerThread() {
  *   - Logs actions and errors using the LogRouter.
  */
 void UsbLogger::loggerCommand(void) {
-  static char rxBuf[10];
+  static char rxBuf[16];
   uint32_t rxLen = 4;
 
   /* Helper lambda to check if a string represents a valid integer */
@@ -286,8 +376,10 @@ void UsbLogger::loggerCommand(void) {
   // Check for received command from USB CDC
   if (USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf),
                                      &rxLen) == USBD_OK) {
-    if (std::strcmp(rxBuf, "set on time") == 0) {
-      usbXferChunk("Set LED ON time (100-2000 ms):\r\n", 30);
+    auto command = std::string(rxBuf);
+    auto it = commandMap.find(command);
+    if (it != commandMap.end()) {
+      it->second(rxBuf); // Call the corresponding command handler
     } else if (isInteger(rxBuf)) {
       uint32_t temp = 0;
       sscanf(rxBuf, "%u", &temp); // Parse received command as integer
@@ -310,26 +402,6 @@ void UsbLogger::loggerCommand(void) {
         printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
 #endif
       }
-    }
-#ifdef FS_LOG
-    else if (strcmp(rxBuf, "fsLog out") == 0) {
-      LogRouter::getInstance().replayFsLogsToUsb();
-    } else if (strcmp(rxBuf, "fsLog off") == 0) {
-      LogRouter::getInstance().enableFsLogging(false);
-    } else if (strcmp(rxBuf, "fsLog on") == 0) {
-      LogRouter::getInstance().enableFsLogging(true);
-      LogRouter::getInstance().enableUsbLogging(false);
-    }
-#endif
-    else if (strcmp(rxBuf, "log off") == 0) {
-      LogRouter::getInstance().enableUsbLogging(false);
-    } else if (strcmp(rxBuf, "log on") == 0) {
-      LogRouter::getInstance().enableUsbLogging(true);
-      LogRouter::getInstance().enableFsLogging(false);
-    } else if (strcmp(rxBuf, "help") == 0) {
-      usbXferChunk(helpMsg, strlen(helpMsg));
-    } else if (strcmp(rxBuf, "set clock") == 0) {
-      usbXferChunk("Set clock format: hh:mm:ss\r\n", 26);
     } else if (strlen(rxBuf) == 8 && *(rxBuf + 2) == ':' &&
                *(rxBuf + 5) == ':') {
       if (BootClock::getInstance().setRTC(rxBuf) == 0) {
