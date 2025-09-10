@@ -106,7 +106,7 @@ void handleSetOnTime(const char *args) {
   UNUSED(args);
   // Replying with prompt to set LED ON time
   UsbLogger::getInstance().usbXferChunk(
-      "Reply: Set LED ON time (100-2000 ms):\r\n", 40);
+      "Reply: Set LED ON time (100-2000 ms):\r\n");
 }
 
 /** @brief Handle 'fsLog out' command
@@ -171,8 +171,8 @@ void handleLogOff(const char *args) {
 void handleSetClock(const char *args) {
   UNUSED(args);
   // Replying with prompt to set clock time
-  UsbLogger::getInstance().usbXferChunk("Reply: Set clock time (hh:mm:ss):\r\n",
-                                        40);
+  UsbLogger::getInstance().usbXferChunk(
+      "Reply: Set clock time (hh:mm:ss):\r\n");
 }
 
 /** @brief Handle 'help' command
@@ -181,7 +181,7 @@ void handleSetClock(const char *args) {
 void handleHelp(const char *args) {
   UNUSED(args);
   // Replying with help command message
-  UsbLogger::getInstance().usbXferChunk(helpMsg, strlen(helpMsg));
+  UsbLogger::getInstance().usbXferChunk(helpMsg);
 }
 
 // Map of command strings to their corresponding handler functions
@@ -400,9 +400,8 @@ void UsbLogger::loggerCommand(void) {
 #endif
       } else if (temp != 0) {
 #ifdef RUN_TIME
-        usbXferChunk("Reply: Invalid ON Time received: %d. Enter "
-                     "between 100 and 2000.\r\n",
-                     temp);
+        usbXferChunk(
+            "Reply: Invalid ON Time received. Enter between 100 and 2000.\r\n");
 #endif
 #ifdef DEBUG
         printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
@@ -411,19 +410,19 @@ void UsbLogger::loggerCommand(void) {
     } else if (strlen(rxBuf) == 8 && *(rxBuf + 2) == ':' &&
                *(rxBuf + 5) == ':') {
       if (BootClock::getInstance().setRTC(rxBuf) == 0) {
-        usbXferChunk("Reply: Clock time set successfully\r\n", 40);
+        usbXferChunk("Reply: Clock time set successfully\r\n");
       } else {
-        usbXferChunk("Reply: Failed to set clock time\r\n", 36);
+        usbXferChunk("Reply: Failed to set clock time\r\n");
       }
     } else {
       if (strlen(rxBuf) > 1) {
 #ifdef RUN_TIME
         usbXferChunk(
-            "Reply: Invalid command. Type 'help' for list of commands\r\n", 60);
+            "Reply: Invalid command. Type 'help' for list of commands\r\n");
 #endif
       }
     }
-    std::memset(rxBuf, 0, 10); // Clear receive buffer
+    std::memset(rxBuf, 0, sizeof(rxBuf)); // Clear receive buffer
   }
 }
 
@@ -436,11 +435,11 @@ void UsbLogger::loggerCommand(void) {
  *   - Transmits the data chunk over USB CDC.
  *   - Waits for transfer completion event.
  */
-std::int32_t UsbLogger::usbXferChunk(const char *msg, uint32_t len) {
-  if (msg != nullptr && len > 0) {
+std::int32_t UsbLogger::usbXferChunk(const char *msg) {
+  if (msg != nullptr && strlen(msg) > 0) {
     // Transmit a chunk of data over USB CDC
     while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(const_cast<char *>(msg)),
-                           len) != USBD_OK) {
+                           strlen(msg)) != USBD_OK) {
       osDelay(10); // Wait and retry if USB is busy
     }
     osDelay(10); // allow time for transfer to start

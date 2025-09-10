@@ -373,12 +373,12 @@ void FsLog::fsLogsToUsb() {
     n = fs_fsize(fd); /* Get file size */
     if (n == 0) {
       const char *msg = "Info: No logs in the filesystem to replay.\r\n";
-      UsbLogger::getInstance().usbXferChunk(msg, strlen(msg));
+      UsbLogger::getInstance().usbXferChunk(msg);
       fs_fclose(fd);
       return;
     } else {
       const char *msg = "Reply: Replaying logs from filesystem to USB...\r\n";
-      UsbLogger::getInstance().usbXferChunk(msg, strlen(msg));
+      UsbLogger::getInstance().usbXferChunk(msg);
       osDelay(10); /* Small delay to ensure USB is ready */
     }
     while (n > cursor_pos) {
@@ -399,8 +399,9 @@ void FsLog::fsLogsToUsb() {
           break;
       }
       m = end_ptr - start_ptr + 1;
+      fs_buf[m] = '\0'; /* Null-terminate the string */
       if (m > 1) {
-        while (UsbLogger::getInstance().usbXferChunk(fs_buf, m) == -1) {
+        while (UsbLogger::getInstance().usbXferChunk(fs_buf) == -1) {
           osDelay(10); /* Wait and retry if USB transfer fails */
         }
         cursor_pos += m;

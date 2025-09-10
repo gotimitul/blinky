@@ -28,11 +28,10 @@
  */
 class UsbLogger : public Logger {
 public:
-  static UsbLogger &getInstance();    /*!< Get singleton instance */
-  void init();                        /*!< Initialize logger */
-  void log(const char *msg) override; /*!< Log a message */
-  std::int32_t usbXferChunk(const char *msg,
-                            uint32_t len); /*!< Send data chunk */
+  static UsbLogger &getInstance();            /*!< Get singleton instance */
+  void init();                                /*!< Initialize logger */
+  void log(const char *msg) override;         /*!< Log a message */
+  std::int32_t usbXferChunk(const char *msg); /*!< Send data chunk */
 
 private:
   UsbLogger(); /*!< Private constructor for Singleton */
