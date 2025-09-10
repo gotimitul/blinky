@@ -15,8 +15,6 @@
 #ifndef FS_LOG_H
 #define FS_LOG_H
 
-#include "stdint.h"
-#include <cstdint>
 #include <logger.h>
 #ifdef __cplusplus
 
@@ -44,7 +42,13 @@ private:
   ~FsLog() = default;                       /*!< Default destructor */
   void fsLogsToUsb();                       /*!< Logger thread function */
 
-  int32_t fsInit = -1; /*!< Initialization status of the file system logger */
+  enum FsInitStatus {
+    FS_NOT_INITIALIZED = -1, /*!< Not initialized */
+    FS_INITIALIZED = 0       /*!< Initialized */
+  };
+
+  FsInitStatus fsInit = FS_NOT_INITIALIZED; /*!< Initialization status of the
+                                          file system logger */
 };
 
 extern "C" {

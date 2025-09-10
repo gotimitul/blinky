@@ -28,18 +28,20 @@
  */
 class UsbLogger : public Logger {
 public:
-  static UsbLogger &getInstance();            /*!< Get singleton instance */
-  void init();                                /*!< Initialize logger */
-  void log(const char *msg) override;         /*!< Log a message */
-  std::int32_t usbXferChunk(const char *msg); /*!< Send data chunk */
+  static UsbLogger &getInstance();             /*!< Get singleton instance */
+  void init();                                 /*!< Initialize logger */
+  void log(const char *msg) override;          /*!< Log a message */
+  UsbXferStatus usbXferChunk(const char *msg); /*!< Send data chunk */
 
 private:
   UsbLogger(); /*!< Private constructor for Singleton */
   UsbLogger(const UsbLogger &) = delete; /*!< Prevent copy construction */
   UsbLogger &operator=(const UsbLogger &) = delete; /*!< Prevent assignment */
   static void loggerThreadWrapper(void *argument);  /*!< Thread wrapper */
-  void loggerThread();  /*!< Logger thread function */
-  void loggerCommand(); /*!< Command handling function */
+  UsbXferStatus usbXfer(const char *msg,
+                        std::uint32_t len); /*!< Start USB transfer */
+  void loggerThread();                      /*!< Logger thread function */
+  void loggerCommand();                     /*!< Command handling function */
 
   /** @brief Check if USB is connected */
   bool usbIsConnected(void); /*!< Check if USB is connected */

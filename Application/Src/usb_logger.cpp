@@ -66,6 +66,7 @@ message being logged over USB.
 #include "cmsis_os2.h"
 #include "led_thread.h"
 #include "log_router.h"
+#include "logger.h"
 #include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
 #include "usbd_def.h"
@@ -314,6 +315,35 @@ void UsbLogger::log(const char *msg) {
 }
 
 /**
+ * @brief Start a USB transfer of a message chunk.
+ * @param msg Pointer to the message buffer.
+ * @param len Length of the message to send.
+ * @return 0 on success, -1 on failure.
+ * @details
+ *   - Initiates a USB CDC transfer in a separate thread.
+ *   - Waits for the transfer complete event flag.
+ *   - Retries if the USB is busy.
+ */
+UsbLogger::UsbXferStatus UsbLogger::usbXfer(const char *msg,
+                                            std::uint32_t len) {
+  // Start USB transfer in a separate thread
+  while (CDC_Transmit_FS(
+             const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(msg)),
+             len) != USBD_OK) {
+    osDelay(10); // Wait and retry if USB is busy
+  }
+  // Wait for transfer complete event
+  if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 10U) != 1U) {
+#ifdef DEBUG
+    printf("Failed: USB transfer: %s, %d\r\n", __FILE__, __LINE__);
+#endif
+    return USB_XFER_ERROR; // Transfer failed
+  } else {
+    return USB_XFER_SUCCESS; // Transfer completed successfully
+  }
+}
+
+/**
  * @brief Main logger thread function.
  * @details
  *   - Waits for messages in the queue.
@@ -337,16 +367,7 @@ void UsbLogger::loggerThread() {
       logBuf[LOG_MSG_SIZE - 1] = '\0'; // Ensure null termination
 
       // Transmit log message over USB CDC
-      while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(logBuf),
-                             strlen(logBuf)) != USBD_OK) {
-        osDelay(10); // Wait and retry if USB is busy
-      }
-      osDelay(10);
-      // Wait for transfer complete event
-      if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 10U) != 1U) {
-#ifdef DEBUG
-        printf("Failed: USB transfer: %s, %d\r\n", __FILE__, __LINE__);
-#endif
+      if (usbXfer(logBuf, strlen(logBuf)) != 0) {
         usbXferCompleted = false; // Retry sending next message
       } else {
         usbXferCompleted = true; // Transfer completed successfully
@@ -400,8 +421,8 @@ void UsbLogger::loggerCommand(void) {
 #endif
       } else if (temp != 0) {
 #ifdef RUN_TIME
-        usbXferChunk(
-            "Reply: Invalid ON Time received. Enter between 100 and 2000.\r\n");
+        usbXferChunk("Reply: Invalid ON Time received. Enter between 100 and "
+                     "2000.\r\n");
 #endif
 #ifdef DEBUG
         printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
@@ -435,26 +456,17 @@ void UsbLogger::loggerCommand(void) {
  *   - Transmits the data chunk over USB CDC.
  *   - Waits for transfer completion event.
  */
-std::int32_t UsbLogger::usbXferChunk(const char *msg) {
-  if (msg != nullptr && strlen(msg) > 0) {
+UsbLogger::UsbXferStatus UsbLogger::usbXferChunk(const char *msg) {
+  uint32_t len = strlen(msg);
+  if (len > 0) {
     // Transmit a chunk of data over USB CDC
-    while (CDC_Transmit_FS(reinterpret_cast<uint8_t *>(const_cast<char *>(msg)),
-                           strlen(msg)) != USBD_OK) {
-      osDelay(10); // Wait and retry if USB is busy
-    }
-    osDelay(10); // allow time for transfer to start
-
-    // Wait for transfer complete event
-    if (osEventFlagsWait(usbXferFlag, 1U, osFlagsWaitAny, 10U) != 1U) {
-#if defined(DEBUG) && !defined(FS_LOG)
-      printf("Failed: USB chunk transfer: %s, %d\r\n", __FILE__, __LINE__);
-#endif
-      return -1; // Transfer failed
+    if (usbXfer(msg, len) != 0) {
+      return USB_XFER_ERROR; // Transfer failed
     } else {
-      return 0; // Transfer succeeded
+      return USB_XFER_SUCCESS; // Transfer succeeded
     }
   } else
-    return -1; // Invalid parameters
+    return USB_MESSAGE_EMPTY; // Empty message
 }
 
 /**
@@ -471,7 +483,8 @@ bool UsbLogger::usbIsConnected(void) {
   }
 }
 
-/* "C" type functions --------------------------------------------------------*/
+/* "C" type functions
+ * --------------------------------------------------------*/
 extern "C" {
 
 /**

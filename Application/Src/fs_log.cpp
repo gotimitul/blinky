@@ -83,6 +83,7 @@
 
 #include "fs_log.h"
 #include "cmsis_os2.h"
+#include "logger.h"
 #include "retarget_fs.h"
 #include "rl_fs.h"
 #include "usb_logger.h"
@@ -193,13 +194,12 @@ FsLog &FsLog::getInstance() {
  *  - Sets up mutex and memory pool for thread safety.
  */
 void FsLog::init() {
-  fsInit = 0;
   std::int32_t status = 0;
   int32_t n = std::snprintf(file_path, sizeof(file_path), "%s\\%s", drive_r0,
                             file_name);
   // Check for snprintf errors
   if (n < 0 || n >= sizeof(file_path)) {
-    fsInit = -1;
+    fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
     return;
   }
 
@@ -220,42 +220,42 @@ void FsLog::init() {
           this->log("Log file system initialized.\r\n");
         } else {
           UsbLogger::getInstance().log("Error: Failed to create log file.\r\n");
-          fsInit = -1; /* Mark initialization failure */
+          fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
           return;
         }
       } else {
         UsbLogger::getInstance().log(
             "Error: Failed to mount the formatted drive.\r\n");
-        fsInit = -1; /* Mark initialization failure */
+        fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
         return;
       }
     } else {
       UsbLogger::getInstance().log("Error: Failed to format the drive.\r\n");
-      fsInit = -1; /* Mark initialization failure */
+      fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
       return;
     }
   } else {
     UsbLogger::getInstance().log(
         "Error: RAM drive can not be initialized.\r\n");
-    fsInit = -1; /* Mark initialization failure */
+    fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
     return;
   }
 
   fsMutexId = osMutexNew(&fsMutexAttr);
   if (fsMutexId == nullptr) {
-    fsInit = -1; /* Mark initialization failure */
+    fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
     return;
   }
 
   fsMemPoolId = osMemoryPoolNew(block_count, sizeof(fs_buf_mem),
                                 &fsBufAttr); /* 1 block of 256 bytes */
   if (fsMemPoolId == nullptr) {
-    fsInit = -1; /* Mark initialization failure */
+    fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
     return;
   } else {
     fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
   }
-  fsInit = 0; /* Mark successful initialization */
+  fsInit = FS_INITIALIZED; /* Mark successful initialization */
   return;
 }
 
@@ -327,7 +327,7 @@ void logsToFs(const char *msg) {
  * @param   msg Null-terminated string to log.
  */
 void FsLog::log(const char *msg) {
-  if (fsInit == 0) {
+  if (fsInit == FS_INITIALIZED) {
     logsToFs(msg);
   }
 }
@@ -337,7 +337,7 @@ void FsLog::log(const char *msg) {
  * @details Reads the log file and sends its contents over USB.
  */
 void FsLog::replayLogsToUsb() {
-  if (fsInit == 0) {
+  if (fsInit == FS_INITIALIZED) {
     FsLog::getInstance().fsLogsToUsb();
   }
 }
@@ -353,7 +353,7 @@ void FsLog::fsLogsToUsb() {
   std::int32_t n;
   std::int32_t fd;
   constexpr uint32_t FS_DATA_PAKET_SIZE = 256;
-  if (fsInit != 0) {
+  if (fsInit == FS_NOT_INITIALIZED) {
     return;
   }
   if (fsMemPoolId == nullptr) {
@@ -401,7 +401,8 @@ void FsLog::fsLogsToUsb() {
       m = end_ptr - start_ptr + 1;
       fs_buf[m] = '\0'; /* Null-terminate the string */
       if (m > 1) {
-        while (UsbLogger::getInstance().usbXferChunk(fs_buf) == -1) {
+        while (UsbLogger::getInstance().usbXferChunk(fs_buf) ==
+               USB_XFER_ERROR) {
           osDelay(10); /* Wait and retry if USB transfer fails */
         }
         cursor_pos += m;

@@ -27,6 +27,14 @@ class Logger {
 public:
   virtual ~Logger() = default;           /*!< Virtual destructor */
   virtual void log(const char *msg) = 0; /*!< Pure virtual log method */
+
+protected:
+  enum UsbXferStatus {
+    USB_XFER_SUCCESS = 0,  /*!< USB transfer successful */
+    USB_XFER_BUSY = -1,    /*!< USB is busy */
+    USB_XFER_ERROR = -2,   /*!< USB transfer error */
+    USB_MESSAGE_EMPTY = -3 /*!< Empty message */
+  };
 };
 extern "C" {
 #endif
