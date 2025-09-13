@@ -111,13 +111,13 @@ extern "C" void app_main(void *argument) {
  * @param event Event type (e.g., rising edge)
  * @note This function is called from the GPIO driver interrupt context.
  */
-void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
+static void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
   if (pin == USER_BUTTON_PIN && event == ARM_GPIO_EVENT_RISING_EDGE) {
     if (app_events_get() != nullptr) {
       // Signal the event to the LED thread
-      uint32_t returnFlag = osEventFlagsSet(app_events_get(), 1U);
-      if (returnFlag != 1U) {
-#ifdef DEBUG
+      uint32_t returnFlag = osEventFlagsSet(app_events_get(), USER_BUTTON_FLAG);
+      if (returnFlag != USER_BUTTON_FLAG) {
+#if defined(DEBUG) && !defined(FS_LOG)
         printf(
             "Failed to set event flag for button press: file: %s, line: %d\r\n",
             __FILE__, __LINE__);
@@ -127,7 +127,7 @@ void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event) {
 #endif
       }
     } else {
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(FS_LOG)
       printf("Failed to get event flags ID for button press: file: %s, line: "
              "%d\r\n",
              __FILE__, __LINE__);

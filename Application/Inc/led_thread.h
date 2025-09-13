@@ -66,6 +66,9 @@ public:
 
 osEventFlagsId_t app_events_get(void); // Get event flags for button press
 
+constexpr uint32_t USER_BUTTON_FLAG = 0x00000001U
+                                      << 0U; ///< Event flag for user button
+
 extern "C" {
 #endif
 

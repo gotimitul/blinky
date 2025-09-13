@@ -206,12 +206,14 @@ void LedThread::thread_entry(void *argument) {
  */
 auto checkButtonEvent = [](void *arg) {
   LedThread *thread = static_cast<LedThread *>(arg);
-  if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
+  if (osEventFlagsWait(app_events_get(), USER_BUTTON_FLAG, osFlagsWaitAny,
+                       0U) == USER_BUTTON_FLAG) {
 #ifdef FS_LOG
     LogRouter::getInstance().replayFsLogsToUsb(); /* Replay logs to USB */
 #endif
-    osDelay(50U);                            /* Debounce delay */
-    osEventFlagsClear(app_events_get(), 1U); /* Clear the event flag */
+    osDelay(50U); /* Debounce delay */
+    osEventFlagsClear(app_events_get(),
+                      USER_BUTTON_FLAG); /* Clear the event flag */
   }
 };
 
