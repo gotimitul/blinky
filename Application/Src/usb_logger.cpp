@@ -81,10 +81,8 @@ message being logged over USB.
 namespace {
 constexpr uint32_t LOG_MSG_SIZE = 64;     /*!< Size of each log message */
 constexpr uint32_t LOG_QUEUE_LENGTH = 32; /*!< Number of messages in queue */
-
-osThreadId_t threadId = nullptr;         /*!< RTOS thread ID for logger */
-osMessageQueueId_t msgQueueId = nullptr; /*!< Message queue for log strings */
-osEventFlagsId_t usbXferFlag = nullptr;  /*!< Event flags for USB transfer */
+osMessageQueueId_t msgQueueId = nullptr;  /*!< Message queue for log strings */
+osEventFlagsId_t usbXferFlag = nullptr;   /*!< Event flags for USB transfer */
 
 const char *helpMsg =
     "Commands:\r\n"
@@ -210,7 +208,7 @@ constexpr osMessageQueueAttr_t msgQueueAttr = {
     .mq_size = sizeof(log_queue_mem), /*!< Size of the memory buffer */
 };
 constexpr osThreadAttr_t threadAttr = {
-    .name = "UsbLoggerThread",   /*!< Name for debugging */
+    .name = "Usb Logger",        /*!< Name for debugging */
     .attr_bits = 0U,             /*!< No special thread attributes */
     .cb_mem = cb,                /*!< Memory for thread control block */
     .cb_size = sizeof(cb),       /*!< Size of control block */

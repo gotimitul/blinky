@@ -105,7 +105,8 @@ void LogRouter::log(const char *msg) {
   }
   const char *keywords[] = {"Warning",        "Error",         "Fail",
                             "Critical",       "Overflow",      "Event",
-                            "Hardware Fault", "Program Fault", "System Fault"};
+                            "Hardware Fault", "Program Fault", "System Fault",
+                            "Supervisor"};
 
   bool needTimeStamp = false;
   for (const auto &keyword : keywords) {

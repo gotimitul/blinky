@@ -13,6 +13,7 @@
 #ifndef USB_LOGGER_H
 #define USB_LOGGER_H
 
+#include <cmsis_os2.h>
 #include <logger.h>
 #include <stdint.h>
 
@@ -32,6 +33,7 @@ public:
   void init();                                 /*!< Initialize logger */
   void log(const char *msg) override;          /*!< Log a message */
   UsbXferStatus usbXferChunk(const char *msg); /*!< Send data chunk */
+  osThreadId_t getThreadId() const { return threadId; } /*!< Get thread ID */
 
 private:
   UsbLogger(); /*!< Private constructor for Singleton */
@@ -42,6 +44,8 @@ private:
                         std::uint32_t len); /*!< Start USB transfer */
   void loggerThread();                      /*!< Logger thread function */
   void loggerCommand();                     /*!< Command handling function */
+
+  osThreadId_t threadId = nullptr; /*!< RTOS thread ID for logger */
 
   /** @brief Check if USB is connected */
   bool usbIsConnected(void); /*!< Check if USB is connected */

@@ -51,6 +51,7 @@ private:
 public:
   // Constructor initializes the LED pin and thread attributes
   LedThread(const char *threadName, uint32_t pin);
+  osThreadId_t getThreadId(void) const { return thread_id; }
 
   inline static uint32_t getOnTime(void) { return onTime; } // Getter for onTime
   inline static void setOnTime(uint32_t t) { onTime = t; }  // Setter for onTime

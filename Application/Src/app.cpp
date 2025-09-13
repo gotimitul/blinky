@@ -3,48 +3,52 @@
  * @brief Application main function: initializes threads and synchronization
  * mechanisms
  * @author Mitul Goti
- * @version 1.0
- * @date 2025-08-07
+ * @version 1.1
+ * @date 2025-09-13
  * @ingroup app
  *
+ * @details
  * This file contains the application entry point which initializes a shared
- * semaphore and starts multiple LED control threads with CMSIS-RTOS2.
- */
-
-/* Application Main
- ---
- # 📝 Overview
- The Application Main module initializes the application by setting up GPIO for
- the user button, creating LED control threads, and initializing the USB logger
- for debugging output.
-
- # ⚙️ Features
- - Initializes GPIO for user button with event callback.
- - Creates multiple LED control threads.
- - Initializes USB logger for runtime logging.
- - Uses CMSIS-RTOS2 for threading and synchronization.
-
- # 📋 Usage
- The application starts by calling the `app_main` function, which sets up the
- necessary components and then exits, allowing the LED threads to run
- independently.
-
- # 🔧 Implementation Details
- The `app_main` function is the entry point of the application. It configures
- the GPIO pin for the user button to trigger an event on a rising edge. It then
- initializes the USB logger if runtime logging is enabled. Four LED threads are
- created, each controlling a different colored LED. The function finally exits,
- allowing the RTOS to manage the threads.
-
- The GPIO event callback function `ARM_GPIO_SignalEvent` is defined to handle
- button press events. When the user button is pressed, it sets an event flag to
- notify the LED thread.
-
- The implementation uses static allocation for RTOS objects to ensure efficient
- memory usage and avoid dynamic allocation issues in embedded systems.
-
- It has been verified to handle concurrent logging from multiple threads and to
- replay logs correctly over USB.
+ * semaphore, sets up GPIO for the user button, starts multiple LED control
+ * threads, and launches a supervisor thread for runtime health monitoring.
+ * Logging is routed via LogRouter to USB or file system as configured. All RTOS
+ * objects use static allocation for reliability in embedded systems.
+ *
+ * # 📝 Overview
+ * The Application Main module initializes the application by setting up GPIO
+ * for the user button, creating LED control threads, initializing logging
+ * backends, and launching a supervisor thread that monitors the health of all
+ * LED and logger threads. The system uses CMSIS-RTOS2 for threading and
+ * synchronization.
+ *
+ * # ⚙️ Features
+ * - Initializes GPIO for user button with event callback.
+ * - Creates multiple LED control threads (blue, red, orange, green).
+ * - Initializes USB and file system loggers as configured.
+ * - Supervisor thread monitors health of all threads and logs status/heartbeat.
+ * - Uses CMSIS-RTOS2 for threading, synchronization, and static allocation.
+ * - Handles button press events via GPIO interrupt and event flags.
+ *
+ * # 📋 Usage
+ * The application starts by calling the `app_main` function, which sets up all
+ * necessary components and enters an infinite loop. The supervisor thread runs
+ * in the background, monitoring thread health and logging system status.
+ *
+ * # 🔧 Implementation Details
+ * - The `app_main` function configures the GPIO pin for the user button to
+ * trigger an event on a rising edge, initializes loggers, and creates LED
+ * threads.
+ * - Thread IDs are stored in an array for easy health monitoring.
+ * - The supervisor thread checks the state of all threads and logs warnings if
+ *   any are not running, as well as a periodic heartbeat.
+ * - The GPIO event callback function `ARM_GPIO_SignalEvent` signals the LED
+ * thread on button press using event flags (ISR-safe).
+ * - All RTOS objects (threads, stacks, control blocks) use static allocation.
+ * - The implementation is robust for concurrent logging and log replay over
+ * USB.
+ *
+ * @version 1.1 - Added supervisor thread for runtime health monitoring and
+ * improved documentation.
  */
 
 #include "app.h"
@@ -62,7 +66,9 @@
 #endif
 
 extern ARM_DRIVER_GPIO Driver_GPIO0; // External GPIO driver instance
-static void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin, uint32_t event);
+static void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin,
+                                 uint32_t event); // GPIO event callback
+static void supervisor_thread(void *argument);    // Supervisor thread function
 
 namespace {
 constexpr uint32_t USER_BUTTON_PIN = 0U; ///< GPIO pin for user button
@@ -70,6 +76,25 @@ constexpr uint32_t LED_BLUE_PIN = 63U;   ///< GPIO pin for blue LED
 constexpr uint32_t LED_RED_PIN = 62U;    ///< GPIO pin for red LED
 constexpr uint32_t LED_ORANGE_PIN = 61U; ///< GPIO pin for orange LED
 constexpr uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
+
+osThreadId_t osThreadIds[5]; /*!< Array to hold thread IDs */
+
+osThreadId_t supervisor_id;
+uint64_t supervisor_stack[256]
+    __attribute__((aligned(64))); /*!< Static thread stack (aligned) */
+uint64_t supervisor_cb[32]
+    __attribute__((aligned(64))); /*!< Static thread control block (aligned) */
+osThreadAttr_t supervisor_attr = {
+    .name = "supervisor",             /*!< Thread name */
+    .attr_bits = 0U,                  /*!< No special thread attributes */
+    .cb_mem = supervisor_cb,          /*!< Use static control block memory */
+    .cb_size = sizeof(supervisor_cb), /*!< Use static control block size */
+    .stack_mem = supervisor_stack,    /*!< Use static stack memory */
+    .stack_size = sizeof(supervisor_stack), /*!< Stack size in bytes */
+    .priority = osPriorityLow2,             /*!< Normal priority */
+    .tz_module = 0U,                        /*!< Not used in this application */
+};
+
 } // namespace
 
 /**
@@ -99,8 +124,67 @@ extern "C" void app_main(void *argument) {
   static LedThread orange("orange", LED_ORANGE_PIN);
   static LedThread green("green", LED_GREEN_PIN);
 
+  osThreadIds[0] = blue.getThreadId();   // Get thread ID for blue LED thread
+  osThreadIds[1] = red.getThreadId();    // Get thread ID for red LED thread
+  osThreadIds[2] = orange.getThreadId(); // Get thread ID for orange LED thread
+  osThreadIds[3] = green.getThreadId();  // Get thread ID for green LED thread
+  osThreadIds[4] =
+      UsbLogger::getInstance().getThreadId(); // Reserved for supervisor thread
+
+  // Create a supervisor thread to monitor LED threads
+  supervisor_id = osThreadNew(supervisor_thread, nullptr, &supervisor_attr);
+
+  if (supervisor_id == nullptr) {
+#if defined(DEBUG) && !defined(FS_LOG)
+    printf("Failed to create supervisor thread: %s, %d\r\n", __FILE__,
+           __LINE__);
+#elif RUN_TIME
+    LogRouter::getInstance().log(
+        "Program Fault: Failed to create supervisor thread\r\n");
+#endif
+  }
+
+  while (1) {
+    osDelay(1000U);
+  }
   // Exit the application thread once all LED threads are launched
   osThreadExit();
+}
+
+/**
+ * @brief   Supervisor thread to monitor LED threads
+ * @details Monitors the health of LED threads and logs their status. If any
+ * thread is found to be inactive, an error message is logged. The supervisor
+ * also logs a heartbeat message every second if all threads are healthy.
+ * @param   argument Unused (reserved for future extensions)
+ */
+static void supervisor_thread(void *argument) {
+  UNUSED(argument);
+  osThreadState_t state;
+  const char *name;
+  static std::uint8_t heartbeat = 0;
+  while (1) {
+    auto threadHealthCheck = [&]() {
+      if (state == (osThreadInactive || osThreadError || osThreadTerminated)) {
+#if defined(DEBUG) && !defined(FS_LOG)
+        printf("%s thread not running!\r\n", name);
+#endif
+        LogRouter::getInstance().log("%s thread state is %d!\r\n", name, state);
+      }
+    };
+
+    for (size_t i = 0; i < sizeof(osThreadIds) / sizeof(osThreadIds[0]); i++) {
+      if (osThreadIds[i] == nullptr) {
+        continue;
+      }
+      state = osThreadGetState(osThreadIds[i]);
+      name = osThreadGetName(osThreadIds[i]);
+      threadHealthCheck();
+    }
+
+    LogRouter::getInstance().log("Supervisor: Heartbeat %d\r\n", heartbeat++);
+    osDelay(1000U); // Delay to reduce CPU usage
+  }
 }
 
 /**
