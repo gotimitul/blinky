@@ -87,6 +87,7 @@
 #include "retarget_fs.h"
 #include "rl_fs.h"
 #include "usb_logger.h"
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -101,17 +102,19 @@
  * logging.
  */
 namespace {
-const char *drive_r0 = "R0:";      /*!< Drive name for FlashFS */
-const char *file_name = "log.txt"; /*!< Log file name */
-char file_path[16];                /*!< Full path for log file */
-uint32_t cursor_pos = 0;           /*!< Cursor position for reading logs */
-uint32_t block_count = 1;          /*!< Number of memory pool blocks */
-osMemoryPoolId_t fsMemPoolId;      /*!< Memory pool ID for log buffer */
-osMutexId_t fsMutexId;             /*!< Mutex ID for file system access */
-osThreadId_t threadId = nullptr;   /*!< RTOS thread ID for logger */
-char *fs_buf = nullptr;            /*!< Buffer for file system operations */
+constexpr char drive_r0[] = "R0:";      /*!< Drive name for FlashFS */
+constexpr char file_name[] = "log.txt"; /*!< Log file name */
+char file_path[16];                     /*!< Full path for log file */
+std::atomic_int32_t cursor_pos = 0;     /*!< Cursor position for reading logs */
+constexpr uint32_t block_count = 1;     /*!< Number of memory pool blocks */
+osMemoryPoolId_t fsMemPoolId;           /*!< Memory pool ID for log buffer */
+osMutexId_t fsMutexId;                  /*!< Mutex ID for file system access */
+osThreadId_t threadId = nullptr;        /*!< RTOS thread ID for logger */
+char *fs_buf = nullptr; /*!< Buffer for file system operations */
+constexpr uint32_t FS_DATA_PACKET_SIZE =
+    256; /*!< Data packet size for USB transfer */
 
-uint64_t fs_buf_mem[256 / 8]
+uint64_t fs_buf_mem[FS_DATA_PACKET_SIZE / 8]
     __attribute__((aligned(64))); /*!< Memory buffer for file system */
 uint64_t fs_buf_cb[32]
     __attribute__((aligned(64))); /*!< Control block for file system */
@@ -250,11 +253,15 @@ void FsLog::init() {
   fsMemPoolId = osMemoryPoolNew(block_count, sizeof(fs_buf_mem),
                                 &fsBufAttr); /* 1 block of 256 bytes */
   if (fsMemPoolId == nullptr) {
+    UsbLogger::getInstance().log(
+        "Error: Memory pool for file system logger can not be created.\r\n");
     fsInit = FS_MEMPOOL_ERROR; /* Mark initialization failure */
     return;
   } else {
-    fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
+    fs_buf = static_cast<char *>(osMemoryPoolAlloc(fsMemPoolId, 0));
     if (fs_buf == nullptr) {
+      UsbLogger::getInstance().log(
+          "Error: Memory pool for file system logger allocation failed.\r\n");
       fsInit = FS_MEMPOOL_ALLOC_ERROR; /* Mark initialization failure */
       return;
     }
@@ -339,10 +346,11 @@ void FsLog::log(const char *msg) {
  * @brief   Replay log file contents to USB.
  * @details Reads the log file and sends its contents over USB.
  */
-void FsLog::replayLogsToUsb() {
+std::int32_t FsLog::replayLogsToUsb() {
   if (fsInit == FS_INITIALIZED) {
-    FsLog::getInstance().fsLogsToUsb();
+    return FsLog::getInstance().fsLogsToUsb();
   }
+  return FS_NOT_INITIALIZED;
 }
 
 /**
@@ -352,12 +360,11 @@ void FsLog::replayLogsToUsb() {
  *  - Sends data to USB in chunks.
  *  - Updates cursor position.
  */
-void FsLog::fsLogsToUsb() {
+std::int32_t FsLog::fsLogsToUsb() {
   std::int32_t n;
   std::int32_t fd;
-  constexpr uint32_t FS_DATA_PAKET_SIZE = 256;
   if (fsInit == FS_NOT_INITIALIZED) {
-    return;
+    return FS_TO_USB_INIT_ERROR;
   }
 
   fd = fs_fopen(file_path, FS_FOPEN_RD);
@@ -367,7 +374,7 @@ void FsLog::fsLogsToUsb() {
       const char *msg = "Info: No logs in the filesystem to replay.\r\n";
       UsbLogger::getInstance().usbXferChunk(msg);
       fs_fclose(fd);
-      return;
+      return FS_TO_USB_OK;
     } else {
       const char *msg = "Reply: Replaying logs from filesystem to USB...\r\n";
       UsbLogger::getInstance().usbXferChunk(msg);
@@ -378,10 +385,10 @@ void FsLog::fsLogsToUsb() {
       fs_fseek(fd, cursor_pos, SEEK_SET);
 
       int32_t m = fs_fread(fd, fs_buf,
-                           (m - cursor_pos) < FS_DATA_PAKET_SIZE
+                           (m - cursor_pos) < FS_DATA_PACKET_SIZE
                                ? m - cursor_pos
-                               : FS_DATA_PAKET_SIZE); /* Read file content */
-                                                      //     fs_fclose(fd);
+                               : FS_DATA_PACKET_SIZE); /* Read file content */
+                                                       //     fs_fclose(fd);
       osMutexRelease(fsMutexId);
       const char *end_ptr = fs_buf + m;
       const char *start_ptr = fs_buf;
@@ -397,15 +404,16 @@ void FsLog::fsLogsToUsb() {
                USB_XFER_ERROR) {
           osDelay(10); /* Wait and retry if USB transfer fails */
         }
-        cursor_pos += m;
+        cursor_pos.fetch_add(m); /* Update cursor position atomically */
       }
     }
   } else {
     UsbLogger::getInstance().log(
         "Error: Failed to open log file for reading.\r\n");
+    return FS_TO_USB_FILE_OPEN_ERROR;
   }
   fs_fclose(fd);
-  return;
+  return FS_TO_USB_OK;
 }
 
 /** @} */ // end of Logger
