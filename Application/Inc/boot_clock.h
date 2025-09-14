@@ -30,17 +30,25 @@
  */
 class BootClock {
 public:
+  enum SetRTCStatus {
+    SUCCESS = 0,
+    INVALID_RX_FORMAT = -1,
+    INVALID_VALUE = -2,
+  };
+  SetRTCStatus setRTC(char *buf);
+
   static BootClock &getInstance(); ///< Get singleton instance
 
   char *getCurrentTimeString(void); ///< Get current time as formatted string
-
-  std::int32_t setRTC(char *buf);
 
 private:
   BootClock() {}; ///< Private constructor for singleton pattern
   BootClock(const BootClock &) = delete; ///< Delete copy constructor
   BootClock &
   operator=(const BootClock &) = delete; ///< Delete copy assignment operator
+
+  std::uint32_t getClockOffset(void) const { return clock_offset; }
+  void setClockOffset(std::uint32_t offset) { clock_offset = offset; }
 
   char timeString[16]; ///< Buffer to hold formatted time string
 

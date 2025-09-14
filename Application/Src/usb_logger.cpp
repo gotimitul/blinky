@@ -428,10 +428,14 @@ void UsbLogger::loggerCommand(void) {
       }
     } else if (strlen(rxBuf) == 8 && *(rxBuf + 2) == ':' &&
                *(rxBuf + 5) == ':') {
-      if (BootClock::getInstance().setRTC(rxBuf) == 0) {
+      // Handle 'set clock' command with time format hh:mm:ss
+      BootClock::SetRTCStatus result = BootClock::getInstance().setRTC(rxBuf);
+      if (result == BootClock::SUCCESS) {
         usbXferChunk("Reply: Clock time set successfully\r\n");
-      } else {
-        usbXferChunk("Reply: Failed to set clock time\r\n");
+      } else if (result == BootClock::INVALID_RX_FORMAT) {
+        usbXferChunk("Reply: Invalid clock format received. Use hh:mm:ss.\r\n");
+      } else if (result == BootClock::INVALID_VALUE) {
+        usbXferChunk("Reply: Invalid clock value received.\r\n");
       }
     } else {
       if (strlen(rxBuf) > 1) {
