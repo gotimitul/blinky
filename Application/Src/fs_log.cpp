@@ -199,7 +199,7 @@ void FsLog::init() {
                             file_name);
   // Check for snprintf errors
   if (n < 0 || n >= sizeof(file_path)) {
-    fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
+    fsInit = FS_FILE_FORMAT_ERROR; /* Mark initialization failure */
     return;
   }
 
@@ -220,40 +220,44 @@ void FsLog::init() {
           this->log("Log file system initialized.\r\n");
         } else {
           UsbLogger::getInstance().log("Error: Failed to create log file.\r\n");
-          fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
+          fsInit = FS_FILE_CREATE_ERROR; /* Mark initialization failure */
           return;
         }
       } else {
         UsbLogger::getInstance().log(
             "Error: Failed to mount the formatted drive.\r\n");
-        fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
+        fsInit = FS_MOUNT_ERROR; /* Mark initialization failure */
         return;
       }
     } else {
       UsbLogger::getInstance().log("Error: Failed to format the drive.\r\n");
-      fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
+      fsInit = FS_FORMAT_ERROR; /* Mark initialization failure */
       return;
     }
   } else {
     UsbLogger::getInstance().log(
         "Error: RAM drive can not be initialized.\r\n");
-    fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
+    fsInit = FS_DRIVE_INIT_ERROR; /* Mark initialization failure */
     return;
   }
 
   fsMutexId = osMutexNew(&fsMutexAttr);
   if (fsMutexId == nullptr) {
-    fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
+    fsInit = FS_MUTEX_ERROR; /* Mark initialization failure */
     return;
   }
 
   fsMemPoolId = osMemoryPoolNew(block_count, sizeof(fs_buf_mem),
                                 &fsBufAttr); /* 1 block of 256 bytes */
   if (fsMemPoolId == nullptr) {
-    fsInit = FS_NOT_INITIALIZED; /* Mark initialization failure */
+    fsInit = FS_MEMPOOL_ERROR; /* Mark initialization failure */
     return;
   } else {
     fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
+    if (fs_buf == nullptr) {
+      fsInit = FS_MEMPOOL_ALLOC_ERROR; /* Mark initialization failure */
+      return;
+    }
   }
   fsInit = FS_INITIALIZED; /* Mark successful initialization */
   return;
@@ -266,9 +270,7 @@ void FsLog::init() {
 void logsToFs(const char *msg) {
   std::int32_t status;
   std::int32_t fd;
-  if (fsMutexId == nullptr) {
-    return; /* Mutex not initialized */
-  }
+
   /* Acquire mutex for thread safety */
   osMutexAcquire(fsMutexId, osWaitForever);
   /* Open log file in append mode */
@@ -327,7 +329,8 @@ void logsToFs(const char *msg) {
  * @param   msg Null-terminated string to log.
  */
 void FsLog::log(const char *msg) {
-  if (fsInit == FS_INITIALIZED) {
+  if (fsInit !=
+      (FS_NOT_INITIALIZED | FS_MEMPOOL_ERROR | FS_MEMPOOL_ALLOC_ERROR)) {
     logsToFs(msg);
   }
 }
@@ -356,18 +359,7 @@ void FsLog::fsLogsToUsb() {
   if (fsInit == FS_NOT_INITIALIZED) {
     return;
   }
-  if (fsMemPoolId == nullptr) {
-    return;
-  }
-  if (fsMutexId == nullptr) {
-    return;
-  }
-  if (fs_buf == nullptr) {
-    fs_buf = (char *)osMemoryPoolAlloc(fsMemPoolId, 0);
-    if (fs_buf == nullptr) {
-      return;
-    }
-  }
+
   fd = fs_fopen(file_path, FS_FOPEN_RD);
   if (fd >= 0) {
     n = fs_fsize(fd); /* Get file size */
