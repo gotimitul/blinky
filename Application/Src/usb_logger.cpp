@@ -432,12 +432,13 @@ void UsbLogger::loggerCommand(void) {
     } else if (strnlen(rxBuf.data(), rxBuf.size()) == 8 && rxBuf.at(2) == ':' &&
                rxBuf.at(5) == ':') {
       // Handle 'set clock' command with time format hh:mm:ss
-      SetRTCStatus result = BootClock::getInstance().setRTC(rxBuf.data());
-      if (result == SetRTCStatus::SUCCESS) {
+      BootClock::SetRTCStatus result =
+          BootClock::getInstance().setRTC(rxBuf.data());
+      if (result == BootClock::SetRTCStatus::SUCCESS) {
         usbXferChunk("Reply: Clock time set successfully\r\n");
-      } else if (result == SetRTCStatus::INVALID_RX_FORMAT) {
+      } else if (result == BootClock::SetRTCStatus::INVALID_RX_FORMAT) {
         usbXferChunk("Reply: Invalid clock format received. Use hh:mm:ss.\r\n");
-      } else if (result == SetRTCStatus::INVALID_VALUE) {
+      } else if (result == BootClock::SetRTCStatus::INVALID_VALUE) {
         usbXferChunk("Reply: Invalid clock value received.\r\n");
       }
     } else {

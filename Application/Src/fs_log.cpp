@@ -201,8 +201,7 @@ FsLog &FsLog::getInstance() {
 void FsLog::init() {
   std::int32_t status = 0;
   int32_t n = std::snprintf(file_path.data(), file_path.size(), "%s\\%s",
-                            reinterpret_cast<const char *>(drive_r0.data()),
-                            reinterpret_cast<const char *>(file_name.data()));
+                            drive_r0.data(), file_name.data());
   // Check for snprintf errors
   if (n < 0 || n >= file_path.size()) {
     fsInit = FS_FILE_FORMAT_ERROR; /* Mark initialization failure */
@@ -350,11 +349,11 @@ void FsLog::log(std::string_view msg) {
  * @brief   Replay log file contents to USB.
  * @details Reads the log file and sends its contents over USB.
  */
-std::int32_t FsLog::replayLogsToUsb() {
-  if (fsInit == FS_INITIALIZED) {
+FsLog::FsLogStatus FsLog::replayLogsToUsb() {
+  if (fsInit == FsLog::FsLogStatus::FS_INITIALIZED) {
     return FsLog::getInstance().fsLogsToUsb();
   }
-  return FS_NOT_INITIALIZED;
+  return FsLog::FsLogStatus::FS_NOT_INITIALIZED;
 }
 
 /**
@@ -364,11 +363,11 @@ std::int32_t FsLog::replayLogsToUsb() {
  *  - Sends data to USB in chunks.
  *  - Updates cursor position.
  */
-std::int32_t FsLog::fsLogsToUsb() {
+FsLog::FsLogStatus FsLog::fsLogsToUsb() {
   std::int32_t n;
   std::int32_t fd;
   if (fsInit == FS_NOT_INITIALIZED) {
-    return FS_TO_USB_INIT_ERROR;
+    return FsLog::FsLogStatus::FS_TO_USB_INIT_ERROR;
   }
 
   fd = fs_fopen(file_path.data(), FS_FOPEN_RD);
@@ -378,7 +377,7 @@ std::int32_t FsLog::fsLogsToUsb() {
       std::string_view msg = "Info: No logs in the filesystem to replay.\r\n";
       UsbLogger::getInstance().usbXferChunk(msg.data());
       fs_fclose(fd);
-      return FS_TO_USB_OK;
+      return FsLog::FsLogStatus::FS_TO_USB_OK;
     } else {
       std::string_view msg =
           "Reply: Replaying logs from filesystem to USB...\r\n";
@@ -390,8 +389,8 @@ std::int32_t FsLog::fsLogsToUsb() {
       fs_fseek(fd, cursor_pos.load(), SEEK_SET);
 
       int32_t m = fs_fread(fd, fs_buf,
-                           (m - cursor_pos.load()) < FS_DATA_PACKET_SIZE
-                               ? m - cursor_pos
+                           (n - cursor_pos.load()) < FS_DATA_PACKET_SIZE
+                               ? n - cursor_pos.load()
                                : FS_DATA_PACKET_SIZE); /* Read file content */
                                                        //     fs_fclose(fd);
       osMutexRelease(fsMutexId);
@@ -415,10 +414,10 @@ std::int32_t FsLog::fsLogsToUsb() {
   } else {
     UsbLogger::getInstance().log(
         "Error: Failed to open log file for reading.\r\n");
-    return FS_TO_USB_FILE_OPEN_ERROR;
+    return FsLog::FsLogStatus::FS_TO_USB_FILE_OPEN_ERROR;
   }
   fs_fclose(fd);
-  return FS_TO_USB_OK;
+  return FsLog::FsLogStatus::FS_TO_USB_OK;
 }
 
 /** @} */ // end of Logger

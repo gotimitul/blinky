@@ -82,7 +82,7 @@ std::string_view BootClock::getCurrentTimeString(void) {
  * @param buf Pointer to a string containing the time in "hh:mm:ss" format.
  * @return Status code indicating success or type of error.
  */
-SetRTCStatus BootClock::setRTC(std::string_view buf) {
+BootClock::SetRTCStatus BootClock::setRTC(std::string_view buf) {
 
   std::uint32_t hours, minutes, seconds;
   if (std::sscanf(buf.data(), "%2u:%2u:%2u", &hours, &minutes, &seconds) != 3) {
