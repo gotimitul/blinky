@@ -390,8 +390,8 @@ FsLog::FsLogStatus FsLog::fsLogsToUsb() {
       fs_fseek(fd, cursor_pos.load(), SEEK_SET);
 
       int32_t m = fs_fread(fd, fs_buf,
-                           (m - cursor_pos.load()) < FS_DATA_PACKET_SIZE
-                               ? m - cursor_pos
+                           (n - cursor_pos.load()) < FS_DATA_PACKET_SIZE
+                               ? n - cursor_pos.load()
                                : FS_DATA_PACKET_SIZE); /* Read file content */
                                                        //     fs_fclose(fd);
       osMutexRelease(fsMutexId);
