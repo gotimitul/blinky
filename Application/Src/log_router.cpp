@@ -56,6 +56,7 @@
 #include "fs_log.h"
 #include "logger.h"
 #include "usb_logger.h"
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include <string_view>
@@ -91,7 +92,7 @@ void LogRouter::enableFsLogging(bool enable) { fsLoggingEnabled = enable; }
  */
 void LogRouter::log(std::string_view msg) {
 
-  if (msg.size() == 0) {
+  if (msg.length() == 0) {
 #if defined(DEBUG) && !defined(FS_LOG)
     printf("LogRouter::log: msg is empty: %s, %d\r\n", __FILE__, __LINE__);
 #endif
@@ -110,14 +111,14 @@ void LogRouter::log(std::string_view msg) {
     }
   }
 
-  char logBuffer[256];
+  std::array<char, 256> logBuffer;
   if (needTimeStamp) {
     std::string_view timeStamp =
         BootClock::getInstance().getCurrentTimeString();
-    snprintf(logBuffer, sizeof(logBuffer), "[%s] %s", timeStamp.data(),
+    snprintf(logBuffer.data(), logBuffer.size(), "[%s] %s", timeStamp.data(),
              msg.data());
   } else {
-    snprintf(logBuffer, sizeof(logBuffer), "%s", msg.data());
+    snprintf(logBuffer.data(), logBuffer.size(), "%s", msg.data());
   }
 
   Logger *logger = nullptr; // Pointer to the selected logger
@@ -132,7 +133,7 @@ void LogRouter::log(std::string_view msg) {
     return; // No logging enabled
   }
   if (logger != nullptr) {
-    logger->log(logBuffer); // Route log message
+    logger->log(logBuffer.data()); // Route log message
   }
 }
 
@@ -141,9 +142,9 @@ void LogRouter::log(std::string_view msg) {
  * @param val Integer value to include in the log message.
  */
 void LogRouter::log(std::string_view msg, uint32_t val) {
-  char logBuffer[64];
-  snprintf(logBuffer, sizeof(logBuffer), msg.data(), val);
-  log(logBuffer);
+  std::array<char, 64> logBuffer;
+  snprintf(logBuffer.data(), logBuffer.size(), msg.data(), val);
+  log(logBuffer.data());
 }
 
 /** @brief Log a message with a string value.
@@ -151,9 +152,9 @@ void LogRouter::log(std::string_view msg, uint32_t val) {
  * @param str String value to include in the log message.
  */
 void LogRouter::log(std::string_view msg, std::string_view str) {
-  char logBuffer[128];
-  snprintf(logBuffer, sizeof(logBuffer), msg.data(), str.data());
-  log(logBuffer);
+  std::array<char, 128> logBuffer;
+  snprintf(logBuffer.data(), logBuffer.size(), msg.data(), str.data());
+  log(logBuffer.data());
 }
 
 /** @brief Log a message with a string and an integer value.
@@ -162,9 +163,9 @@ void LogRouter::log(std::string_view msg, std::string_view str) {
  * @param val Integer value to include in the log message.
  */
 void LogRouter::log(std::string_view msg, std::string_view str, uint32_t val) {
-  char logBuffer[128];
-  snprintf(logBuffer, sizeof(logBuffer), msg.data(), str.data(), val);
-  log(logBuffer);
+  std::array<char, 128> logBuffer;
+  snprintf(logBuffer.data(), logBuffer.size(), msg.data(), str.data(), val);
+  log(logBuffer.data());
 }
 
 /** @brief Log a message with two strings and an integer value.
@@ -175,10 +176,10 @@ void LogRouter::log(std::string_view msg, std::string_view str, uint32_t val) {
  */
 void LogRouter::log(std::string_view msg, std::string_view str,
                     std::string_view str2, uint32_t val) {
-  char logBuffer[256];
-  snprintf(logBuffer, sizeof(logBuffer), msg.data(), str.data(), str2.data(),
-           val);
-  log(logBuffer);
+  std::array<char, 256> logBuffer;
+  snprintf(logBuffer.data(), logBuffer.size(), msg.data(), str.data(),
+           str2.data(), val);
+  log(logBuffer.data());
 }
 
 /** @brief Replay filesystem logs to USB.

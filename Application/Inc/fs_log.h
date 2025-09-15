@@ -29,29 +29,10 @@
  */
 class FsLog : public Logger {
 public:
-  enum FsToUsbStatus {
-    FS_TO_USB_OK = 0,               /*!< Success */
-    FS_TO_USB_INIT_ERROR = -1,      /*!< Initialization error */
-    FS_TO_USB_FILE_OPEN_ERROR = -2, /*!< File open error */
-  };
-
-  static FsLog &getInstance(); /*!< Get singleton instance */
-
-  void init(); /*!< Initialize logger */
-
-  void log(std::string_view msg) override; /*!< Log a message */
-
-  std::int32_t replayLogsToUsb(); /*!< Replay logs to USB */
-
-private:
-  FsLog();                                  /*!< Singleton */
-  FsLog(const FsLog &) = delete;            /*!< Prevent copy construction */
-  FsLog &operator=(const FsLog &) = delete; /*!< Prevent assignment */
-  ~FsLog() = default;                       /*!< Default destructor */
-  std::int32_t fsLogsToUsb();               /*!< Logger thread function */
-
-  enum FsInitStatus {
-    FS_NOT_INITIALIZED = 1,      /*!< Not initialized */
+  /** @brief Status codes for file system logger initialization */
+  enum FsLogStatus : std::int8_t {
+    FS_NOT_INITIALIZED = 2,      /*!< Not initialized */
+    FS_TO_USB_OK = 1,            /*!< Successfully replayed logs to USB */
     FS_INITIALIZED = 0,          /*!< Initialized */
     FS_FILE_FORMAT_ERROR = -1,   /*!< File format error */
     FS_DRIVE_INIT_ERROR = -2,    /*!< Drive initialization error */
@@ -61,10 +42,28 @@ private:
     FS_MUTEX_ERROR = -6,         /*!< Mutex creation error */
     FS_MEMPOOL_ERROR = -7,       /*!< Memory pool creation error */
     FS_MEMPOOL_ALLOC_ERROR = -8, /*!< Memory pool allocation error */
+    FS_TO_USB_INIT_ERROR = -9,   /*!< Error replaying logs to USB */
+    FS_TO_USB_FILE_OPEN_ERROR =
+        -10, /*!< Error opening log file for USB replay */
   };
 
-  std::int32_t fsInit = FS_NOT_INITIALIZED; /*!< Initialization status of the
-                                          file system logger */
+  static FsLog &getInstance(); /*!< Get singleton instance */
+
+  void init(); /*!< Initialize logger */
+
+  void log(std::string_view msg) override; /*!< Log a message */
+
+  FsLog::FsLogStatus replayLogsToUsb(); /*!< Replay logs to USB */
+
+private:
+  FsLog();                                  /*!< Singleton */
+  FsLog(const FsLog &) = delete;            /*!< Prevent copy construction */
+  FsLog &operator=(const FsLog &) = delete; /*!< Prevent assignment */
+  ~FsLog() = default;                       /*!< Default destructor */
+  FsLog::FsLogStatus fsLogsToUsb();         /*!< Logger thread function */
+
+  FsLogStatus fsInit = FsLogStatus::FS_NOT_INITIALIZED; /*!< Initialization
+                                          status of the file system logger */
 };
 
 extern "C" {

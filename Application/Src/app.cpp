@@ -71,11 +71,11 @@ static void ARM_GPIO_SignalEvent(ARM_GPIO_Pin_t pin,
 static void supervisor_thread(void *argument);    // Supervisor thread function
 
 namespace {
-constexpr uint32_t USER_BUTTON_PIN = 0U; ///< GPIO pin for user button
-constexpr uint32_t LED_BLUE_PIN = 63U;   ///< GPIO pin for blue LED
-constexpr uint32_t LED_RED_PIN = 62U;    ///< GPIO pin for red LED
-constexpr uint32_t LED_ORANGE_PIN = 61U; ///< GPIO pin for orange LED
-constexpr uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
+constexpr std::uint32_t USER_BUTTON_PIN = 0U; ///< GPIO pin for user button
+constexpr std::uint32_t LED_BLUE_PIN = 63U;   ///< GPIO pin for blue LED
+constexpr std::uint32_t LED_RED_PIN = 62U;    ///< GPIO pin for red LED
+constexpr std::uint32_t LED_ORANGE_PIN = 61U; ///< GPIO pin for orange LED
+constexpr std::uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
 
 osThreadId_t osThreadIds[5]; /*!< Array to hold thread IDs */
 
@@ -162,7 +162,7 @@ static void supervisor_thread(void *argument) {
   UNUSED(argument);
   osThreadState_t state;
   std::string_view name;
-  static std::uint8_t heartbeat = 0;
+  static std::atomic_uint8_t heartbeat = 0;
   while (1) {
     auto threadHealthCheck = [&]() {
       if (state == (osThreadInactive || osThreadError || osThreadTerminated)) {
@@ -182,8 +182,9 @@ static void supervisor_thread(void *argument) {
       name = osThreadGetName(osThreadIds[i]);
       threadHealthCheck();
     }
-
-    LogRouter::getInstance().log("Supervisor: Heartbeat %d\r\n", heartbeat++);
+    heartbeat.fetch_add(1U); // Increment heartbeat counter
+    LogRouter::getInstance().log("Supervisor: Heartbeat %d\r\n",
+                                 heartbeat.load());
     osDelay(1000U); // Delay to reduce CPU usage
   }
 }

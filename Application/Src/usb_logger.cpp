@@ -70,6 +70,7 @@ message being logged over USB.
 #include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
 #include "usbd_def.h"
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <functional>
@@ -351,22 +352,23 @@ UsbLogger::UsbXferStatus UsbLogger::usbXfer(std::string_view msg,
  *   - Handles command processing.
  */
 void UsbLogger::loggerThread() {
-  char logBuf[LOG_MSG_SIZE];
+  std::array<char, LOG_MSG_SIZE> logBuf;
   bool usbXferCompleted = true;
 
   for (;;) {
     osStatus_t status;
     // Get next log message from queue if previous transfer completed
     if (usbXferCompleted == true) {
-      status = osMessageQueueGet(msgQueueId, logBuf, nullptr, 100U);
+      status = osMessageQueueGet(msgQueueId, const_cast<char *>(logBuf.data()),
+                                 nullptr, 100U);
     }
     // Check if a message was received
     if (status == osOK) {
-      EventStartA(1);                  // Start event recording for profiling
-      logBuf[LOG_MSG_SIZE - 1] = '\0'; // Ensure null termination
+      EventStartA(1);                     // Start event recording for profiling
+      logBuf.at(LOG_MSG_SIZE - 1) = '\0'; // Ensure null termination
 
       // Transmit log message over USB CDC
-      if (usbXfer(logBuf, strlen(logBuf)) != 0) {
+      if (usbXfer(logBuf.data(), strnlen(logBuf.data(), logBuf.size())) != 0) {
         usbXferCompleted = false; // Retry sending next message
       } else {
         usbXferCompleted = true; // Transfer completed successfully
@@ -388,7 +390,7 @@ void UsbLogger::loggerThread() {
  *   - Logs actions and errors using the LogRouter.
  */
 void UsbLogger::loggerCommand(void) {
-  static char rxBuf[16];
+  std::array<char, 16> rxBuf; // Buffer for receiving commands
   uint32_t rxLen = 4;
 
   /* Helper lambda to check if a string represents a valid integer */
@@ -402,15 +404,15 @@ void UsbLogger::loggerCommand(void) {
   };
 
   // Check for received command from USB CDC
-  if (USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf),
+  if (USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf.data()),
                                      &rxLen) == USBD_OK) {
-    auto command = std::string(rxBuf);
+    auto command = std::string(rxBuf.data());
     auto it = commandMap.find(command);
     if (it != commandMap.end()) {
-      it->second(rxBuf); // Call the corresponding command handler
-    } else if (isInteger(rxBuf)) {
+      it->second(rxBuf.data()); // Call the corresponding command handler
+    } else if (isInteger(rxBuf.data())) {
       uint32_t temp = 0;
-      sscanf(rxBuf, "%u", &temp); // Parse received command as integer
+      sscanf(rxBuf.data(), "%u", &temp); // Parse received command as integer
       // Validate and apply LED on-time command
       if (temp >= LED_ON_TIME_MIN && temp <= LED_ON_TIME_MAX) {
         LedThread::setOnTime(temp);
@@ -427,26 +429,29 @@ void UsbLogger::loggerCommand(void) {
         printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
 #endif
       }
-    } else if (strlen(rxBuf) == 8 && *(rxBuf + 2) == ':' &&
-               *(rxBuf + 5) == ':') {
+    } else if (strnlen(rxBuf.data(), rxBuf.size()) == 8 && rxBuf.at(2) == ':' &&
+               rxBuf.at(5) == ':') {
       // Handle 'set clock' command with time format hh:mm:ss
-      BootClock::SetRTCStatus result = BootClock::getInstance().setRTC(rxBuf);
-      if (result == BootClock::SUCCESS) {
+      BootClock::SetRTCStatus result =
+          BootClock::getInstance().setRTC(rxBuf.data());
+      if (result == BootClock::SetRTCStatus::SUCCESS) {
         usbXferChunk("Reply: Clock time set successfully\r\n");
-      } else if (result == BootClock::INVALID_RX_FORMAT) {
+      } else if (result == BootClock::SetRTCStatus::INVALID_RX_FORMAT) {
         usbXferChunk("Reply: Invalid clock format received. Use hh:mm:ss.\r\n");
-      } else if (result == BootClock::INVALID_VALUE) {
+      } else if (result == BootClock::SetRTCStatus::INVALID_VALUE) {
         usbXferChunk("Reply: Invalid clock value received.\r\n");
       }
     } else {
-      if (strlen(rxBuf) > 1) {
+      // Find the actual length of received data (up to first null terminator)
+      size_t actualLen = strnlen(rxBuf.data(), rxBuf.size());
+      if (actualLen > 1) {
 #ifdef RUN_TIME
         usbXferChunk(
             "Reply: Invalid command. Type 'help' for list of commands\r\n");
 #endif
       }
     }
-    std::memset(rxBuf, 0, sizeof(rxBuf)); // Clear receive buffer
+    rxBuf.fill(0); // Clear receive buffer using STL
   }
 }
 
@@ -460,7 +465,7 @@ void UsbLogger::loggerCommand(void) {
  *   - Waits for transfer completion event.
  */
 UsbLogger::UsbXferStatus UsbLogger::usbXferChunk(std::string_view msg) {
-  uint32_t len = msg.size();
+  uint32_t len = msg.length();
   if (len > 0) {
     // Transmit a chunk of data over USB CDC
     if (usbXfer(msg.data(), len) != 0) {

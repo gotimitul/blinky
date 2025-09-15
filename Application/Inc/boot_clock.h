@@ -15,8 +15,10 @@
 #ifndef BOOT_CLOCK_H
 #define BOOT_CLOCK_H
 
-#include <cstdint>
+#include <array>
+#include <atomic>
 #include <cstring>
+#include <string_view>
 
 #ifdef __cplusplus
 
@@ -30,16 +32,18 @@
  */
 class BootClock {
 public:
-  enum SetRTCStatus {
+  enum class SetRTCStatus : std::int8_t {
     SUCCESS = 0,
     INVALID_RX_FORMAT = -1,
     INVALID_VALUE = -2,
   };
-  SetRTCStatus setRTC(char *buf);
+
+  SetRTCStatus setRTC(std::string_view buf);
 
   static BootClock &getInstance(); ///< Get singleton instance
 
-  char *getCurrentTimeString(void); ///< Get current time as formatted string
+  std::string_view
+  getCurrentTimeString(void); ///< Get current time as formatted string
 
 private:
   BootClock() {}; ///< Private constructor for singleton pattern
@@ -47,12 +51,9 @@ private:
   BootClock &
   operator=(const BootClock &) = delete; ///< Delete copy assignment operator
 
-  std::uint32_t getClockOffset(void) const { return clock_offset; }
-  void setClockOffset(std::uint32_t offset) { clock_offset = offset; }
+  std::array<char, 16> timeString; ///< Buffer to hold formatted time string
 
-  char timeString[16]; ///< Buffer to hold formatted time string
-
-  std::uint32_t clock_offset = 0; ///< Offset to adjust clock time
+  std::atomic_uint32_t clock_offset = 0; ///< Offset to adjust clock time
 }; // End of BootClock class
 
 extern "C" {

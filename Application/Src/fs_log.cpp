@@ -87,6 +87,7 @@
 #include "retarget_fs.h"
 #include "rl_fs.h"
 #include "usb_logger.h"
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -103,10 +104,10 @@
  * logging.
  */
 namespace {
-constexpr char drive_r0[] = "R0:";      /*!< Drive name for FlashFS */
-constexpr char file_name[] = "log.txt"; /*!< Log file name */
-char file_path[16];                     /*!< Full path for log file */
-std::atomic_int32_t cursor_pos = 0;     /*!< Cursor position for reading logs */
+std::string_view drive_r0 = "R0:";      /*!< Drive name for FlashFS */
+std::string_view file_name = "log.txt"; /*!< Log file name */
+std::array<char, 16> file_path;         /*!< Full path for log file */
+std::atomic_uint32_t cursor_pos = 0;    /*!< Cursor position for reading logs */
 constexpr uint32_t block_count = 1;     /*!< Number of memory pool blocks */
 osMemoryPoolId_t fsMemPoolId;           /*!< Memory pool ID for log buffer */
 osMutexId_t fsMutexId;                  /*!< Mutex ID for file system access */
@@ -147,7 +148,7 @@ constexpr osMutexAttr_t fsMutexAttr = {
  * @return  Number of bytes written or negative value on error.
  */
 static std::int32_t fs_write(int32_t &fd, std::string_view buf) {
-  return fs_fwrite(fd, buf.data(), buf.size());
+  return fs_fwrite(fd, buf.data(), buf.length());
 }
 
 /**
@@ -158,9 +159,9 @@ static std::int32_t fs_write(int32_t &fd, std::string_view buf) {
 static int32_t fs_recreate(int32_t &fd) {
   std::uint8_t retries = 3;
   do {
-    fs_fclose(fd);           /* Close the current file descriptor */
-    rt_fs_remove(file_path); /* Remove the existing log file */
-    fd = fs_fopen(file_path,
+    fs_fclose(fd);                  /* Close the current file descriptor */
+    rt_fs_remove(file_path.data()); /* Remove the existing log file */
+    fd = fs_fopen(file_path.data(),
                   FS_FOPEN_CREATE | FS_FOPEN_WR); /* Recreate log file */
     if (fd >= 0) {
       if (fs_write(fd, "Log file recreated after write error.\r\n") > 0) {
@@ -199,25 +200,27 @@ FsLog &FsLog::getInstance() {
  */
 void FsLog::init() {
   std::int32_t status = 0;
-  int32_t n = std::snprintf(file_path, sizeof(file_path), "%s\\%s", drive_r0,
-                            file_name);
+  int32_t n = std::snprintf(file_path.data(), file_path.size(), "%s\\%s",
+                            drive_r0.data(),
+                            file_name.data());
   // Check for snprintf errors
-  if (n < 0 || n >= sizeof(file_path)) {
+  if (n < 0 || n >= file_path.size()) {
     fsInit = FS_FILE_FORMAT_ERROR; /* Mark initialization failure */
     return;
   }
 
-  status = finit(drive_r0); /* Initialize File System */
+  status = finit(drive_r0.data()); /* Initialize File System */
   if (status == fsOK) {
-    status = fmount(drive_r0); /* Try to mount the file system */
+    status = fmount(drive_r0.data()); /* Try to mount the file system */
     if (status == fsNoFileSystem) {
-      status = fformat(drive_r0, "FAT32"); /* Format if no file system */
+      status = fformat(drive_r0.data(), "FAT32"); /* Format if no file system */
     }
     if (status == fsOK) {
-      status = fmount(drive_r0); /* Mount again after formatting */
+      status = fmount(drive_r0.data()); /* Mount again after formatting */
       if (status == fsOK) {
-        int32_t fd = fs_fopen(file_path, FS_FOPEN_CREATE |
-                                             FS_FOPEN_WR); /* Create log file */
+        int32_t fd =
+            fs_fopen(file_path.data(),
+                     FS_FOPEN_CREATE | FS_FOPEN_WR); /* Create log file */
         // Check if file was created successfully
         if (fd >= 0) {
           fs_fclose(fd); /* Close the file after creation */
@@ -288,17 +291,17 @@ void logsToFs(std::string_view msg) {
     return status;
   };
 
-  fd = fs_fopen(file_path, FS_FOPEN_APPEND);
+  fd = fs_fopen(file_path.data(), FS_FOPEN_APPEND);
   if (fd >= 0) {
     /* Move cursor to end of file */
     if (fs_fseek(fd, 0, SEEK_END) >= 0) {
       /* Check free space whether it is greater than the message size */
-      if (ffree(drive_r0) < msg.size()) {
+      if (ffree(drive_r0.data()) < msg.length()) {
         /* Not enough space, attempt to recreate the log file */
         if (fs_recreate(fd) == 0) {
           int32_t n = append_msg(
-              msg.data()); /* Retry writing the message in the new file */
-          cursor_pos = 0;  /* Reset cursor position */
+              msg.data());     /* Retry writing the message in the new file */
+          cursor_pos.store(0); /* Reset cursor position */
           osMutexRelease(fsMutexId);
           if (n < 0) {
             UsbLogger::getInstance().log(
@@ -347,11 +350,11 @@ void FsLog::log(std::string_view msg) {
  * @brief   Replay log file contents to USB.
  * @details Reads the log file and sends its contents over USB.
  */
-std::int32_t FsLog::replayLogsToUsb() {
-  if (fsInit == FS_INITIALIZED) {
+FsLog::FsLogStatus FsLog::replayLogsToUsb() {
+  if (fsInit == FsLog::FsLogStatus::FS_INITIALIZED) {
     return FsLog::getInstance().fsLogsToUsb();
   }
-  return FS_NOT_INITIALIZED;
+  return FsLog::FsLogStatus::FS_NOT_INITIALIZED;
 }
 
 /**
@@ -361,34 +364,34 @@ std::int32_t FsLog::replayLogsToUsb() {
  *  - Sends data to USB in chunks.
  *  - Updates cursor position.
  */
-std::int32_t FsLog::fsLogsToUsb() {
+FsLog::FsLogStatus FsLog::fsLogsToUsb() {
   std::int32_t n;
   std::int32_t fd;
   if (fsInit == FS_NOT_INITIALIZED) {
-    return FS_TO_USB_INIT_ERROR;
+    return FsLog::FsLogStatus::FS_TO_USB_INIT_ERROR;
   }
 
-  fd = fs_fopen(file_path, FS_FOPEN_RD);
+  fd = fs_fopen(file_path.data(), FS_FOPEN_RD);
   if (fd >= 0) {
     n = fs_fsize(fd); /* Get file size */
     if (n == 0) {
       std::string_view msg = "Info: No logs in the filesystem to replay.\r\n";
       UsbLogger::getInstance().usbXferChunk(msg.data());
       fs_fclose(fd);
-      return FS_TO_USB_OK;
+      return FsLog::FsLogStatus::FS_TO_USB_OK;
     } else {
       std::string_view msg =
           "Reply: Replaying logs from filesystem to USB...\r\n";
       UsbLogger::getInstance().usbXferChunk(msg.data());
       osDelay(10); /* Small delay to ensure USB is ready */
     }
-    while (n > cursor_pos) {
+    while (n > cursor_pos.load()) {
       osMutexAcquire(fsMutexId, osWaitForever);
-      fs_fseek(fd, cursor_pos, SEEK_SET);
+      fs_fseek(fd, cursor_pos.load(), SEEK_SET);
 
       int32_t m = fs_fread(fd, fs_buf,
-                           (m - cursor_pos) < FS_DATA_PACKET_SIZE
-                               ? m - cursor_pos
+                           (n - cursor_pos.load()) < FS_DATA_PACKET_SIZE
+                               ? n - cursor_pos.load()
                                : FS_DATA_PACKET_SIZE); /* Read file content */
                                                        //     fs_fclose(fd);
       osMutexRelease(fsMutexId);
@@ -412,10 +415,10 @@ std::int32_t FsLog::fsLogsToUsb() {
   } else {
     UsbLogger::getInstance().log(
         "Error: Failed to open log file for reading.\r\n");
-    return FS_TO_USB_FILE_OPEN_ERROR;
+    return FsLog::FsLogStatus::FS_TO_USB_FILE_OPEN_ERROR;
   }
   fs_fclose(fd);
-  return FS_TO_USB_OK;
+  return FsLog::FsLogStatus::FS_TO_USB_OK;
 }
 
 /** @} */ // end of Logger

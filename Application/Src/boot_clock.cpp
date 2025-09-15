@@ -45,6 +45,7 @@
 #include "cmsis_os2.h"
 #include <cstdint>
 #include <cstdio>
+#include <string_view>
 
 /** @brief Get the singleton instance of BootClock
  * This method returns a reference to the single instance of the BootClock
@@ -63,16 +64,17 @@ BootClock &BootClock::getInstance() {
  * @note The returned pointer is valid until the next call to this function
  *       from any thread. Copy the string immediately if you need to retain it.
  */
-char *BootClock::getCurrentTimeString(void) {
-  std::uint32_t totalMilliseconds = osKernelGetTickCount() + getClockOffset();
+std::string_view BootClock::getCurrentTimeString(void) {
+  std::uint32_t totalMilliseconds =
+      osKernelGetTickCount() + clock_offset.load();
   std::uint32_t hours = (totalMilliseconds / 3600000) % 24;
   std::uint32_t minutes = (totalMilliseconds / 60000) % 60;
   std::uint32_t seconds = (totalMilliseconds / 1000) % 60;
   std::uint32_t milliseconds = totalMilliseconds % 1000;
 
-  snprintf(timeString, sizeof(timeString), "%02u:%02u:%02u.%03u", hours,
+  snprintf(timeString.data(), timeString.size(), "%02u:%02u:%02u.%03u", hours,
            minutes, seconds, milliseconds); // Format time string
-  return timeString; // Return pointer to formatted time string
+  return timeString.data(); // Return pointer to formatted time string
 }
 
 /** @brief Set the RTC time based on a provided string.
@@ -80,19 +82,19 @@ char *BootClock::getCurrentTimeString(void) {
  * @param buf Pointer to a string containing the time in "hh:mm:ss" format.
  * @return Status code indicating success or type of error.
  */
-BootClock::SetRTCStatus BootClock::setRTC(char *buf) {
+BootClock::SetRTCStatus BootClock::setRTC(std::string_view buf) {
 
   std::uint32_t hours, minutes, seconds;
-  if (std::sscanf(buf, "%2u:%2u:%2u", &hours, &minutes, &seconds) != 3) {
-    return INVALID_RX_FORMAT; // Parsing error
+  if (std::sscanf(buf.data(), "%2u:%2u:%2u", &hours, &minutes, &seconds) != 3) {
+    return SetRTCStatus::INVALID_RX_FORMAT; // Parsing error
   }
 
   if (hours >= 24 || minutes >= 60 || seconds >= 60) {
-    return INVALID_VALUE; // Invalid time values
+    return SetRTCStatus::INVALID_VALUE; // Invalid time values
   }
 
-  setClockOffset((hours * 3600000) + (minutes * 60000) + (seconds * 1000) -
-                 osKernelGetTickCount()); // Adjust clock offset
+  clock_offset.store((hours * 3600000) + (minutes * 60000) + (seconds * 1000) -
+                     osKernelGetTickCount()); // Adjust clock offset
 
-  return SUCCESS; // Success
+  return SetRTCStatus::SUCCESS; // Success
 }
