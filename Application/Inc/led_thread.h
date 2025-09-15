@@ -14,6 +14,7 @@
 /* includes
  * --------------------------------------------------------------------------*/
 #include "cmsis_os2.h"
+#include "led.h"
 #include <cstdint>
 #include <string_view>
 
@@ -30,7 +31,7 @@
  * adjust the LED on-time within defined limits. Uses a semaphore for
  * synchronized access.
  */
-class LedThread {
+class LedThread : public Led {
 private:
   uint32_t pin; ///< GPIO pin associated with this LED
   static void thread_entry(void *argument);

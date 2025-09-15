@@ -125,10 +125,10 @@ void LogRouter::log(std::string_view msg) {
   // Determine which logger to use based on enabled flags
   if (fsLoggingEnabled) {
 #if defined(FS_LOG) && !defined(DEBUG)
-    logger = static_cast<Logger *>(&FsLog::getInstance());
+    logger = &FsLog::getInstance();
 #endif
   } else if (usbLoggingEnabled) {
-    logger = static_cast<Logger *>(&UsbLogger::getInstance());
+    logger = &UsbLogger::getInstance();
   } else {
     return; // No logging enabled
   }

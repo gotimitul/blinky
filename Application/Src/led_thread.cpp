@@ -140,7 +140,8 @@ osEventFlagsId_t app_events_get() {
  * @param threadName Name of the thread (used by CMSIS-RTOS2 for debugging).
  * @param pin  GPIO pin number associated with the LED.
  */
-LedThread::LedThread(std::string_view threadName, uint32_t pin) : pin(pin) {
+LedThread::LedThread(std::string_view threadName, uint32_t pin)
+    : Led(pin, Led::State::ON), pin(pin) {
   /* Initialize thread attributes for CMSIS-RTOS2 */
   thread_attr = {
       .name = threadName.data(),   /*!< Thread name */
@@ -230,6 +231,7 @@ void LedThread::run(void) {
   const char *const str = osThreadGetName(thread_id);
   const char *const blue = "blue";
 #endif
+  Led &led = *this; /* Reference to the base Led class */
   for (;;) {
     /* Acquire semaphore before accessing the LED */
     osSemaphoreAcquire(sem, osWaitForever);
@@ -238,14 +240,14 @@ void LedThread::run(void) {
       EventStartA(10);
 #endif
 
-    Led::getInstance().on(pin); /* Turn LED on */
+    led.on(pin); /* Turn LED on */
 
     LogRouter::getInstance().log("Event: LED %s ON for %d ms\r\n",
                                  thread_attr.name, getOnTime());
 
     osDelay(getOnTime());
 
-    Led::getInstance().off(pin);
+    led.off(pin); /* Turn LED off */
 #ifdef DEBUG
     if (strcmp(str, blue) == 0)
       EventStopA(10);
