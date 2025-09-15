@@ -22,11 +22,6 @@
 
 #ifdef __cplusplus
 
-enum class SetRTCStatus {
-  SUCCESS = 0,
-  INVALID_RX_FORMAT = -1,
-  INVALID_VALUE = -2,
-};
 /**
  * @class BootClock
  * @brief Singleton class for system timekeeping
@@ -37,6 +32,12 @@ enum class SetRTCStatus {
  */
 class BootClock {
 public:
+  enum class SetRTCStatus : std::int8_t {
+    SUCCESS = 0,
+    INVALID_RX_FORMAT = -1,
+    INVALID_VALUE = -2,
+  };
+
   SetRTCStatus setRTC(std::string_view buf);
 
   static BootClock &getInstance(); ///< Get singleton instance
