@@ -40,6 +40,9 @@ public:
       off(pin);
     }
   }
+  virtual ~Led() =
+      default; ///< Virtual destructor for proper cleanup in derived classes
+
   void on(uint32_t pin);     /*!< Turn on LED */
   void off(uint32_t pin);    /*!< Turn off LED */
   void toggle(uint32_t pin); /*!< Toggle LED state */

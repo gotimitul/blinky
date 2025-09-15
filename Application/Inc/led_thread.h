@@ -54,6 +54,8 @@ private:
 public:
   // Constructor initializes the LED pin and thread attributes
   LedThread(std::string_view threadName, uint32_t pin);
+  ~LedThread() = default; // Default destructor
+
   osThreadId_t getThreadId(void) const { return thread_id; }
 
   inline static uint32_t getOnTime(void) { return onTime; } // Getter for onTime
