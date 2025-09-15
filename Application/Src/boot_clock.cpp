@@ -60,41 +60,39 @@ BootClock &BootClock::getInstance() {
  * The time is formatted as "HH:MM:SS.mmm" where HH is hours, MM is minutes,
  * SS is seconds, and mmm is milliseconds since system start.
  * @return Pointer to a static string containing the formatted time.
+ * @note The returned pointer is valid until the next call to this function
+ *       from any thread. Copy the string immediately if you need to retain it.
  */
 char *BootClock::getCurrentTimeString(void) {
-  std::uint32_t totalMilliseconds = osKernelGetTickCount() + clock_offset;
+  std::uint32_t totalMilliseconds = osKernelGetTickCount() + getClockOffset();
   std::uint32_t hours = (totalMilliseconds / 3600000) % 24;
   std::uint32_t minutes = (totalMilliseconds / 60000) % 60;
   std::uint32_t seconds = (totalMilliseconds / 1000) % 60;
   std::uint32_t milliseconds = totalMilliseconds % 1000;
 
   snprintf(timeString, sizeof(timeString), "%02u:%02u:%02u.%03u", hours,
-           minutes, seconds, milliseconds);
-  return timeString;
+           minutes, seconds, milliseconds); // Format time string
+  return timeString; // Return pointer to formatted time string
 }
 
 /** @brief Set the RTC time based on a provided string.
  * The input string should be in the format "hh:mm:ss".
  * @param buf Pointer to a string containing the time in "hh:mm:ss" format.
- * @return 0 on success, -1 on error (invalid format or values).
+ * @return Status code indicating success or type of error.
  */
-std::int32_t BootClock::setRTC(char *buf) {
+BootClock::SetRTCStatus BootClock::setRTC(char *buf) {
 
   std::uint32_t hours, minutes, seconds;
   if (std::sscanf(buf, "%2u:%2u:%2u", &hours, &minutes, &seconds) != 3) {
-    return -1; // Parsing error
+    return INVALID_RX_FORMAT; // Parsing error
   }
 
   if (hours >= 24 || minutes >= 60 || seconds >= 60) {
-    return -1; // Invalid time values
+    return INVALID_VALUE; // Invalid time values
   }
 
-  clock_offset = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) -
-                 osKernelGetTickCount();
+  setClockOffset((hours * 3600000) + (minutes * 60000) + (seconds * 1000) -
+                 osKernelGetTickCount()); // Adjust clock offset
 
-  // Note: osKernelSetTickCount is not part of CMSIS-RTOS2 standard.
-  // This is a placeholder for setting the tick count.
-  // osKernelSetTickCount(totalMilliseconds);
-
-  return 0; // Success
+  return SUCCESS; // Success
 }

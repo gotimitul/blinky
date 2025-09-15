@@ -74,6 +74,7 @@ message being logged over USB.
 #include <cstring>
 #include <functional>
 #include <map>
+#include <string_view>
 
 /** Anonymous namespace for internal linkage
  * @details Contains internal variables and helper functions for UsbLogger.
@@ -81,12 +82,10 @@ message being logged over USB.
 namespace {
 constexpr uint32_t LOG_MSG_SIZE = 64;     /*!< Size of each log message */
 constexpr uint32_t LOG_QUEUE_LENGTH = 32; /*!< Number of messages in queue */
+osMessageQueueId_t msgQueueId = nullptr;  /*!< Message queue for log strings */
+osEventFlagsId_t usbXferFlag = nullptr;   /*!< Event flags for USB transfer */
 
-osThreadId_t threadId = nullptr;         /*!< RTOS thread ID for logger */
-osMessageQueueId_t msgQueueId = nullptr; /*!< Message queue for log strings */
-osEventFlagsId_t usbXferFlag = nullptr;  /*!< Event flags for USB transfer */
-
-const char *helpMsg =
+constexpr char helpMsg[] =
     "Commands:\r\n"
     "  set on time: Set LED ON time (100-2000 ms)\r\n"
     "  fsLog out: Replay file system logs to USB\r\n"
@@ -98,12 +97,12 @@ const char *helpMsg =
     "  help     : Show this help message\r\n"; /*!< Help message */
 
 using CommandHandler =
-    std::function<void(const char *)>; /*!< Command handler type */
+    std::function<void(std::string_view)>; /*!< Command handler type */
 
 /** @brief Handle 'set on time' command
  * @param args Command arguments (not used)
  */
-void handleSetOnTime(const char *args) {
+void handleSetOnTime(std::string_view args) {
   UNUSED(args);
   // Replying with prompt to set LED ON time
   UsbLogger::getInstance().usbXferChunk(
@@ -113,7 +112,7 @@ void handleSetOnTime(const char *args) {
 /** @brief Handle 'fsLog out' command
  * @param args Command arguments (not used)
  */
-void handleFsLogOut(const char *args) {
+void handleFsLogOut(std::string_view args) {
   UNUSED(args);
 #ifdef FS_LOG
   // Calling LogRouter to replay file system logs to USB
@@ -124,7 +123,7 @@ void handleFsLogOut(const char *args) {
 /** @brief Handle 'fsLog on' command
  * @param args Command arguments (not used)
  */
-void handleFsLogOn(const char *args) {
+void handleFsLogOn(std::string_view args) {
   UNUSED(args);
 #ifdef FS_LOG
   // Calling LogRouter to enable file system logging
@@ -136,7 +135,7 @@ void handleFsLogOn(const char *args) {
 /** @brief Handle 'fsLog off' command
  * @param args Command arguments (not used)
  */
-void handleFsLogOff(const char *args) {
+void handleFsLogOff(std::string_view args) {
   UNUSED(args);
 #ifdef FS_LOG
   // Calling LogRouter to disable file system logging
@@ -147,7 +146,7 @@ void handleFsLogOff(const char *args) {
 /** @brief Handle 'log on' command
  * @param args Command arguments (not used)
  */
-void handleLogOn(const char *args) {
+void handleLogOn(std::string_view args) {
   UNUSED(args);
   // Calling LogRouter for enabling USB logging using MemoryPool
   LogRouter::getInstance().enableUsbLogging(true);
@@ -160,7 +159,7 @@ void handleLogOn(const char *args) {
 /** @brief Handle 'log off' command
  * @param args Command arguments (not used)
  */
-void handleLogOff(const char *args) {
+void handleLogOff(std::string_view args) {
   UNUSED(args);
   // Calling LogRouter for disabling USB logging
   LogRouter::getInstance().enableUsbLogging(false);
@@ -169,7 +168,7 @@ void handleLogOff(const char *args) {
 /** @brief Handle 'set clock' command
  * @param args Command arguments (not used)
  */
-void handleSetClock(const char *args) {
+void handleSetClock(std::string_view args) {
   UNUSED(args);
   // Replying with prompt to set clock time
   UsbLogger::getInstance().usbXferChunk(
@@ -179,7 +178,7 @@ void handleSetClock(const char *args) {
 /** @brief Handle 'help' command
  * @param args Command arguments (not used)
  */
-void handleHelp(const char *args) {
+void handleHelp(std::string_view args) {
   UNUSED(args);
   // Replying with help command message
   UsbLogger::getInstance().usbXferChunk(helpMsg);
@@ -210,7 +209,7 @@ constexpr osMessageQueueAttr_t msgQueueAttr = {
     .mq_size = sizeof(log_queue_mem), /*!< Size of the memory buffer */
 };
 constexpr osThreadAttr_t threadAttr = {
-    .name = "UsbLoggerThread",   /*!< Name for debugging */
+    .name = "Usb Logger",        /*!< Name for debugging */
     .attr_bits = 0U,             /*!< No special thread attributes */
     .cb_mem = cb,                /*!< Memory for thread control block */
     .cb_size = sizeof(cb),       /*!< Size of control block */
@@ -304,9 +303,9 @@ auto messageQueueFullHandler = +[](void) {
  *   - Puts the message into the logger's message queue.
  *   - If the queue is full, removes the oldest message and retries.
  */
-void UsbLogger::log(const char *msg) {
+void UsbLogger::log(std::string_view msg) {
   if (msgQueueId != nullptr) {
-    while (osMessageQueuePut(msgQueueId, msg, 0, 0) ==
+    while (osMessageQueuePut(msgQueueId, msg.data(), 0, 0) ==
            osErrorResource) // non-blocking enqueue, remove oldest if full
     {
       messageQueueFullHandler();
@@ -324,12 +323,12 @@ void UsbLogger::log(const char *msg) {
  *   - Waits for the transfer complete event flag.
  *   - Retries if the USB is busy.
  */
-UsbLogger::UsbXferStatus UsbLogger::usbXfer(const char *msg,
+UsbLogger::UsbXferStatus UsbLogger::usbXfer(std::string_view msg,
                                             std::uint32_t len) {
   // Start USB transfer in a separate thread
-  while (CDC_Transmit_FS(
-             const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(msg)),
-             len) != USBD_OK) {
+  while (CDC_Transmit_FS(const_cast<uint8_t *>(
+                             reinterpret_cast<const uint8_t *>(msg.data())),
+                         len) != USBD_OK) {
     osDelay(10); // Wait and retry if USB is busy
   }
   // Wait for transfer complete event
@@ -393,12 +392,12 @@ void UsbLogger::loggerCommand(void) {
   uint32_t rxLen = 4;
 
   /* Helper lambda to check if a string represents a valid integer */
-  auto isInteger = [](const char *str) {
-    if (str == nullptr || *str == '\0') {
+  auto isInteger = [](std::string_view str) {
+    if (str.empty()) {
       return false;
     }
     char *endptr = nullptr;
-    strtol(str, &endptr, 10);
+    strtol(str.data(), &endptr, 10);
     return (*endptr == '\0');
   };
 
@@ -430,10 +429,14 @@ void UsbLogger::loggerCommand(void) {
       }
     } else if (strlen(rxBuf) == 8 && *(rxBuf + 2) == ':' &&
                *(rxBuf + 5) == ':') {
-      if (BootClock::getInstance().setRTC(rxBuf) == 0) {
+      // Handle 'set clock' command with time format hh:mm:ss
+      BootClock::SetRTCStatus result = BootClock::getInstance().setRTC(rxBuf);
+      if (result == BootClock::SUCCESS) {
         usbXferChunk("Reply: Clock time set successfully\r\n");
-      } else {
-        usbXferChunk("Reply: Failed to set clock time\r\n");
+      } else if (result == BootClock::INVALID_RX_FORMAT) {
+        usbXferChunk("Reply: Invalid clock format received. Use hh:mm:ss.\r\n");
+      } else if (result == BootClock::INVALID_VALUE) {
+        usbXferChunk("Reply: Invalid clock value received.\r\n");
       }
     } else {
       if (strlen(rxBuf) > 1) {
@@ -456,11 +459,11 @@ void UsbLogger::loggerCommand(void) {
  *   - Transmits the data chunk over USB CDC.
  *   - Waits for transfer completion event.
  */
-UsbLogger::UsbXferStatus UsbLogger::usbXferChunk(const char *msg) {
-  uint32_t len = strlen(msg);
+UsbLogger::UsbXferStatus UsbLogger::usbXferChunk(std::string_view msg) {
+  uint32_t len = msg.size();
   if (len > 0) {
     // Transmit a chunk of data over USB CDC
-    if (usbXfer(msg, len) != 0) {
+    if (usbXfer(msg.data(), len) != 0) {
       return USB_XFER_ERROR; // Transfer failed
     } else {
       return USB_XFER_SUCCESS; // Transfer succeeded

@@ -16,6 +16,7 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#include <string_view>
 #ifdef __cplusplus
 
 /**
@@ -25,8 +26,8 @@
  */
 class Logger {
 public:
-  virtual ~Logger() = default;           /*!< Virtual destructor */
-  virtual void log(const char *msg) = 0; /*!< Pure virtual log method */
+  virtual ~Logger() = default;                /*!< Virtual destructor */
+  virtual void log(std::string_view msg) = 0; /*!< Pure virtual log method */
 
 protected:
   enum UsbXferStatus {

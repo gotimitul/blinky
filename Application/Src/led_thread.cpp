@@ -63,6 +63,7 @@
 #include <cstdint>
 #include <cstring>
 #include <mutex>
+#include <string_view>
 
 #ifdef DEBUG
 #include "eventrecorder.h"
@@ -139,10 +140,10 @@ osEventFlagsId_t app_events_get() {
  * @param threadName Name of the thread (used by CMSIS-RTOS2 for debugging).
  * @param pin  GPIO pin number associated with the LED.
  */
-LedThread::LedThread(const char *threadName, uint32_t pin) : pin(pin) {
+LedThread::LedThread(std::string_view threadName, uint32_t pin) : pin(pin) {
   /* Initialize thread attributes for CMSIS-RTOS2 */
   thread_attr = {
-      .name = threadName,          /*!< Thread name */
+      .name = threadName.data(),   /*!< Thread name */
       .attr_bits = 0U,             /*!< No special thread attributes */
       .cb_mem = cb,                /*!< Memory for thread control block */
       .cb_size = sizeof(cb),       /*!< Size of control block */
@@ -204,16 +205,18 @@ void LedThread::thread_entry(void *argument) {
  *       detected.
  * @param arg Pointer to the LED thread instance.
  */
-auto checkButtonEvent = [](void *arg) {
+void LedThread::checkButtonEvent(void *arg) {
   LedThread *thread = static_cast<LedThread *>(arg);
-  if (osEventFlagsWait(app_events_get(), 1U, osFlagsWaitAny, 0U) == 1U) {
+  if (osEventFlagsWait(app_events_get(), USER_BUTTON_FLAG, osFlagsWaitAny,
+                       0U) == USER_BUTTON_FLAG) {
 #ifdef FS_LOG
     LogRouter::getInstance().replayFsLogsToUsb(); /* Replay logs to USB */
 #endif
-    osDelay(50U);                            /* Debounce delay */
-    osEventFlagsClear(app_events_get(), 1U); /* Clear the event flag */
+    osDelay(50U); /* Debounce delay */
+    osEventFlagsClear(app_events_get(),
+                      USER_BUTTON_FLAG); /* Clear the event flag */
   }
-};
+}
 
 /**
  * @brief Main control loop for the LED thread.
