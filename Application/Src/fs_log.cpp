@@ -201,8 +201,7 @@ FsLog &FsLog::getInstance() {
 void FsLog::init() {
   std::int32_t status = 0;
   int32_t n = std::snprintf(file_path.data(), file_path.size(), "%s\\%s",
-                            drive_r0.data(),
-                            file_name.data());
+                            drive_r0.data(), file_name.data());
   // Check for snprintf errors
   if (n < 0 || n >= file_path.size()) {
     fsInit = FS_FILE_FORMAT_ERROR; /* Mark initialization failure */
