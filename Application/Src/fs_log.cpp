@@ -95,6 +95,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string_view>
 
 /**
  * @brief   Anonymous namespace for internal linkage.
@@ -145,8 +146,8 @@ constexpr osMutexAttr_t fsMutexAttr = {
  * @param   buf Buffer to write.
  * @return  Number of bytes written or negative value on error.
  */
-static std::int32_t fs_write(int32_t &fd, const char *buf) {
-  return fs_fwrite(fd, buf, strlen(buf));
+static std::int32_t fs_write(int32_t &fd, std::string_view buf) {
+  return fs_fwrite(fd, buf.data(), buf.size());
 }
 
 /**
@@ -274,15 +275,15 @@ void FsLog::init() {
  * @brief   Write a message to the log file.
  * @param   msg Null-terminated string to write.
  */
-void logsToFs(const char *msg) {
+void logsToFs(std::string_view msg) {
   std::int32_t status;
   std::int32_t fd;
 
   /* Acquire mutex for thread safety */
   osMutexAcquire(fsMutexId, osWaitForever);
   /* Open log file in append mode */
-  auto append_msg = [&](const char *msg) {
-    int32_t status = fs_write(fd, msg);
+  auto append_msg = [&](std::string_view msg) {
+    int32_t status = fs_write(fd, msg.data());
     fs_fclose(fd);
     return status;
   };
@@ -292,12 +293,12 @@ void logsToFs(const char *msg) {
     /* Move cursor to end of file */
     if (fs_fseek(fd, 0, SEEK_END) >= 0) {
       /* Check free space whether it is greater than the message size */
-      if (ffree(drive_r0) < strlen(msg)) {
+      if (ffree(drive_r0) < msg.size()) {
         /* Not enough space, attempt to recreate the log file */
         if (fs_recreate(fd) == 0) {
-          int32_t n =
-              append_msg(msg); /* Retry writing the message in the new file */
-          cursor_pos = 0;      /* Reset cursor position */
+          int32_t n = append_msg(
+              msg.data()); /* Retry writing the message in the new file */
+          cursor_pos = 0;  /* Reset cursor position */
           osMutexRelease(fsMutexId);
           if (n < 0) {
             UsbLogger::getInstance().log(
@@ -310,7 +311,7 @@ void logsToFs(const char *msg) {
           return;
         }
       } else {
-        int32_t n = append_msg(msg);
+        int32_t n = append_msg(msg.data()); /* Write the message to the file */
         osMutexRelease(fsMutexId);
         if (n < 0) {
           UsbLogger::getInstance().log(
@@ -335,10 +336,10 @@ void logsToFs(const char *msg) {
  * @brief   Log a message using the file system logger.
  * @param   msg Null-terminated string to log.
  */
-void FsLog::log(const char *msg) {
+void FsLog::log(std::string_view msg) {
   if (fsInit !=
       (FS_NOT_INITIALIZED | FS_MEMPOOL_ERROR | FS_MEMPOOL_ALLOC_ERROR)) {
-    logsToFs(msg);
+    logsToFs(msg.data());
   }
 }
 
@@ -371,13 +372,14 @@ std::int32_t FsLog::fsLogsToUsb() {
   if (fd >= 0) {
     n = fs_fsize(fd); /* Get file size */
     if (n == 0) {
-      const char *msg = "Info: No logs in the filesystem to replay.\r\n";
-      UsbLogger::getInstance().usbXferChunk(msg);
+      std::string_view msg = "Info: No logs in the filesystem to replay.\r\n";
+      UsbLogger::getInstance().usbXferChunk(msg.data());
       fs_fclose(fd);
       return FS_TO_USB_OK;
     } else {
-      const char *msg = "Reply: Replaying logs from filesystem to USB...\r\n";
-      UsbLogger::getInstance().usbXferChunk(msg);
+      std::string_view msg =
+          "Reply: Replaying logs from filesystem to USB...\r\n";
+      UsbLogger::getInstance().usbXferChunk(msg.data());
       osDelay(10); /* Small delay to ensure USB is ready */
     }
     while (n > cursor_pos) {

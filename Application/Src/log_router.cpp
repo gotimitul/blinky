@@ -58,6 +58,7 @@
 #include "usb_logger.h"
 #include <cstdio>
 #include <cstring>
+#include <string_view>
 
 /** @brief Get the singleton instance of LogRouter
  * This method returns a reference to the single instance of the LogRouter
@@ -88,16 +89,9 @@ void LogRouter::enableFsLogging(bool enable) { fsLoggingEnabled = enable; }
  * the enabled flags.
  * @param msg The message string to log.
  */
-void LogRouter::log(const char *msg) {
-  // Validate input message
-  if (msg == nullptr) {
-#if defined(DEBUG) && !defined(FS_LOG)
-    printf("LogRouter::log: msg pointer is null: %s, %d\r\n", __FILE__,
-           __LINE__);
-#endif
-    return;
-  }
-  if (strlen(msg) == 0) {
+void LogRouter::log(std::string_view msg) {
+
+  if (msg.size() == 0) {
 #if defined(DEBUG) && !defined(FS_LOG)
     printf("LogRouter::log: msg is empty: %s, %d\r\n", __FILE__, __LINE__);
 #endif
@@ -110,7 +104,7 @@ void LogRouter::log(const char *msg) {
 
   bool needTimeStamp = false;
   for (const auto &keyword : keywords) {
-    if (strstr(msg, keyword) != nullptr) {
+    if (msg.find(keyword) != std::string_view::npos) {
       needTimeStamp = true;
       break;
     }
@@ -118,10 +112,12 @@ void LogRouter::log(const char *msg) {
 
   char logBuffer[256];
   if (needTimeStamp) {
-    const char *timeStamp = BootClock::getInstance().getCurrentTimeString();
-    snprintf(logBuffer, sizeof(logBuffer), "[%s] %s", timeStamp, msg);
+    std::string_view timeStamp =
+        BootClock::getInstance().getCurrentTimeString();
+    snprintf(logBuffer, sizeof(logBuffer), "[%s] %s", timeStamp.data(),
+             msg.data());
   } else {
-    snprintf(logBuffer, sizeof(logBuffer), "%s", msg);
+    snprintf(logBuffer, sizeof(logBuffer), "%s", msg.data());
   }
 
   Logger *logger = nullptr; // Pointer to the selected logger
@@ -144,9 +140,9 @@ void LogRouter::log(const char *msg) {
  * @param msg Format string for the log message.
  * @param val Integer value to include in the log message.
  */
-void LogRouter::log(const char *msg, uint32_t val) {
+void LogRouter::log(std::string_view msg, uint32_t val) {
   char logBuffer[64];
-  snprintf(logBuffer, sizeof(logBuffer), msg, val);
+  snprintf(logBuffer, sizeof(logBuffer), msg.data(), val);
   log(logBuffer);
 }
 
@@ -154,9 +150,9 @@ void LogRouter::log(const char *msg, uint32_t val) {
  * @param msg Format string for the log message.
  * @param str String value to include in the log message.
  */
-void LogRouter::log(const char *msg, const char *str) {
+void LogRouter::log(std::string_view msg, std::string_view str) {
   char logBuffer[128];
-  snprintf(logBuffer, sizeof(logBuffer), msg, str);
+  snprintf(logBuffer, sizeof(logBuffer), msg.data(), str.data());
   log(logBuffer);
 }
 
@@ -165,9 +161,9 @@ void LogRouter::log(const char *msg, const char *str) {
  * @param str String value to include in the log message.
  * @param val Integer value to include in the log message.
  */
-void LogRouter::log(const char *msg, const char *str, uint32_t val) {
+void LogRouter::log(std::string_view msg, std::string_view str, uint32_t val) {
   char logBuffer[128];
-  snprintf(logBuffer, sizeof(logBuffer), msg, str, val);
+  snprintf(logBuffer, sizeof(logBuffer), msg.data(), str.data(), val);
   log(logBuffer);
 }
 
@@ -177,10 +173,11 @@ void LogRouter::log(const char *msg, const char *str, uint32_t val) {
  * @param str2 Second string value to include in the log message.
  * @param val Integer value to include in the log message.
  */
-void LogRouter::log(const char *msg, const char *str, const char *str2,
-                    uint32_t val) {
+void LogRouter::log(std::string_view msg, std::string_view str,
+                    std::string_view str2, uint32_t val) {
   char logBuffer[256];
-  snprintf(logBuffer, sizeof(logBuffer), msg, str, str2, val);
+  snprintf(logBuffer, sizeof(logBuffer), msg.data(), str.data(), str2.data(),
+           val);
   log(logBuffer);
 }
 

@@ -161,15 +161,16 @@ extern "C" void app_main(void *argument) {
 static void supervisor_thread(void *argument) {
   UNUSED(argument);
   osThreadState_t state;
-  const char *name;
+  std::string_view name;
   static std::uint8_t heartbeat = 0;
   while (1) {
     auto threadHealthCheck = [&]() {
       if (state == (osThreadInactive || osThreadError || osThreadTerminated)) {
 #if defined(DEBUG) && !defined(FS_LOG)
-        printf("%s thread not running!\r\n", name);
+        printf("%s thread not running!\r\n", name.data());
 #endif
-        LogRouter::getInstance().log("%s thread state is %d!\r\n", name, state);
+        LogRouter::getInstance().log("%s thread state is %d!\r\n", name.data(),
+                                     state);
       }
     };
 

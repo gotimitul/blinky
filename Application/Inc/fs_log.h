@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <logger.h>
+#include <string_view>
 #ifdef __cplusplus
 
 /**
@@ -38,7 +39,7 @@ public:
 
   void init(); /*!< Initialize logger */
 
-  void log(const char *msg) override; /*!< Log a message */
+  void log(std::string_view msg) override; /*!< Log a message */
 
   std::int32_t replayLogsToUsb(); /*!< Replay logs to USB */
 

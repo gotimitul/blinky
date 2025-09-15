@@ -15,6 +15,7 @@
 #define LOG_ROUTER_H
 
 #include <stdint.h>
+#include <string_view> // For std::string_view
 
 #ifdef __cplusplus
 /**
@@ -39,11 +40,12 @@ public:
 
   /** @name Logging API */
   ///@{
-  void log(const char *msg);
-  void log(const char *msg, uint32_t val);
-  void log(const char *msg, const char *str);
-  void log(const char *msg, const char *str, uint32_t val);
-  void log(const char *msg, const char *str, const char *str2, uint32_t val);
+  void log(std::string_view msg);
+  void log(std::string_view msg, uint32_t val);
+  void log(std::string_view msg, std::string_view str);
+  void log(std::string_view msg, std::string_view str, uint32_t val);
+  void log(std::string_view msg, std::string_view str, std::string_view str2,
+           uint32_t val);
   ///@}
 
   /** @brief If FS logging is enabled, request replay of FS logs to USB. */
