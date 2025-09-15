@@ -16,6 +16,7 @@
 #include <cmsis_os2.h>
 #include <logger.h>
 #include <stdint.h>
+#include <string_view>
 
 #ifdef __cplusplus
 
@@ -29,10 +30,10 @@
  */
 class UsbLogger : public Logger {
 public:
-  static UsbLogger &getInstance();             /*!< Get singleton instance */
-  void init();                                 /*!< Initialize logger */
-  void log(const char *msg) override;          /*!< Log a message */
-  UsbXferStatus usbXferChunk(const char *msg); /*!< Send data chunk */
+  static UsbLogger &getInstance();         /*!< Get singleton instance */
+  void init();                             /*!< Initialize logger */
+  void log(std::string_view msg) override; /*!< Log a message */
+  UsbXferStatus usbXferChunk(std::string_view msg);     /*!< Send data chunk */
   osThreadId_t getThreadId() const { return threadId; } /*!< Get thread ID */
 
 private:
@@ -40,7 +41,7 @@ private:
   UsbLogger(const UsbLogger &) = delete; /*!< Prevent copy construction */
   UsbLogger &operator=(const UsbLogger &) = delete; /*!< Prevent assignment */
   static void loggerThreadWrapper(void *argument);  /*!< Thread wrapper */
-  UsbXferStatus usbXfer(const char *msg,
+  UsbXferStatus usbXfer(std::string_view msg,
                         std::uint32_t len); /*!< Start USB transfer */
   void loggerThread();                      /*!< Logger thread function */
   void loggerCommand();                     /*!< Command handling function */

@@ -15,6 +15,7 @@
  * --------------------------------------------------------------------------*/
 #include "cmsis_os2.h"
 #include <cstdint>
+#include <string_view>
 
 #ifdef __cplusplus
 
@@ -45,12 +46,13 @@ private:
 
   osThreadAttr_t thread_attr; ///< Thread attributes used by osThreadNew
 
+  void checkButtonEvent(void *arg);
   void start(void); // It creates a new thread
   void run(void);   // It contains the control logic for an LED.
 
 public:
   // Constructor initializes the LED pin and thread attributes
-  LedThread(const char *threadName, uint32_t pin);
+  LedThread(std::string_view threadName, uint32_t pin);
   osThreadId_t getThreadId(void) const { return thread_id; }
 
   inline static uint32_t getOnTime(void) { return onTime; } // Getter for onTime

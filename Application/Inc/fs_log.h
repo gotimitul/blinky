@@ -17,7 +17,28 @@
 
 #include <cstdint>
 #include <logger.h>
+#include <string_view>
 #ifdef __cplusplus
+
+/** @brief Status codes for file system to USB log replay */
+enum FsToUsbStatus {
+  FS_TO_USB_OK = 0,               /*!< Success */
+  FS_TO_USB_INIT_ERROR = -1,      /*!< Initialization error */
+  FS_TO_USB_FILE_OPEN_ERROR = -2, /*!< File open error */
+};
+/** @brief Status codes for file system logger initialization */
+enum FsInitStatus {
+  FS_NOT_INITIALIZED = 1,      /*!< Not initialized */
+  FS_INITIALIZED = 0,          /*!< Initialized */
+  FS_FILE_FORMAT_ERROR = -1,   /*!< File format error */
+  FS_DRIVE_INIT_ERROR = -2,    /*!< Drive initialization error */
+  FS_FORMAT_ERROR = -3,        /*!< Format error */
+  FS_MOUNT_ERROR = -4,         /*!< Mount error */
+  FS_FILE_CREATE_ERROR = -5,   /*!< File creation error */
+  FS_MUTEX_ERROR = -6,         /*!< Mutex creation error */
+  FS_MEMPOOL_ERROR = -7,       /*!< Memory pool creation error */
+  FS_MEMPOOL_ALLOC_ERROR = -8, /*!< Memory pool allocation error */
+};
 
 /**
  * @class FsLog
@@ -28,17 +49,11 @@
  */
 class FsLog : public Logger {
 public:
-  enum FsToUsbStatus {
-    FS_TO_USB_OK = 0,               /*!< Success */
-    FS_TO_USB_INIT_ERROR = -1,      /*!< Initialization error */
-    FS_TO_USB_FILE_OPEN_ERROR = -2, /*!< File open error */
-  };
-
   static FsLog &getInstance(); /*!< Get singleton instance */
 
   void init(); /*!< Initialize logger */
 
-  void log(const char *msg) override; /*!< Log a message */
+  void log(std::string_view msg) override; /*!< Log a message */
 
   std::int32_t replayLogsToUsb(); /*!< Replay logs to USB */
 
@@ -49,21 +64,8 @@ private:
   ~FsLog() = default;                       /*!< Default destructor */
   std::int32_t fsLogsToUsb();               /*!< Logger thread function */
 
-  enum FsInitStatus {
-    FS_NOT_INITIALIZED = 1,      /*!< Not initialized */
-    FS_INITIALIZED = 0,          /*!< Initialized */
-    FS_FILE_FORMAT_ERROR = -1,   /*!< File format error */
-    FS_DRIVE_INIT_ERROR = -2,    /*!< Drive initialization error */
-    FS_FORMAT_ERROR = -3,        /*!< Format error */
-    FS_MOUNT_ERROR = -4,         /*!< Mount error */
-    FS_FILE_CREATE_ERROR = -5,   /*!< File creation error */
-    FS_MUTEX_ERROR = -6,         /*!< Mutex creation error */
-    FS_MEMPOOL_ERROR = -7,       /*!< Memory pool creation error */
-    FS_MEMPOOL_ALLOC_ERROR = -8, /*!< Memory pool allocation error */
-  };
-
-  std::int32_t fsInit = FS_NOT_INITIALIZED; /*!< Initialization status of the
-                                          file system logger */
+  FsInitStatus fsInit = FsInitStatus::FS_NOT_INITIALIZED; /*!< Initialization
+                                          status of the file system logger */
 };
 
 extern "C" {

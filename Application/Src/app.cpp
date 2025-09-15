@@ -161,15 +161,16 @@ extern "C" void app_main(void *argument) {
 static void supervisor_thread(void *argument) {
   UNUSED(argument);
   osThreadState_t state;
-  const char *name;
-  static std::uint8_t heartbeat = 0;
+  std::string_view name;
+  static std::atomic_uint8_t heartbeat = 0;
   while (1) {
     auto threadHealthCheck = [&]() {
       if (state == (osThreadInactive || osThreadError || osThreadTerminated)) {
 #if defined(DEBUG) && !defined(FS_LOG)
-        printf("%s thread not running!\r\n", name);
+        printf("%s thread not running!\r\n", name.data());
 #endif
-        LogRouter::getInstance().log("%s thread state is %d!\r\n", name, state);
+        LogRouter::getInstance().log("%s thread state is %d!\r\n", name.data(),
+                                     state);
       }
     };
 
@@ -181,8 +182,9 @@ static void supervisor_thread(void *argument) {
       name = osThreadGetName(osThreadIds[i]);
       threadHealthCheck();
     }
-
-    LogRouter::getInstance().log("Supervisor: Heartbeat %d\r\n", heartbeat++);
+    heartbeat.fetch_add(1U); // Increment heartbeat counter
+    LogRouter::getInstance().log("Supervisor: Heartbeat %d\r\n",
+                                 heartbeat.load());
     osDelay(1000U); // Delay to reduce CPU usage
   }
 }

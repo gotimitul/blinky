@@ -70,10 +70,12 @@ message being logged over USB.
 #include "stdio.h" // For printf
 #include "usbd_cdc_if.h"
 #include "usbd_def.h"
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <functional>
 #include <map>
+#include <string_view>
 
 /** Anonymous namespace for internal linkage
  * @details Contains internal variables and helper functions for UsbLogger.
@@ -84,7 +86,7 @@ constexpr uint32_t LOG_QUEUE_LENGTH = 32; /*!< Number of messages in queue */
 osMessageQueueId_t msgQueueId = nullptr;  /*!< Message queue for log strings */
 osEventFlagsId_t usbXferFlag = nullptr;   /*!< Event flags for USB transfer */
 
-const char *helpMsg =
+constexpr char helpMsg[] =
     "Commands:\r\n"
     "  set on time: Set LED ON time (100-2000 ms)\r\n"
     "  fsLog out: Replay file system logs to USB\r\n"
@@ -96,12 +98,12 @@ const char *helpMsg =
     "  help     : Show this help message\r\n"; /*!< Help message */
 
 using CommandHandler =
-    std::function<void(const char *)>; /*!< Command handler type */
+    std::function<void(std::string_view)>; /*!< Command handler type */
 
 /** @brief Handle 'set on time' command
  * @param args Command arguments (not used)
  */
-void handleSetOnTime(const char *args) {
+void handleSetOnTime(std::string_view args) {
   UNUSED(args);
   // Replying with prompt to set LED ON time
   UsbLogger::getInstance().usbXferChunk(
@@ -111,7 +113,7 @@ void handleSetOnTime(const char *args) {
 /** @brief Handle 'fsLog out' command
  * @param args Command arguments (not used)
  */
-void handleFsLogOut(const char *args) {
+void handleFsLogOut(std::string_view args) {
   UNUSED(args);
 #ifdef FS_LOG
   // Calling LogRouter to replay file system logs to USB
@@ -122,7 +124,7 @@ void handleFsLogOut(const char *args) {
 /** @brief Handle 'fsLog on' command
  * @param args Command arguments (not used)
  */
-void handleFsLogOn(const char *args) {
+void handleFsLogOn(std::string_view args) {
   UNUSED(args);
 #ifdef FS_LOG
   // Calling LogRouter to enable file system logging
@@ -134,7 +136,7 @@ void handleFsLogOn(const char *args) {
 /** @brief Handle 'fsLog off' command
  * @param args Command arguments (not used)
  */
-void handleFsLogOff(const char *args) {
+void handleFsLogOff(std::string_view args) {
   UNUSED(args);
 #ifdef FS_LOG
   // Calling LogRouter to disable file system logging
@@ -145,7 +147,7 @@ void handleFsLogOff(const char *args) {
 /** @brief Handle 'log on' command
  * @param args Command arguments (not used)
  */
-void handleLogOn(const char *args) {
+void handleLogOn(std::string_view args) {
   UNUSED(args);
   // Calling LogRouter for enabling USB logging using MemoryPool
   LogRouter::getInstance().enableUsbLogging(true);
@@ -158,7 +160,7 @@ void handleLogOn(const char *args) {
 /** @brief Handle 'log off' command
  * @param args Command arguments (not used)
  */
-void handleLogOff(const char *args) {
+void handleLogOff(std::string_view args) {
   UNUSED(args);
   // Calling LogRouter for disabling USB logging
   LogRouter::getInstance().enableUsbLogging(false);
@@ -167,7 +169,7 @@ void handleLogOff(const char *args) {
 /** @brief Handle 'set clock' command
  * @param args Command arguments (not used)
  */
-void handleSetClock(const char *args) {
+void handleSetClock(std::string_view args) {
   UNUSED(args);
   // Replying with prompt to set clock time
   UsbLogger::getInstance().usbXferChunk(
@@ -177,7 +179,7 @@ void handleSetClock(const char *args) {
 /** @brief Handle 'help' command
  * @param args Command arguments (not used)
  */
-void handleHelp(const char *args) {
+void handleHelp(std::string_view args) {
   UNUSED(args);
   // Replying with help command message
   UsbLogger::getInstance().usbXferChunk(helpMsg);
@@ -302,9 +304,9 @@ auto messageQueueFullHandler = +[](void) {
  *   - Puts the message into the logger's message queue.
  *   - If the queue is full, removes the oldest message and retries.
  */
-void UsbLogger::log(const char *msg) {
+void UsbLogger::log(std::string_view msg) {
   if (msgQueueId != nullptr) {
-    while (osMessageQueuePut(msgQueueId, msg, 0, 0) ==
+    while (osMessageQueuePut(msgQueueId, msg.data(), 0, 0) ==
            osErrorResource) // non-blocking enqueue, remove oldest if full
     {
       messageQueueFullHandler();
@@ -322,12 +324,12 @@ void UsbLogger::log(const char *msg) {
  *   - Waits for the transfer complete event flag.
  *   - Retries if the USB is busy.
  */
-UsbLogger::UsbXferStatus UsbLogger::usbXfer(const char *msg,
+UsbLogger::UsbXferStatus UsbLogger::usbXfer(std::string_view msg,
                                             std::uint32_t len) {
   // Start USB transfer in a separate thread
-  while (CDC_Transmit_FS(
-             const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(msg)),
-             len) != USBD_OK) {
+  while (CDC_Transmit_FS(const_cast<uint8_t *>(
+                             reinterpret_cast<const uint8_t *>(msg.data())),
+                         len) != USBD_OK) {
     osDelay(10); // Wait and retry if USB is busy
   }
   // Wait for transfer complete event
@@ -350,22 +352,23 @@ UsbLogger::UsbXferStatus UsbLogger::usbXfer(const char *msg,
  *   - Handles command processing.
  */
 void UsbLogger::loggerThread() {
-  char logBuf[LOG_MSG_SIZE];
+  std::array<char, LOG_MSG_SIZE> logBuf;
   bool usbXferCompleted = true;
 
   for (;;) {
     osStatus_t status;
     // Get next log message from queue if previous transfer completed
     if (usbXferCompleted == true) {
-      status = osMessageQueueGet(msgQueueId, logBuf, nullptr, 100U);
+      status = osMessageQueueGet(msgQueueId, const_cast<char *>(logBuf.data()),
+                                 nullptr, 100U);
     }
     // Check if a message was received
     if (status == osOK) {
-      EventStartA(1);                  // Start event recording for profiling
-      logBuf[LOG_MSG_SIZE - 1] = '\0'; // Ensure null termination
+      EventStartA(1);                     // Start event recording for profiling
+      logBuf.at(LOG_MSG_SIZE - 1) = '\0'; // Ensure null termination
 
       // Transmit log message over USB CDC
-      if (usbXfer(logBuf, strlen(logBuf)) != 0) {
+      if (usbXfer(logBuf.data(), strnlen(logBuf.data(), logBuf.size())) != 0) {
         usbXferCompleted = false; // Retry sending next message
       } else {
         usbXferCompleted = true; // Transfer completed successfully
@@ -387,29 +390,29 @@ void UsbLogger::loggerThread() {
  *   - Logs actions and errors using the LogRouter.
  */
 void UsbLogger::loggerCommand(void) {
-  static char rxBuf[16];
+  std::array<char, 16> rxBuf; // Buffer for receiving commands
   uint32_t rxLen = 4;
 
   /* Helper lambda to check if a string represents a valid integer */
-  auto isInteger = [](const char *str) {
-    if (str == nullptr || *str == '\0') {
+  auto isInteger = [](std::string_view str) {
+    if (str.empty()) {
       return false;
     }
     char *endptr = nullptr;
-    strtol(str, &endptr, 10);
+    strtol(str.data(), &endptr, 10);
     return (*endptr == '\0');
   };
 
   // Check for received command from USB CDC
-  if (USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf),
+  if (USBD_Interface_fops_FS.Receive(reinterpret_cast<uint8_t *>(rxBuf.data()),
                                      &rxLen) == USBD_OK) {
-    auto command = std::string(rxBuf);
+    auto command = std::string(rxBuf.data());
     auto it = commandMap.find(command);
     if (it != commandMap.end()) {
-      it->second(rxBuf); // Call the corresponding command handler
-    } else if (isInteger(rxBuf)) {
+      it->second(rxBuf.data()); // Call the corresponding command handler
+    } else if (isInteger(rxBuf.data())) {
       uint32_t temp = 0;
-      sscanf(rxBuf, "%u", &temp); // Parse received command as integer
+      sscanf(rxBuf.data(), "%u", &temp); // Parse received command as integer
       // Validate and apply LED on-time command
       if (temp >= LED_ON_TIME_MIN && temp <= LED_ON_TIME_MAX) {
         LedThread::setOnTime(temp);
@@ -426,26 +429,28 @@ void UsbLogger::loggerCommand(void) {
         printf("Invalid ON Time received: %s, %d\r\n", __FILE__, __LINE__);
 #endif
       }
-    } else if (strlen(rxBuf) == 8 && *(rxBuf + 2) == ':' &&
-               *(rxBuf + 5) == ':') {
+    } else if (strnlen(rxBuf.data(), rxBuf.size()) == 8 && rxBuf.at(2) == ':' &&
+               rxBuf.at(5) == ':') {
       // Handle 'set clock' command with time format hh:mm:ss
-      BootClock::SetRTCStatus result = BootClock::getInstance().setRTC(rxBuf);
-      if (result == BootClock::SUCCESS) {
+      SetRTCStatus result = BootClock::getInstance().setRTC(rxBuf.data());
+      if (result == SetRTCStatus::SUCCESS) {
         usbXferChunk("Reply: Clock time set successfully\r\n");
-      } else if (result == BootClock::INVALID_RX_FORMAT) {
+      } else if (result == SetRTCStatus::INVALID_RX_FORMAT) {
         usbXferChunk("Reply: Invalid clock format received. Use hh:mm:ss.\r\n");
-      } else if (result == BootClock::INVALID_VALUE) {
+      } else if (result == SetRTCStatus::INVALID_VALUE) {
         usbXferChunk("Reply: Invalid clock value received.\r\n");
       }
     } else {
-      if (strlen(rxBuf) > 1) {
+      // Find the actual length of received data (up to first null terminator)
+      size_t actualLen = strnlen(rxBuf.data(), rxBuf.size());
+      if (actualLen > 1) {
 #ifdef RUN_TIME
         usbXferChunk(
             "Reply: Invalid command. Type 'help' for list of commands\r\n");
 #endif
       }
     }
-    std::memset(rxBuf, 0, sizeof(rxBuf)); // Clear receive buffer
+    rxBuf.fill(0); // Clear receive buffer using STL
   }
 }
 
@@ -458,11 +463,11 @@ void UsbLogger::loggerCommand(void) {
  *   - Transmits the data chunk over USB CDC.
  *   - Waits for transfer completion event.
  */
-UsbLogger::UsbXferStatus UsbLogger::usbXferChunk(const char *msg) {
-  uint32_t len = strlen(msg);
+UsbLogger::UsbXferStatus UsbLogger::usbXferChunk(std::string_view msg) {
+  uint32_t len = msg.length();
   if (len > 0) {
     // Transmit a chunk of data over USB CDC
-    if (usbXfer(msg, len) != 0) {
+    if (usbXfer(msg.data(), len) != 0) {
       return USB_XFER_ERROR; // Transfer failed
     } else {
       return USB_XFER_SUCCESS; // Transfer succeeded
