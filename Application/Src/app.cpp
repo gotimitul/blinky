@@ -59,6 +59,7 @@
 #include "stdio.h"
 #include "stm32f4xx.h" // IWYU pragma: keep
 #include "usb_logger.h"
+#include <array>
 #include <cstdint>
 
 #ifdef FS_LOG
@@ -77,7 +78,7 @@ constexpr std::uint32_t LED_RED_PIN = 62U;    ///< GPIO pin for red LED
 constexpr std::uint32_t LED_ORANGE_PIN = 61U; ///< GPIO pin for orange LED
 constexpr std::uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
 
-osThreadId_t osThreadIds[5]; /*!< Array to hold thread IDs */
+std::array<osThreadId_t, 5> osThreadIds; /*!< Array to hold thread IDs */
 
 osThreadId_t supervisor_id;
 uint64_t supervisor_stack[256]
@@ -174,7 +175,7 @@ static void supervisor_thread(void *argument) {
       }
     };
 
-    for (size_t i = 0; i < sizeof(osThreadIds) / sizeof(osThreadIds[0]); i++) {
+    for (size_t i = 0; i < osThreadIds.size(); i++) {
       if (osThreadIds[i] == nullptr) {
         continue;
       }

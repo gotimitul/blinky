@@ -79,7 +79,7 @@ uint32_t LedThread::onTime = 500; /*!< Definition of static member variable */
  *   used for inter-thread communication in the application.
  */
 namespace {
-
+constexpr uint32_t debounceDelayMs = 50U; /*!< Debounce delay in milliseconds */
 /**
  * @brief Static function to get a shared semaphore for LED threads.
  * @details
@@ -213,7 +213,7 @@ void LedThread::checkButtonEvent(void *arg) {
 #ifdef FS_LOG
     LogRouter::getInstance().replayFsLogsToUsb(); /* Replay logs to USB */
 #endif
-    osDelay(50U); /* Debounce delay */
+    osDelay(debounceDelayMs); /* Debounce delay */
     osEventFlagsClear(app_events_get(),
                       USER_BUTTON_FLAG); /* Clear the event flag */
   }

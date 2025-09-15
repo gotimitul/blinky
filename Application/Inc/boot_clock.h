@@ -51,7 +51,9 @@ private:
   BootClock &
   operator=(const BootClock &) = delete; ///< Delete copy assignment operator
 
-  std::array<char, 16> timeString; ///< Buffer to hold formatted time string
+  constexpr static size_t TIME_STRING_SIZE = 16;
+  std::array<char, TIME_STRING_SIZE>
+      timeString; ///< Buffer to hold formatted time string
 
   std::atomic_uint32_t clock_offset = 0; ///< Offset to adjust clock time
 }; // End of BootClock class
