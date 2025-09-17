@@ -277,7 +277,7 @@ void FsLog::init() {
  * @brief   Write a message to the log file.
  * @param   msg Null-terminated string to write.
  */
-void logsToFs(std::string_view msg) {
+void FsLog::logsToFs(std::string_view msg) {
   std::int32_t status;
   std::int32_t fd;
 
