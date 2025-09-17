@@ -149,16 +149,6 @@ static std::int32_t fs_write(int32_t &fd, std::string_view buf) {
 } // namespace
 
 /**
- * @class   FsLog
- * @brief   Singleton class for file system logging.
- */
-
-/**
- * @brief   Constructor (private for singleton pattern).
- */
-FsLog::FsLog() {}
-
-/**
  * @brief   Get the singleton instance of FsLog.
  * @return  Reference to FsLog instance.
  */
@@ -295,8 +285,8 @@ void FsLog::logsToFs(std::string_view msg) {
         /* Not enough space, attempt to recreate the log file */
         if (fs_recreate(fd) == 0) {
           int32_t n = append_msg(
-              msg.data());     /* Retry writing the message in the new file */
-          cursor_pos.store(0); /* Reset cursor position */
+              msg.data()); /* Retry writing the message in the new file */
+          fs_read_cursor_pos.store(0); /* Reset cursor position */
           osMutexRelease(fsMutexId);
           if (n < 0) {
             UsbLogger::getInstance().log(
@@ -360,15 +350,13 @@ FsLog::FsLogStatus FsLog::replayLogsToUsb() {
  *  - Updates cursor position.
  */
 FsLog::FsLogStatus FsLog::fsLogsToUsb() {
-  std::int32_t n;
-  std::int32_t fd;
   if (fsInit == FS_NOT_INITIALIZED) {
     return FsLog::FsLogStatus::FS_TO_USB_INIT_ERROR;
   }
 
-  fd = fs_fopen(file_path.data(), FS_FOPEN_RD);
+  auto fd = fs_fopen(file_path.data(), FS_FOPEN_RD);
   if (fd >= 0) {
-    n = fs_fsize(fd); /* Get file size */
+    auto n = fs_fsize(fd); /* Get file size */
     if (n == 0) {
       std::string_view msg = "Info: No logs in the filesystem to replay.\r\n";
       UsbLogger::getInstance().usbXferChunk(msg.data());
@@ -380,31 +368,39 @@ FsLog::FsLogStatus FsLog::fsLogsToUsb() {
       UsbLogger::getInstance().usbXferChunk(msg.data());
       osDelay(10); /* Small delay to ensure USB is ready */
     }
-    while (n > cursor_pos.load()) {
+    while (n > fs_read_cursor_pos.load()) {
       osMutexAcquire(fsMutexId, osWaitForever);
-      fs_fseek(fd, cursor_pos.load(), SEEK_SET);
+      fs_fseek(fd, fs_read_cursor_pos.load(), SEEK_SET);
 
       int32_t m = fs_fread(fd, fs_buf,
-                           (n - cursor_pos.load()) < FS_DATA_PACKET_SIZE
-                               ? n - cursor_pos.load()
+                           (n - fs_read_cursor_pos.load()) < FS_DATA_PACKET_SIZE
+                               ? n - fs_read_cursor_pos.load()
                                : FS_DATA_PACKET_SIZE); /* Read file content */
                                                        //     fs_fclose(fd);
       osMutexRelease(fsMutexId);
-      const char *end_ptr = fs_buf + m;
-      const char *start_ptr = fs_buf;
-      while (end_ptr != start_ptr) {
-        end_ptr--; /* Trim trailing newlines */
-        if (*end_ptr == '\n')
-          break;
+
+      const char *start_ptr = fs_buf; /* Pointer to the start of the buffer */
+      const char *end_ptr = nullptr;  /* Pointer to the end of the buffer */
+      // Find the last newline character in fs_buf[0..m-1]
+      auto rpos =
+          std::find_if(std::reverse_iterator<const char *>(start_ptr + m),
+                       std::reverse_iterator<const char *>(start_ptr),
+                       [](char c) { return c == '\n'; });
+
+      if (rpos != std::reverse_iterator<const char *>(start_ptr)) {
+        // Convert reverse iterator to normal pointer
+        end_ptr = (rpos.base() - 1);
+      } else {
+        end_ptr = start_ptr + m - 1; // No newline found, use last character
       }
       m = end_ptr - start_ptr + 1;
       fs_buf[m] = '\0'; /* Null-terminate the string */
       if (m > 1) {
-        while (UsbLogger::getInstance().usbXferChunk(fs_buf) ==
+        while (UsbLogger::getInstance().usbXferChunk(start_ptr) ==
                USB_XFER_ERROR) {
           osDelay(10); /* Wait and retry if USB transfer fails */
         }
-        cursor_pos.fetch_add(m); /* Update cursor position atomically */
+        fs_read_cursor_pos.fetch_add(m); /* Update cursor position atomically */
       }
     }
   } else {

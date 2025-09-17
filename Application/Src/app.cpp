@@ -63,7 +63,7 @@
 #include <cstdint>
 
 #ifdef FS_LOG
-#include "fs_log.h"
+#include "fs_log.h" // Include File System Logger if FS_LOG is defined
 #endif
 
 extern ARM_DRIVER_GPIO Driver_GPIO0; // External GPIO driver instance
@@ -144,10 +144,6 @@ extern "C" void app_main(void *argument) {
         "Program Fault: Failed to create supervisor thread\r\n");
 #endif
   }
-
-  while (1) {
-    osDelay(1000U);
-  }
   // Exit the application thread once all LED threads are launched
   osThreadExit();
 }
@@ -166,7 +162,8 @@ static void supervisor_thread(void *argument) {
   static std::atomic_uint8_t heartbeat = 0;
   while (1) {
     auto threadHealthCheck = [&]() {
-      if (state == (osThreadInactive || osThreadError || osThreadTerminated)) {
+      if (state == osThreadInactive || state == osThreadError ||
+          state == osThreadTerminated) {
 #if defined(DEBUG) && !defined(FS_LOG)
         printf("%s thread not running!\r\n", name.data());
 #endif

@@ -46,10 +46,8 @@ public:
   getCurrentTimeString(void); ///< Get current time as formatted string
 
 private:
-  BootClock() {}; ///< Private constructor for singleton pattern
-  BootClock(const BootClock &) = delete; ///< Delete copy constructor
-  BootClock &
-  operator=(const BootClock &) = delete; ///< Delete copy assignment operator
+  BootClock() = default; ///< Private constructor for singleton pattern
+  ~BootClock() = default;
 
   constexpr static size_t TIME_STRING_SIZE = 16;
   std::array<char, TIME_STRING_SIZE>

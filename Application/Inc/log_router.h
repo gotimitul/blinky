@@ -52,10 +52,8 @@ public:
   void replayFsLogsToUsb();
 
 private:
-  LogRouter();
-  LogRouter(const LogRouter &) = delete;
-  LogRouter &operator=(const LogRouter &) = delete;
-  ~LogRouter() = default;
+  LogRouter();            // default constructor
+  ~LogRouter() = default; // default destructor
 
   bool usbLoggingEnabled = false; /**< USB sink flag. */
   bool fsLoggingEnabled = false;  /**< FS sink flag. */
