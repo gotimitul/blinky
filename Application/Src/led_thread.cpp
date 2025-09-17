@@ -206,7 +206,6 @@ void LedThread::thread_entry(void *argument) {
  * @param arg Pointer to the LED thread instance.
  */
 void LedThread::checkButtonEvent(void *arg) {
-  LedThread *thread = static_cast<LedThread *>(arg);
   if (osEventFlagsWait(app_events_get(), USER_BUTTON_FLAG, osFlagsWaitAny,
                        0U) == USER_BUTTON_FLAG) {
 #ifdef FS_LOG
