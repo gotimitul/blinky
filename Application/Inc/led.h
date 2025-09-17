@@ -13,7 +13,6 @@
 #define __LED_H
 
 #include "stdint.h"
-#include <cstdint>
 
 #ifdef __cplusplus
 
@@ -25,23 +24,13 @@
  * derived classes.
  */
 class Led {
-protected:
-  enum class State : std::uint8_t { OFF = 0, ON = 1 };
-
 private:
-  std::uint32_t pin;        ///< GPIO pin associated with this LED
-  State state = State::OFF; ///< Current state of the LED
-
 public:
-  Led(std::uint32_t pin, State state) : pin(pin), state(state) {
-    if (state == State::ON) {
-      on(pin);
-    } else {
-      off(pin);
-    }
+  static Led &getInstance() {
+    static Led instance; // Guaranteed to be destroyed.
+                         // Instantiated on first use.
+    return instance;
   }
-  virtual ~Led() =
-      default; ///< Virtual destructor for proper cleanup in derived classes
 
   void on(uint32_t pin);     /*!< Turn on LED */
   void off(uint32_t pin);    /*!< Turn off LED */

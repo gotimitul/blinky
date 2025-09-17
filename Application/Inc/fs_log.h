@@ -15,12 +15,9 @@
 #ifndef FS_LOG_H
 #define FS_LOG_H
 
-#include <array>
-#include <cmsis_os2.h>
 #include <cstdint>
 #include <logger.h>
 #include <string_view>
-
 #ifdef __cplusplus
 
 /**
@@ -59,20 +56,11 @@ public:
   FsLog::FsLogStatus replayLogsToUsb(); /*!< Replay logs to USB */
 
 private:
-  FsLog() = default;  /*!< Singleton */
-  ~FsLog() = default; /*!< Default destructor */
-
-  osMemoryPoolId_t fsMemPoolId;    /*!< Memory pool ID for log buffer */
-  osMutexId_t fsMutexId;           /*!< Mutex ID for file system access */
-  osThreadId_t threadId = nullptr; /*!< RTOS thread ID for logger */
-
-  std::array<char, 16> file_path; /*!< Full path for log file */
-  std::atomic_uint32_t fs_read_cursor_pos =
-      0; /*!< Cursor position for reading logs */
-
-  int32_t fs_recreate(int32_t &fd);
-  void logsToFs(std::string_view msg);
-  FsLog::FsLogStatus fsLogsToUsb(); /*!< Logger thread function */
+  FsLog();                                  /*!< Singleton */
+  FsLog(const FsLog &) = delete;            /*!< Prevent copy construction */
+  FsLog &operator=(const FsLog &) = delete; /*!< Prevent assignment */
+  ~FsLog() = default;                       /*!< Default destructor */
+  FsLog::FsLogStatus fsLogsToUsb();         /*!< Logger thread function */
 
   FsLogStatus fsInit = FsLogStatus::FS_NOT_INITIALIZED; /*!< Initialization
                                           status of the file system logger */

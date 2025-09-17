@@ -46,12 +46,12 @@ public:
   getCurrentTimeString(void); ///< Get current time as formatted string
 
 private:
-  BootClock() = default; ///< Private constructor for singleton pattern
-  ~BootClock() = default;
+  BootClock() {}; ///< Private constructor for singleton pattern
+  BootClock(const BootClock &) = delete; ///< Delete copy constructor
+  BootClock &
+  operator=(const BootClock &) = delete; ///< Delete copy assignment operator
 
-  constexpr static size_t TIME_STRING_SIZE = 16;
-  std::array<char, TIME_STRING_SIZE>
-      timeString; ///< Buffer to hold formatted time string
+  std::array<char, 16> timeString; ///< Buffer to hold formatted time string
 
   std::atomic_uint32_t clock_offset = 0; ///< Offset to adjust clock time
 }; // End of BootClock class
