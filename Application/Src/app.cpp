@@ -59,10 +59,11 @@
 #include "stdio.h"
 #include "stm32f4xx.h" // IWYU pragma: keep
 #include "usb_logger.h"
+#include <array>
 #include <cstdint>
 
 #ifdef FS_LOG
-#include "fs_log.h"
+#include "fs_log.h" // Include File System Logger if FS_LOG is defined
 #endif
 
 extern ARM_DRIVER_GPIO Driver_GPIO0; // External GPIO driver instance
@@ -77,7 +78,7 @@ constexpr std::uint32_t LED_RED_PIN = 62U;    ///< GPIO pin for red LED
 constexpr std::uint32_t LED_ORANGE_PIN = 61U; ///< GPIO pin for orange LED
 constexpr std::uint32_t LED_GREEN_PIN = 60U;  ///< GPIO pin for green LED
 
-osThreadId_t osThreadIds[5]; /*!< Array to hold thread IDs */
+std::array<osThreadId_t, 5> osThreadIds; /*!< Array to hold thread IDs */
 
 osThreadId_t supervisor_id;
 uint64_t supervisor_stack[256]
@@ -143,10 +144,6 @@ extern "C" void app_main(void *argument) {
         "Program Fault: Failed to create supervisor thread\r\n");
 #endif
   }
-
-  while (1) {
-    osDelay(1000U);
-  }
   // Exit the application thread once all LED threads are launched
   osThreadExit();
 }
@@ -165,7 +162,8 @@ static void supervisor_thread(void *argument) {
   static std::atomic_uint8_t heartbeat = 0;
   while (1) {
     auto threadHealthCheck = [&]() {
-      if (state == (osThreadInactive || osThreadError || osThreadTerminated)) {
+      if (state == osThreadInactive || state == osThreadError ||
+          state == osThreadTerminated) {
 #if defined(DEBUG) && !defined(FS_LOG)
         printf("%s thread not running!\r\n", name.data());
 #endif
@@ -174,7 +172,7 @@ static void supervisor_thread(void *argument) {
       }
     };
 
-    for (size_t i = 0; i < sizeof(osThreadIds) / sizeof(osThreadIds[0]); i++) {
+    for (size_t i = 0; i < osThreadIds.size(); i++) {
       if (osThreadIds[i] == nullptr) {
         continue;
       }

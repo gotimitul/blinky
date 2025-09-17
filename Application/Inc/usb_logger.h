@@ -37,10 +37,10 @@ public:
   osThreadId_t getThreadId() const { return threadId; } /*!< Get thread ID */
 
 private:
-  UsbLogger(); /*!< Private constructor for Singleton */
-  UsbLogger(const UsbLogger &) = delete; /*!< Prevent copy construction */
-  UsbLogger &operator=(const UsbLogger &) = delete; /*!< Prevent assignment */
-  static void loggerThreadWrapper(void *argument);  /*!< Thread wrapper */
+  UsbLogger() = default;  /*!< Private constructor for Singleton */
+  ~UsbLogger() = default; /*!< Default destructor */
+
+  static void loggerThreadWrapper(void *argument); /*!< Thread wrapper */
   UsbXferStatus usbXfer(std::string_view msg,
                         std::uint32_t len); /*!< Start USB transfer */
   void loggerThread();                      /*!< Logger thread function */

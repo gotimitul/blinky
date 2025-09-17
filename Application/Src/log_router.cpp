@@ -61,6 +61,12 @@
 #include <cstring>
 #include <string_view>
 
+namespace {
+constexpr size_t maxLogSize = 256; /*!< Maximum size for log messages */
+std::array<char, maxLogSize>
+    logBuffer; /*!< Buffer for formatted log messages */
+} // namespace
+
 /** @brief Get the singleton instance of LogRouter
  * This method returns a reference to the single instance of the LogRouter
  * class, creating it if it does not already exist.
@@ -110,25 +116,35 @@ void LogRouter::log(std::string_view msg) {
       break;
     }
   }
-
-  std::array<char, 256> logBuffer;
+  // Prepend timestamp if needed
   if (needTimeStamp) {
     std::string_view timeStamp =
         BootClock::getInstance().getCurrentTimeString();
-    snprintf(logBuffer.data(), logBuffer.size(), "[%s] %s", timeStamp.data(),
-             msg.data());
-  } else {
-    snprintf(logBuffer.data(), logBuffer.size(), "%s", msg.data());
+    size_t tsLen = timeStamp.size(); // Length of timestamp
+    size_t msgLen = msg.size();      // Length of message
+    size_t totalLen =
+        tsLen + 3 + msgLen; // +3 for a space or separator and brackets
+
+    if (totalLen < logBuffer.size()) {
+      // Shift the message to make room for the timestamp
+      std::memmove(logBuffer.data() + tsLen + 3, logBuffer.data(), msgLen);
+      // Copy the timestamp at the beginning
+      std::memcpy(logBuffer.data() + 1, timeStamp.data(), tsLen);
+      logBuffer[0] = '[';         // Opening bracket
+      logBuffer[tsLen + 1] = ']'; // Closing bracket
+      logBuffer[tsLen + 2] = ' '; // Separator
+      logBuffer[totalLen] = '\0'; // Null-terminate
+    }
   }
 
   Logger *logger = nullptr; // Pointer to the selected logger
   // Determine which logger to use based on enabled flags
   if (fsLoggingEnabled) {
 #if defined(FS_LOG) && !defined(DEBUG)
-    logger = static_cast<Logger *>(&FsLog::getInstance());
+    logger = &FsLog::getInstance();
 #endif
   } else if (usbLoggingEnabled) {
-    logger = static_cast<Logger *>(&UsbLogger::getInstance());
+    logger = &UsbLogger::getInstance();
   } else {
     return; // No logging enabled
   }
@@ -142,7 +158,6 @@ void LogRouter::log(std::string_view msg) {
  * @param val Integer value to include in the log message.
  */
 void LogRouter::log(std::string_view msg, uint32_t val) {
-  std::array<char, 64> logBuffer;
   snprintf(logBuffer.data(), logBuffer.size(), msg.data(), val);
   log(logBuffer.data());
 }
@@ -152,7 +167,6 @@ void LogRouter::log(std::string_view msg, uint32_t val) {
  * @param str String value to include in the log message.
  */
 void LogRouter::log(std::string_view msg, std::string_view str) {
-  std::array<char, 128> logBuffer;
   snprintf(logBuffer.data(), logBuffer.size(), msg.data(), str.data());
   log(logBuffer.data());
 }
@@ -163,7 +177,6 @@ void LogRouter::log(std::string_view msg, std::string_view str) {
  * @param val Integer value to include in the log message.
  */
 void LogRouter::log(std::string_view msg, std::string_view str, uint32_t val) {
-  std::array<char, 128> logBuffer;
   snprintf(logBuffer.data(), logBuffer.size(), msg.data(), str.data(), val);
   log(logBuffer.data());
 }
@@ -176,7 +189,6 @@ void LogRouter::log(std::string_view msg, std::string_view str, uint32_t val) {
  */
 void LogRouter::log(std::string_view msg, std::string_view str,
                     std::string_view str2, uint32_t val) {
-  std::array<char, 256> logBuffer;
   snprintf(logBuffer.data(), logBuffer.size(), msg.data(), str.data(),
            str2.data(), val);
   log(logBuffer.data());

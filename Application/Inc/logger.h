@@ -26,6 +26,7 @@
  */
 class Logger {
 public:
+  Logger() = default;                         /*!< Default constructor */
   virtual ~Logger() = default;                /*!< Virtual destructor */
   virtual void log(std::string_view msg) = 0; /*!< Pure virtual log method */
 
