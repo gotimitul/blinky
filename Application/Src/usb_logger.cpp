@@ -221,6 +221,12 @@ constexpr osThreadAttr_t threadAttr = {
 } // namespace
 
 /**
+ * @brief Private constructor for singleton pattern.
+ * @details Only accessible by getInstance().
+ */
+UsbLogger::UsbLogger() {}
+
+/**
  * @brief Get the singleton instance of UsbLogger.
  * @return Reference to the singleton UsbLogger instance.
  */

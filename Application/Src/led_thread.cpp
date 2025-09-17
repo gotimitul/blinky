@@ -69,8 +69,7 @@
 #include "eventrecorder.h"
 #endif
 
-std::atomic_uint32_t LedThread::onTime =
-    500; /*!< Definition of static member variable */
+uint32_t LedThread::onTime = 500; /*!< Definition of static member variable */
 
 /**
  * @namespace App
@@ -80,7 +79,7 @@ std::atomic_uint32_t LedThread::onTime =
  *   used for inter-thread communication in the application.
  */
 namespace {
-constexpr uint32_t debounceDelayMs = 50U; /*!< Debounce delay in milliseconds */
+
 /**
  * @brief Static function to get a shared semaphore for LED threads.
  * @details
@@ -141,8 +140,7 @@ osEventFlagsId_t app_events_get() {
  * @param threadName Name of the thread (used by CMSIS-RTOS2 for debugging).
  * @param pin  GPIO pin number associated with the LED.
  */
-LedThread::LedThread(std::string_view threadName, uint32_t pin)
-    : Led(pin, Led::State::ON), pin(pin) {
+LedThread::LedThread(std::string_view threadName, uint32_t pin) : pin(pin) {
   /* Initialize thread attributes for CMSIS-RTOS2 */
   thread_attr = {
       .name = threadName.data(),   /*!< Thread name */
@@ -208,12 +206,13 @@ void LedThread::thread_entry(void *argument) {
  * @param arg Pointer to the LED thread instance.
  */
 void LedThread::checkButtonEvent(void *arg) {
+  LedThread *thread = static_cast<LedThread *>(arg);
   if (osEventFlagsWait(app_events_get(), USER_BUTTON_FLAG, osFlagsWaitAny,
                        0U) == USER_BUTTON_FLAG) {
 #ifdef FS_LOG
     LogRouter::getInstance().replayFsLogsToUsb(); /* Replay logs to USB */
 #endif
-    osDelay(debounceDelayMs); /* Debounce delay */
+    osDelay(50U); /* Debounce delay */
     osEventFlagsClear(app_events_get(),
                       USER_BUTTON_FLAG); /* Clear the event flag */
   }
@@ -228,28 +227,27 @@ void LedThread::checkButtonEvent(void *arg) {
  */
 void LedThread::run(void) {
 #ifdef DEBUG
-  std::string_view str = osThreadGetName(thread_id);
-  std::string_view blue = "blue";
+  const char *const str = osThreadGetName(thread_id);
+  const char *const blue = "blue";
 #endif
-  Led &led = *this; /* Reference to the base Led class */
   for (;;) {
     /* Acquire semaphore before accessing the LED */
     osSemaphoreAcquire(sem, osWaitForever);
 #ifdef DEBUG
-    if (str == blue)
+    if (strcmp(str, blue) == 0)
       EventStartA(10);
 #endif
 
-    led.on(pin); /* Turn LED on */
+    Led::getInstance().on(pin); /* Turn LED on */
 
     LogRouter::getInstance().log("Event: LED %s ON for %d ms\r\n",
-                                 thread_attr.name, onTime.load());
+                                 thread_attr.name, getOnTime());
 
-    osDelay(onTime.load());
+    osDelay(getOnTime());
 
-    led.off(pin); /* Turn LED off */
+    Led::getInstance().off(pin);
 #ifdef DEBUG
-    if (str == blue)
+    if (strcmp(str, blue) == 0)
       EventStopA(10);
 #endif
     /* Release semaphore for next thread */

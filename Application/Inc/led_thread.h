@@ -14,8 +14,6 @@
 /* includes
  * --------------------------------------------------------------------------*/
 #include "cmsis_os2.h"
-#include "led.h"
-#include <atomic>
 #include <cstdint>
 #include <string_view>
 
@@ -32,14 +30,14 @@
  * adjust the LED on-time within defined limits. Uses a semaphore for
  * synchronized access.
  */
-class LedThread : public Led {
+class LedThread {
 private:
   uint32_t pin; ///< GPIO pin associated with this LED
   static void thread_entry(void *argument);
 
-  static std::atomic_uint32_t onTime; ///< Delay time for LED ON state
-  osThreadId_t thread_id = nullptr;   ///< CMSIS RTOS thread ID
-  osSemaphoreId_t sem;                ///< Shared semaphore pointer
+  static uint32_t onTime;           ///< Delay time for LED ON state
+  osThreadId_t thread_id = nullptr; ///< CMSIS RTOS thread ID
+  osSemaphoreId_t sem;              ///< Shared semaphore pointer
 
   uint64_t stack[128]
       __attribute__((aligned(64))); ///< Static thread stack (aligned)
@@ -55,25 +53,17 @@ private:
 public:
   // Constructor initializes the LED pin and thread attributes
   LedThread(std::string_view threadName, uint32_t pin);
-  ~LedThread() = default; // Default destructor
-
   osThreadId_t getThreadId(void) const { return thread_id; }
 
-  inline static uint32_t getOnTime(void) {
-    return onTime.load();
-  } // Getter for onTime
-  inline static void setOnTime(uint32_t t) {
-    onTime.store(t);
-  } // Setter for onTime
+  inline static uint32_t getOnTime(void) { return onTime; } // Getter for onTime
+  inline static void setOnTime(uint32_t t) { onTime = t; }  // Setter for onTime
 
   inline static void increaseOnTime(uint32_t delta) {
-    onTime.store((onTime.load() + delta) > LED_ON_TIME_MAX
-                     ? LED_ON_TIME_MAX
-                     : (onTime.fetch_add(delta)));
+    onTime =
+        (onTime + delta) > LED_ON_TIME_MAX ? LED_ON_TIME_MAX : (onTime + delta);
   } // Increase onTime
   inline static void decreaseOnTime(uint32_t delta) {
-    onTime.store((onTime.load() > delta) ? (onTime.load() - delta)
-                                         : LED_ON_TIME_MAX);
+    onTime = (onTime > delta) ? (onTime - delta) : LED_ON_TIME_MAX;
   } // Decrease onTime with lower limit
 };
 
