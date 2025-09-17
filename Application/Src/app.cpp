@@ -165,7 +165,7 @@ static void supervisor_thread(void *argument) {
   static std::atomic_uint8_t heartbeat = 0;
   while (1) {
     auto threadHealthCheck = [&]() {
-      if (state == (osThreadInactive || osThreadError || osThreadTerminated)) {
+      if (state == osThreadInactive || state == osThreadError || state == osThreadTerminated) {
 #if defined(DEBUG) && !defined(FS_LOG)
         printf("%s thread not running!\r\n", name.data());
 #endif
